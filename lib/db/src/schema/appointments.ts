@@ -17,6 +17,7 @@ export const appointmentsTable = pgTable("appointments", {
   price: real("price").notNull(),
   duration: integer("duration").notNull(),
   notes: text("notes"),
+  stripeSessionId: text("stripe_session_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

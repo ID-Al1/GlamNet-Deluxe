@@ -13,6 +13,7 @@ import DashboardRouter from "@/pages/dashboard";
 import StylistsList from "@/pages/stylists/index";
 import StylistProfile from "@/pages/stylists/[id]";
 import BookStylist from "@/pages/book/[stylistId]";
+import BookingSuccess from "@/pages/booking/success";
 import Messages from "@/pages/messages/index";
 import CastingCalls from "@/pages/casting/index";
 import ProfileSetup from "@/pages/profile/setup";
@@ -43,6 +44,7 @@ function Router() {
             <Route path="/stylists" component={StylistsList} />
             <Route path="/stylists/:id" component={StylistProfile} />
             <Route path="/book/:stylistId" component={BookStylist} />
+            <Route path="/booking/success" component={BookingSuccess} />
             <Route path="/messages" component={Messages} />
             <Route path="/casting" component={CastingCalls} />
             <Route component={NotFound} />

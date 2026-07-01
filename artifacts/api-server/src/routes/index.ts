@@ -6,6 +6,7 @@ import appointmentsRouter from "./appointments";
 import messagesRouter from "./messages";
 import castingRouter from "./casting";
 import dashboardRouter from "./dashboard";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(appointmentsRouter);
 router.use(messagesRouter);
 router.use(castingRouter);
 router.use(dashboardRouter);
+router.use(stripeRouter);
 
 export default router;
