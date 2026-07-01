@@ -102,10 +102,17 @@ router.post("/stripe/confirm-booking", requireAuth, async (req, res) => {
     return;
   }
 
-  const { stylistId, serviceId, date, time, notes } = session.metadata ?? {};
+  const { userId, stylistId, serviceId, date, time, notes } = session.metadata ?? {};
 
   if (!stylistId || !serviceId || !date || !time) {
     res.status(400).json({ error: "Missing booking metadata in session" });
+    return;
+  }
+
+  // Bind the session to its original purchaser — prevents another authenticated
+  // user from confirming a booking against someone else's paid session.
+  if (userId && userId !== user.id) {
+    res.status(403).json({ error: "This checkout session does not belong to you" });
     return;
   }
 

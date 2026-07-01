@@ -49,12 +49,28 @@ router.get("/team-invitations", requireAuth, async (req, res) => {
   })));
 });
 
-// Get all team members for an appointment
+// Get all team members for an appointment — only participants may view
 router.get("/appointments/:appointmentId/team-members", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const { appointmentId } = req.params;
+
+  const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, appointmentId));
+  if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
+
   const members = await db
     .select()
     .from(bookingTeamMembersTable)
-    .where(eq(bookingTeamMembersTable.appointmentId, req.params.appointmentId));
+    .where(eq(bookingTeamMembersTable.appointmentId, appointmentId));
+
+  // Authorised if: the booking client, the lead stylist, or a team member on it
+  const [callerProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  const isClientOwner = appt.clientId === user.id;
+  const isLeadStylist = callerProfile && appt.stylistId === callerProfile.id;
+  const isTeamMember = callerProfile && members.some(m => m.stylistId === callerProfile.id);
+  if (!isClientOwner && !isLeadStylist && !isTeamMember) {
+    res.status(403).json({ error: "You are not a participant in this booking" });
+    return;
+  }
 
   res.json(members.map(m => ({ ...m, createdAt: m.createdAt.toISOString() })));
 });

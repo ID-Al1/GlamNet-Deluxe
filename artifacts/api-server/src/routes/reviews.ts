@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  db, reviewsTable, appointmentsTable, stylistProfilesTable, usersTable,
+  db, reviewsTable, appointmentsTable, stylistProfilesTable, usersTable, bookingTeamMembersTable,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -36,6 +36,23 @@ router.post("/reviews", requireAuth, async (req, res) => {
   // Verify the stylist profile exists
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
   if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+
+  // Verify the stylist is actually tied to this appointment — either the lead
+  // stylist or a confirmed team member. Prevents reviewing arbitrary profiles.
+  const isLeadStylist = appt.stylistId === stylistId;
+  let isTeamMember = false;
+  if (!isLeadStylist) {
+    const [member] = await db.select().from(bookingTeamMembersTable)
+      .where(and(
+        eq(bookingTeamMembersTable.appointmentId, appointmentId),
+        eq(bookingTeamMembersTable.stylistId, stylistId),
+      ));
+    isTeamMember = !!member;
+  }
+  if (!isLeadStylist && !isTeamMember) {
+    res.status(403).json({ error: "This stylist is not part of this appointment" });
+    return;
+  }
 
   // Prevent duplicate reviews for the same appointment + stylist
   const existing = await db.select().from(reviewsTable)
@@ -84,6 +101,9 @@ router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, r
     .set({ status: "completed" })
     .where(eq(appointmentsTable.id, appointmentId))
     .returning();
+
+  // Completing a booking is the trigger for referral completion — not the review.
+  await maybeCompleteReferral(user.id);
 
   res.json({ ...updated, createdAt: updated.createdAt.toISOString() });
 });
