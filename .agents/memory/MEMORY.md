@@ -1,2 +1,3 @@
 - [GlamNet stack & auth](glamnet-stack.md) — Express 5 + Drizzle + Postgres, React + Vite + Wouter, Tailwind v4, custom HMAC-SHA256 JWT in localStorage key `glamnet_auth`.
 - [GlamNet schema decisions](glamnet-schema.md) — houseCalls boolean added to stylist_profiles; servicesTable.stylistId references stylistProfilesTable.id (not userId).
+- [video-js vertical export](video-js-vertical-export.md) — export is fixed 16:9; make Reels via a centered 9:16 stage with branded fill (no black bars), then crop.

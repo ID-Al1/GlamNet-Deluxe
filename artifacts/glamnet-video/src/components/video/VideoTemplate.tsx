@@ -35,20 +35,21 @@ const SCENE_START_SEC: Record<string, number> = (() => {
 
 const AUDIO_SEEK_EPSILON = 0.18;
 
+// Adapted for a 9:16 vertical stage, using vh/vw or % for positioning relative to the container
 const scenePositions = [
-  { x: '-20vw', y: '-40vh', scale: 1,   opacity: 0.3 },
-  { x: '10vw',  y: '10vh',  scale: 1.5, opacity: 0.5 },
-  { x: '40vw',  y: '-20vh', scale: 0.8, opacity: 0.4 },
-  { x: '60vw',  y: '50vh',  scale: 1.2, opacity: 0.6 },
-  { x: '20vw',  y: '10vh',  scale: 1,   opacity: 0.3 },
+  { x: '-30%', y: '-20%', scale: 1,   opacity: 0.3 },
+  { x: '10%',  y: '10%',  scale: 1.5, opacity: 0.5 },
+  { x: '40%',  y: '-10%', scale: 0.8, opacity: 0.4 },
+  { x: '20%',  y: '50%',  scale: 1.2, opacity: 0.6 },
+  { x: '-10%', y: '10%',  scale: 1,   opacity: 0.3 },
 ];
 
 const blob2Positions = [
-  { x: '40vw', y: '50vh' },
-  { x: '-10vw', y: '20vh' },
-  { x: '50vw', y: '60vh' },
-  { x: '0vw',  y: '-10vh' },
-  { x: '30vw', y: '40vh' },
+  { x: '40%', y: '50%' },
+  { x: '-10%', y: '20%' },
+  { x: '50%', y: '60%' },
+  { x: '0%',  y: '-10%' },
+  { x: '30%', y: '40%' },
 ];
 
 export default function VideoTemplate({
@@ -88,8 +89,8 @@ export default function VideoTemplate({
   const blob2pos = blob2Positions[sceneIndex] ?? blob2Positions[0];
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-brand-950 text-brand-50">
-      {/* Persistent Background */}
+    <div className="relative w-full h-screen overflow-hidden bg-brand-950 text-brand-50 flex items-center justify-center">
+      {/* Persistent Background - fills the entire 16:9 viewport to prevent black bars */}
       <div className="absolute inset-0 z-0">
         <motion.div
           className="absolute inset-0 opacity-40 bg-cover bg-center mix-blend-overlay"
@@ -102,21 +103,24 @@ export default function VideoTemplate({
         />
       </div>
 
-      {/* Persistent Midground — morphs with scene */}
-      <motion.div
-        className="absolute w-[80vw] h-[80vw] rounded-full border border-brand-400/20 mix-blend-screen"
-        animate={pos}
-        transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-      />
-      <motion.div
-        className="absolute w-[60vw] h-[60vw] rounded-full bg-brand-600/10 blur-[100px]"
-        animate={blob2pos}
-        transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+      {/* 9:16 Vertical Stage */}
+      <div className="relative h-full aspect-[9/16] bg-transparent overflow-hidden shadow-2xl z-10">
+        {/* Persistent Midground inside the vertical stage */}
+        <motion.div
+          className="absolute w-[120vh] h-[120vh] rounded-full border border-brand-400/20 mix-blend-screen -translate-x-1/2 -translate-y-1/2"
+          animate={pos}
+          transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+        />
+        <motion.div
+          className="absolute w-[90vh] h-[90vh] rounded-full bg-brand-600/10 blur-[100px] -translate-x-1/2 -translate-y-1/2"
+          animate={blob2pos}
+          transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1] }}
+        />
 
-      <AnimatePresence mode="sync">
-        {SceneComponent && <SceneComponent key={currentSceneKey} />}
-      </AnimatePresence>
+        <AnimatePresence mode="sync">
+          {SceneComponent && <SceneComponent key={currentSceneKey} />}
+        </AnimatePresence>
+      </div>
 
       <audio
         ref={audioRef}
