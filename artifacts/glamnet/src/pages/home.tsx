@@ -24,12 +24,6 @@ const BRAND_STEPS = [
   { icon: ShieldCheck, title: "Hire with confidence", desc: "Review portfolios, ratings, and reviews — then book directly through the platform." },
 ];
 
-const STATS = [
-  { value: "8+", label: "Cities" },
-  { value: "50+", label: "Verified artists" },
-  { value: "7", label: "Specialties" },
-  { value: "R0", label: "Commission to start" },
-];
 
 export default function Home() {
   const { data: stylists } = useListStylists({ specialty: undefined }, {
@@ -72,20 +66,6 @@ export default function Home() {
                 Join as a Professional
               </Button>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS BAND ── */}
-      <section className="bg-primary py-8 border-y border-primary/20">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {STATS.map(({ value, label }) => (
-              <div key={label}>
-                <div className="text-3xl md:text-4xl font-serif font-bold text-primary-foreground">{value}</div>
-                <div className="text-sm text-primary-foreground/70 mt-1 uppercase tracking-wider">{label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
