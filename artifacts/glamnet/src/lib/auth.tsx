@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import { setAuthToken, useLogin, useSignup, useLogout } from "@workspace/api-client-react";
 import type { User, LoginInput, SignupInput } from "@workspace/api-client-react";
 
@@ -13,32 +13,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function readStoredAuth(): { user: User; token: string } | null {
+  try {
+    const stored = localStorage.getItem("glamnet_auth");
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (parsed?.token && parsed?.user) return parsed as { user: User; token: string };
+  } catch {}
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    const stored = readStoredAuth();
+    if (stored) {
+      setAuthToken(stored.token);
+      return stored.user;
+    }
+    return null;
+  });
+
+  const [token, setTokenState] = useState<string | null>(() => {
+    return readStoredAuth()?.token ?? null;
+  });
 
   const loginMutation = useLogin();
   const signupMutation = useSignup();
   const logoutMutation = useLogout();
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("glamnet_auth");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.token && parsed.user) {
-          setTokenState(parsed.token);
-          setUser(parsed.user);
-          setAuthToken(parsed.token);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse auth from localStorage", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   const login = async (data: { data: LoginInput }) => {
     const res = await loginMutation.mutateAsync(data);
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading: false, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

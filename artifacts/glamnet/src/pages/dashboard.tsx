@@ -5,9 +5,8 @@ import StylistDashboard from "./dashboards/stylist-dashboard";
 import BrandDashboard from "./dashboards/brand-dashboard";
 
 export default function DashboardRouter() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
   if (!user) return <Redirect to="/login" />;
 
   switch (user.role) {
