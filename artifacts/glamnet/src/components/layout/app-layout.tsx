@@ -29,19 +29,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
       <header className="sticky top-0 z-50 w-full bg-transparent">
-        <div className="container flex h-24 items-center justify-between relative">
-          {/* Centred logo */}
-          <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center" onClick={() => setOpen(false)}>
+        <div className="container flex h-16 items-center justify-between">
+          {/* Logo — left aligned */}
+          <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
             <img
               src="/logo-transparent.png"
               alt="GlamNet"
               className="object-contain"
-              style={{ width: 200, height: "auto" }}
+              style={{ width: 120, height: "auto" }}
             />
           </Link>
-
-          {/* Invisible spacer so flex justify-between still works */}
-          <div className="w-16" />
 
           {/* Right side: theme toggle + hamburger */}
           <div className="flex items-center gap-1">
