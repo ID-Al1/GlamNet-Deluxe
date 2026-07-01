@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "GlamNet"
+version = "1.0.0"
+id = "artifacts/glamnet"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18275
+
+[services.development]
+run = "pnpm --filter @workspace/glamnet run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/glamnet", "run", "build" ]
+publicDir = "artifacts/glamnet/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18275"
+BASE_PATH = "/"

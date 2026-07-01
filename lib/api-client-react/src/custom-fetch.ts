@@ -17,6 +17,11 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _staticToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  _staticToken = token;
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -356,6 +361,8 @@ export async function customFetch<T = unknown>(
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
     }
+  } else if (_staticToken && !headers.has("authorization")) {
+    headers.set("authorization", `Bearer ${_staticToken}`);
   }
 
   const requestInfo = { method, url: resolveUrl(input) };
