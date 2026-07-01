@@ -75,11 +75,11 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(servicesTable)
-        .where(eq(servicesTable.stylistProfileId, p.id)),
+        .where(eq(servicesTable.stylistId, p.id)),
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(portfolioItemsTable)
-        .where(eq(portfolioItemsTable.stylistProfileId, p.id)),
+        .where(eq(portfolioItemsTable.stylistId, p.id)),
     ]);
     if ((svcCount[0]?.count ?? 0) > 0) profileStrength += 20;
     if ((portCount[0]?.count ?? 0) > 0) profileStrength += 25;
