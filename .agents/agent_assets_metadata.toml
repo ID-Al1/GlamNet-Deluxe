@@ -1,0 +1,25 @@
+uploads = []
+
+[[generated]]
+id = "6zbRbRbzqr_UoWFIirAGq"
+uri = "file://artifacts/glamnet-video/public/images/model1.png"
+type = "image"
+title = "Editorial SA beauty model"
+
+[[generated]]
+id = "x8-3u6yR36p-VQYgSjTuX"
+uri = "file://artifacts/glamnet-video/public/images/stylist.png"
+type = "image"
+title = "Stylist working"
+
+[[generated]]
+id = "Se7T64KoyxfSKYC_ziB6K"
+uri = "file://artifacts/glamnet-video/public/images/texture.png"
+type = "image"
+title = "Luxury beauty texture"
+
+[[outputs]]
+id = "aMXWg6pLTUM0Nr67CAcr5"
+uri = "file://artifacts/glamnet-video/public/audio/bg_music.mp3"
+type = "audio"
+title = "glamnet background music"

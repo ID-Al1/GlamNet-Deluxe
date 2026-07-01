@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/glamnet-video/"
+title = "GlamNet Video"
+version = "1.0.0"
+id = "artifacts/glamnet-video"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/glamnet-video/" ]
+localPort = 25610
+
+[services.development]
+run = "pnpm --filter @workspace/glamnet-video run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/glamnet-video", "run", "build" ]
+publicDir = "artifacts/glamnet-video/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25610"
+BASE_PATH = "/glamnet-video/"
