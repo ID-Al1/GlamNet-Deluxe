@@ -6,7 +6,8 @@ import { logger } from "./lib/logger";
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is required for Stripe integration.');
+    logger.warn('DATABASE_URL not set — skipping Stripe init');
+    return;
   }
 
   try {
@@ -25,8 +26,9 @@ async function initStripe() {
       .then(() => logger.info('Stripe data synced'))
       .catch((err) => logger.error({ err }, 'Error syncing Stripe data'));
   } catch (error) {
-    logger.error({ err: error }, 'Failed to initialize Stripe');
-    throw error;
+    // Non-fatal: log the warning but allow the server to start.
+    // Stripe routes will return errors at request time if keys are unavailable.
+    logger.warn({ err: error }, 'Stripe init failed — payment routes will be unavailable until credentials are accessible');
   }
 }
 
