@@ -219,6 +219,7 @@ export const UpdateMyStylistProfileBody = zod.object({
   "location": zod.string().optional(),
   "area": zod.string().optional(),
   "specialty": zod.string().optional(),
+  "houseCalls": zod.boolean().optional(),
   "instagram": zod.string().optional(),
   "website": zod.string().optional(),
   "availability": zod.array(zod.string()).optional(),

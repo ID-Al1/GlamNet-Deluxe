@@ -36,6 +36,7 @@ async function buildStylistResponse(profileId: string) {
     instagram: profile.instagram ?? null,
     website: profile.website ?? null,
     accentColor: profile.accentColor ?? null,
+    houseCalls: profile.houseCalls,
   };
 }
 
@@ -99,6 +100,7 @@ router.patch("/stylists/me/profile", requireAuth, async (req, res) => {
     ...(data.website !== undefined && { website: data.website }),
     ...(data.availability !== undefined && { availability: data.availability }),
     ...(data.tags !== undefined && { tags: data.tags }),
+    ...((data as any).houseCalls !== undefined && { houseCalls: (data as any).houseCalls }),
   }).where(eq(stylistProfilesTable.id, profile.id));
   const result = await buildStylistResponse(profile.id);
   res.json(result);

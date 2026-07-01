@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { useUpdateMyStylistProfile } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,15 +8,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { SignupInputRole } from "@workspace/api-client-react";
+import { Palette, User, Briefcase } from "lucide-react";
 
-const SPECIALTIES = [
-  "Makeup",
-  "Hair",
-  "Barber",
-  "Nails",
-  "Lashes",
-  "Brows",
-  "Skincare",
+const SPECIALTIES = ["Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
+
+const ROLES = [
+  {
+    value: SignupInputRole.client,
+    icon: User,
+    label: "Client",
+    desc: "Book beauty services",
+  },
+  {
+    value: SignupInputRole.stylist,
+    icon: Palette,
+    label: "Artist / Barber",
+    desc: "Offer your services",
+  },
+  {
+    value: SignupInputRole.brand,
+    icon: Briefcase,
+    label: "Brand",
+    desc: "Post casting calls",
+  },
 ];
 
 export default function Signup() {
@@ -29,7 +42,6 @@ export default function Signup() {
   const [specialty, setSpecialty] = useState("Makeup");
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
-  const updateProfile = useUpdateMyStylistProfile();
   const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,13 +57,12 @@ export default function Signup() {
           businessName: role === SignupInputRole.brand ? businessName : undefined,
         },
       });
-
-      if (role === SignupInputRole.stylist && specialty !== "Makeup") {
-        await updateProfile.mutateAsync({ data: { specialty } });
+      toast.success("Account created — let's set up your profile!");
+      if (role === SignupInputRole.stylist) {
+        setLocation("/profile/setup");
+      } else {
+        setLocation("/dashboard");
       }
-
-      toast.success("Account created successfully");
-      setLocation("/dashboard");
     } catch (err: any) {
       toast.error(err.message || "Failed to sign up");
     } finally {
@@ -69,99 +80,106 @@ export default function Signup() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
+
+            {/* Role selection */}
             <div className="space-y-3">
               <Label>I want to use GlamNet as a:</Label>
-              <RadioGroup value={role} onValueChange={(v) => setRole(v as SignupInputRole)} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className={`border rounded-lg p-4 cursor-pointer transition-all ${role === SignupInputRole.client ? 'border-primary bg-primary/10' : 'border-border bg-background'}`} onClick={() => setRole(SignupInputRole.client)}>
-                  <RadioGroupItem value={SignupInputRole.client} id="role-client" className="sr-only" />
-                  <div className="font-semibold text-sm">Client</div>
-                  <div className="text-xs text-muted-foreground mt-1">Book services</div>
-                </div>
-                <div className={`border rounded-lg p-4 cursor-pointer transition-all ${role === SignupInputRole.stylist ? 'border-primary bg-primary/10' : 'border-border bg-background'}`} onClick={() => setRole(SignupInputRole.stylist)}>
-                  <RadioGroupItem value={SignupInputRole.stylist} id="role-stylist" className="sr-only" />
-                  <div className="font-semibold text-sm">Artist / Barber</div>
-                  <div className="text-xs text-muted-foreground mt-1">Offer services</div>
-                </div>
-                <div className={`border rounded-lg p-4 cursor-pointer transition-all ${role === SignupInputRole.brand ? 'border-primary bg-primary/10' : 'border-border bg-background'}`} onClick={() => setRole(SignupInputRole.brand)}>
-                  <RadioGroupItem value={SignupInputRole.brand} id="role-brand" className="sr-only" />
-                  <div className="font-semibold text-sm">Brand</div>
-                  <div className="text-xs text-muted-foreground mt-1">Post castings</div>
-                </div>
+              <RadioGroup value={role} onValueChange={v => setRole(v as SignupInputRole)} className="grid grid-cols-3 gap-3">
+                {ROLES.map(({ value, icon: Icon, label, desc }) => (
+                  <div
+                    key={value}
+                    onClick={() => setRole(value)}
+                    className={`border rounded-xl p-4 cursor-pointer transition-all space-y-2 ${
+                      role === value ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <RadioGroupItem value={value} className="sr-only" />
+                    <Icon className={`h-5 w-5 ${role === value ? "text-primary" : "text-muted-foreground"}`} />
+                    <div>
+                      <div className="font-semibold text-sm">{label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
+                    </div>
+                  </div>
+                ))}
               </RadioGroup>
             </div>
 
+            {/* Full name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
               <Input
                 id="name"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Jane Doe"
+                onChange={e => setName(e.target.value)}
+                placeholder="Jane Dlamini"
                 className="bg-background"
               />
             </div>
 
+            {/* Specialty (artists only) */}
             {role === SignupInputRole.stylist && (
               <div className="space-y-2">
-                <Label htmlFor="specialty">Your Specialty</Label>
+                <Label htmlFor="specialty">Your Specialty <span className="text-destructive">*</span></Label>
                 <Select value={specialty} onValueChange={setSpecialty}>
                   <SelectTrigger id="specialty" className="bg-background">
                     <SelectValue placeholder="Select your specialty" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SPECIALTIES.map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
+                    {SPECIALTIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             )}
 
+            {/* Brand name */}
             {role === SignupInputRole.brand && (
               <div className="space-y-2">
-                <Label htmlFor="businessName">Brand / Agency Name</Label>
+                <Label htmlFor="businessName">Brand / Agency Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="businessName"
                   required
                   value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Lumi Beauty"
+                  onChange={e => setBusinessName(e.target.value)}
+                  placeholder="Lumi Beauty SA"
                   className="bg-background"
                 />
               </div>
             )}
 
+            {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
               <Input
                 id="email"
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="bg-background"
               />
             </div>
 
+            {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
               <Input
                 id="password"
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Min 8 characters"
                 className="bg-background"
                 minLength={8}
               />
             </div>
+
           </div>
 
           <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Create Account"}
+            {isLoading ? "Creating account…" : role === SignupInputRole.stylist ? "Create account & set up profile →" : "Create Account"}
           </Button>
         </form>
 

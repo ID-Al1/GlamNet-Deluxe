@@ -20,6 +20,7 @@ export const stylistProfilesTable = pgTable("stylist_profiles", {
   instagram: text("instagram"),
   website: text("website"),
   accentColor: text("accent_color"),
+  houseCalls: boolean("house_calls").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

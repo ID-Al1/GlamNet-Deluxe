@@ -14,6 +14,7 @@ import StylistProfile from "@/pages/stylists/[id]";
 import BookStylist from "@/pages/book/[stylistId]";
 import Messages from "@/pages/messages/index";
 import CastingCalls from "@/pages/casting/index";
+import ProfileSetup from "@/pages/profile/setup";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -29,20 +30,25 @@ const queryClient = new QueryClient({
 
 function Router() {
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/login" component={Login} />
-        <Route path="/signup" component={Signup} />
-        <Route path="/dashboard" component={DashboardRouter} />
-        <Route path="/stylists" component={StylistsList} />
-        <Route path="/stylists/:id" component={StylistProfile} />
-        <Route path="/book/:stylistId" component={BookStylist} />
-        <Route path="/messages" component={Messages} />
-        <Route path="/casting" component={CastingCalls} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+    <Switch>
+      <Route path="/profile/setup" component={ProfileSetup} />
+      <Route>
+        <AppLayout>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/login" component={Login} />
+            <Route path="/signup" component={Signup} />
+            <Route path="/dashboard" component={DashboardRouter} />
+            <Route path="/stylists" component={StylistsList} />
+            <Route path="/stylists/:id" component={StylistProfile} />
+            <Route path="/book/:stylistId" component={BookStylist} />
+            <Route path="/messages" component={Messages} />
+            <Route path="/casting" component={CastingCalls} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppLayout>
+      </Route>
+    </Switch>
   );
 }
 
