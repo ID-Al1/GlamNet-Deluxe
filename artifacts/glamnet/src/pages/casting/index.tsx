@@ -4,8 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+const SPECIALTIES = ["All", "Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
+
 export default function CastingCalls() {
-  const { data: castings, isLoading } = useListCastingCalls();
+  const [specialty, setSpecialty] = useState("");
+  const { data: castings, isLoading } = useListCastingCalls(
+    specialty ? { specialty } : undefined
+  );
 
   return (
     <div className="container py-12 max-w-6xl space-y-8">
@@ -14,6 +19,19 @@ export default function CastingCalls() {
         <p className="text-muted-foreground text-lg max-w-2xl">
           Apply to exclusive campaigns from top beauty brands and agencies.
         </p>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {SPECIALTIES.map(s => (
+          <Button
+            key={s}
+            variant={specialty === (s === "All" ? "" : s) ? "default" : "outline"}
+            onClick={() => setSpecialty(s === "All" ? "" : s)}
+            className="rounded-full shrink-0"
+          >
+            {s}
+          </Button>
+        ))}
       </div>
 
       {isLoading ? (
@@ -42,16 +60,16 @@ export default function CastingCalls() {
                       {call.brief}
                     </p>
                   </div>
-                  
+
                   <div className="md:w-48 space-y-4 flex flex-col justify-between shrink-0">
                     <div>
                       <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Budget</p>
                       <p className="font-serif font-bold text-lg">{call.budget}</p>
-                      
+
                       <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1 mt-3">Deadline</p>
                       <p className="font-medium text-sm">{new Date(call.deadline).toLocaleDateString()}</p>
                     </div>
-                    
+
                     <Button className="w-full" disabled={call.hasApplied}>
                       {call.hasApplied ? "Applied" : "Apply Now"}
                     </Button>

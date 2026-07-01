@@ -32,7 +32,7 @@ export default function StylistsList() {
           className="max-w-xs"
         />
         <div className="flex gap-2 overflow-x-auto pb-2">
-          {["All", "Makeup", "Hair", "Nails", "Lashes", "Skincare", "Brows"].map(s => (
+          {["All", "Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"].map(s => (
             <Button
               key={s}
               variant={specialty === (s === "All" ? "" : s) ? "default" : "outline"}
