@@ -72,7 +72,7 @@ function CreateCastingForm({ onSuccess }: { onSuccess: () => void }) {
         <Label htmlFor="brief">Brief <span className="text-destructive">*</span></Label>
         <Textarea id="brief" required rows={4} placeholder="Describe what you need, who you're looking for, and any requirements…" value={form.brief} onChange={e => setForm(p => ({ ...p, brief: e.target.value }))} className="bg-background resize-none" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Specialty <span className="text-destructive">*</span></Label>
           <Select value={form.specialty} onValueChange={v => setForm(p => ({ ...p, specialty: v }))}>
@@ -104,15 +104,15 @@ export default function BrandDashboard() {
   if (error) return <div className="p-8 text-center text-destructive">Failed to load dashboard</div>;
 
   return (
-    <div className="container py-8 max-w-6xl space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="container py-6 sm:py-8 max-w-6xl space-y-6 sm:space-y-8 px-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-serif font-bold tracking-tight">Brand Hub</h1>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight">Brand Hub</h1>
           {user && <p className="text-muted-foreground mt-1">{user.businessName || user.name}</p>}
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" />Post Casting Call</Button>
+            <Button className="gap-2 shrink-0"><Plus className="h-4 w-4" />Post Casting Call</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
@@ -123,7 +123,7 @@ export default function BrandDashboard() {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
         {isLoading ? (
           <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
         ) : (

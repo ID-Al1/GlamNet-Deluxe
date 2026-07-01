@@ -55,13 +55,13 @@ export default function BookStylist() {
   const selectedService = stylist.services.find(s => s.id === serviceId);
 
   return (
-    <div className="container py-12 max-w-4xl space-y-8">
+    <div className="container py-8 sm:py-12 max-w-4xl space-y-8 px-4">
       <div className="space-y-2">
-        <h1 className="text-3xl font-serif font-bold tracking-tight">Book Appointment</h1>
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight">Book Appointment</h1>
         <p className="text-muted-foreground">with {stylist.name}</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
         <div className="space-y-8">
           <div className="space-y-4">
             <Label className="text-base font-semibold">Select Service</Label>
@@ -129,7 +129,7 @@ export default function BookStylist() {
         </div>
       </div>
 
-      <div className="pt-6 border-t flex items-center justify-between">
+      <div className="pt-6 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium">Total</p>
           <p className="text-3xl font-serif font-bold">
@@ -138,7 +138,7 @@ export default function BookStylist() {
         </div>
         <Button 
           size="lg" 
-          className="h-14 px-8 text-base"
+          className="h-14 px-8 text-base w-full sm:w-auto"
           disabled={!serviceId || !date || !time || createAppointment.isPending}
           onClick={handleBook}
         >

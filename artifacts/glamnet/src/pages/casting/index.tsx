@@ -13,7 +13,7 @@ export default function CastingCalls() {
   );
 
   return (
-    <div className="container py-12 max-w-6xl space-y-8">
+    <div className="container py-8 sm:py-12 max-w-6xl space-y-8 px-4">
       <div className="space-y-4">
         <h1 className="text-4xl font-serif font-bold tracking-tight">Casting Calls</h1>
         <p className="text-muted-foreground text-lg max-w-2xl">

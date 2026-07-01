@@ -87,16 +87,16 @@ export default function StylistDashboard() {
   }
 
   return (
-    <div className="container py-8 max-w-6xl space-y-8">
+    <div className="container py-6 sm:py-8 max-w-6xl space-y-6 sm:space-y-8 px-4">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-serif font-bold tracking-tight">Studio Overview</h1>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight">Studio Overview</h1>
           {user && <p className="text-muted-foreground mt-1">Welcome back, {user.name.split(" ")[0]}</p>}
         </div>
         <Link href="/casting">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 shrink-0">
             <Briefcase className="h-4 w-4" />
             Find Castings
           </Button>
@@ -104,7 +104,7 @@ export default function StylistDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
         {isLoading ? (
           <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
         ) : (

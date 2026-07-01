@@ -71,7 +71,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS — CLIENTS ── */}
-      <section className="py-24 bg-card/30 border-b border-border/60">
+      <section className="py-14 md:py-24 bg-card/30 border-b border-border/60">
         <div className="container px-4 max-w-5xl">
           <div className="text-center mb-16 space-y-4">
             <p className="text-primary text-sm font-semibold uppercase tracking-widest">For clients</p>
@@ -106,7 +106,7 @@ export default function Home() {
 
       {/* ── FEATURED TALENT ── */}
       {featured.length > 0 && (
-        <section className="py-24 border-b border-border/60">
+        <section className="py-14 md:py-24 border-b border-border/60">
           <div className="container px-4">
             <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
               <div className="space-y-3">
@@ -151,7 +151,7 @@ export default function Home() {
       )}
 
       {/* ── FOR ARTISTS ── */}
-      <section className="py-24 bg-card/30 border-b border-border/60">
+      <section className="py-14 md:py-24 bg-card/30 border-b border-border/60">
         <div className="container px-4 max-w-5xl">
           <div className="text-center mb-16 space-y-4">
             <p className="text-primary text-sm font-semibold uppercase tracking-widest">For artists & barbers</p>
@@ -180,7 +180,7 @@ export default function Home() {
       </section>
 
       {/* ── FOR BRANDS ── */}
-      <section className="py-24 border-b border-border/60">
+      <section className="py-14 md:py-24 border-b border-border/60">
         <div className="container px-4 max-w-5xl">
           <div className="text-center mb-16 space-y-4">
             <p className="text-primary text-sm font-semibold uppercase tracking-widest">For brands & agencies</p>
@@ -214,7 +214,7 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="py-24 bg-primary/5 border-b border-border/60">
+      <section className="py-14 md:py-24 bg-primary/5 border-b border-border/60">
         <div className="container px-4 max-w-2xl text-center space-y-6">
           <h2 className="text-3xl md:text-5xl font-serif font-bold">Ready to get started?</h2>
           <p className="text-muted-foreground text-lg">

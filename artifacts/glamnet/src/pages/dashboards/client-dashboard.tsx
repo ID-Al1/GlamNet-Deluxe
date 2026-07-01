@@ -33,18 +33,18 @@ export default function ClientDashboard() {
   if (error) return <div className="p-8 text-center text-destructive">Failed to load dashboard</div>;
 
   return (
-    <div className="container py-8 max-w-6xl space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="container py-6 sm:py-8 max-w-6xl space-y-6 sm:space-y-8 px-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-serif font-bold tracking-tight">Your Space</h1>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight">Your Space</h1>
           {user && <p className="text-muted-foreground mt-1">Welcome back, {user.name.split(" ")[0]}</p>}
         </div>
         <Link href="/stylists">
-          <Button className="gap-2"><Scissors className="h-4 w-4" />Book a Service</Button>
+          <Button className="gap-2 shrink-0"><Scissors className="h-4 w-4" />Book a Service</Button>
         </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
         {isLoading ? (
           <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
         ) : (
