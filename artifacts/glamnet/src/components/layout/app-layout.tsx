@@ -28,7 +28,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-50 w-full bg-transparent">
         <div className="container flex h-24 items-center justify-between relative">
           {/* Centred logo */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center" onClick={() => setOpen(false)}>
