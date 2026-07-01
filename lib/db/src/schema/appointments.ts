@@ -1,4 +1,4 @@
-import { pgTable, text, real, integer, pgEnum, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, real, integer, boolean, pgEnum, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const appointmentStatusEnum = pgEnum("appointment_status", ["pending", "confirmed", "completed", "cancelled"]);
@@ -18,6 +18,7 @@ export const appointmentsTable = pgTable("appointments", {
   duration: integer("duration").notNull(),
   notes: text("notes"),
   stripeSessionId: text("stripe_session_id"),
+  isTeamBooking: boolean("is_team_booking").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

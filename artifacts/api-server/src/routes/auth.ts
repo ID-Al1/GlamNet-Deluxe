@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, referralsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes } from "crypto";
 import { createHmac, timingSafeEqual } from "crypto";
 import { SignupBody, LoginBody } from "@workspace/api-zod";
 
@@ -41,6 +41,10 @@ export function verifyToken(token: string): string | null {
   }
 }
 
+function generateReferralCode(): string {
+  return randomBytes(5).toString("hex").toUpperCase();
+}
+
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
     id: u.id,
@@ -49,6 +53,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     role: u.role,
     businessName: u.businessName ?? null,
     avatarUrl: u.avatarUrl ?? null,
+    referralCode: u.referralCode ?? null,
     createdAt: u.createdAt.toISOString(),
   };
 }
@@ -60,6 +65,7 @@ router.post("/auth/signup", async (req, res) => {
     return;
   }
   const { name, email, password, role, businessName } = parsed.data;
+  const referralCode = (req.body.referralCode as string | undefined)?.trim().toUpperCase() || null;
 
   const existing = await db.select().from(usersTable).where(eq(usersTable.email, email));
   if (existing.length > 0) {
@@ -67,8 +73,17 @@ router.post("/auth/signup", async (req, res) => {
     return;
   }
 
+  // Resolve referrer if a referral code was provided
+  let referrer: (typeof usersTable.$inferSelect) | null = null;
+  if (referralCode) {
+    const [found] = await db.select().from(usersTable).where(eq(usersTable.referralCode, referralCode));
+    referrer = found ?? null;
+  }
+
   const id = randomUUID();
   const passwordHash = hashPassword(password);
+  const newReferralCode = generateReferralCode();
+
   const [user] = await db.insert(usersTable).values({
     id,
     name,
@@ -76,6 +91,7 @@ router.post("/auth/signup", async (req, res) => {
     passwordHash,
     role: role as "client" | "stylist" | "brand",
     businessName: businessName ?? null,
+    referralCode: newReferralCode,
   }).returning();
 
   if (role === "stylist") {
@@ -87,6 +103,18 @@ router.post("/auth/signup", async (req, res) => {
       specialty: "Makeup",
       location: "",
       area: "",
+    });
+  }
+
+  // Create referral record if a valid referrer was found
+  if (referrer) {
+    await db.insert(referralsTable).values({
+      id: randomUUID(),
+      referrerId: referrer.id,
+      referredId: id,
+      referredType: role === "stylist" ? "artist" : "client",
+      status: "pending",
+      bonusPaid: false,
     });
   }
 

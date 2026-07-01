@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -13,24 +13,9 @@ import { Palette, User, Briefcase } from "lucide-react";
 const SPECIALTIES = ["Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
 
 const ROLES = [
-  {
-    value: SignupInputRole.client,
-    icon: User,
-    label: "Client",
-    desc: "Book beauty services",
-  },
-  {
-    value: SignupInputRole.stylist,
-    icon: Palette,
-    label: "Artist / Barber",
-    desc: "Offer your services",
-  },
-  {
-    value: SignupInputRole.brand,
-    icon: Briefcase,
-    label: "Brand",
-    desc: "Post casting calls",
-  },
+  { value: SignupInputRole.client, icon: User, label: "Client", desc: "Book beauty services" },
+  { value: SignupInputRole.stylist, icon: Palette, label: "Artist / Barber", desc: "Offer your services" },
+  { value: SignupInputRole.brand, icon: Briefcase, label: "Brand", desc: "Post casting calls" },
 ];
 
 export default function Signup() {
@@ -40,9 +25,17 @@ export default function Signup() {
   const [role, setRole] = useState<SignupInputRole>(SignupInputRole.client);
   const [businessName, setBusinessName] = useState("");
   const [specialty, setSpecialty] = useState("Makeup");
+  const [referralCode, setReferralCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Pre-fill referral code from URL ?ref=CODE
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) setReferralCode(ref.toUpperCase());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +48,8 @@ export default function Signup() {
           password,
           role,
           businessName: role === SignupInputRole.brand ? businessName : undefined,
-        },
+          ...(referralCode ? { referralCode } : {}),
+        } as any,
       });
       toast.success("Account created — let's set up your profile!");
       if (role === SignupInputRole.stylist) {
@@ -80,7 +74,6 @@ export default function Signup() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-
             {/* Role selection */}
             <div className="space-y-3">
               <Label>I want to use GlamNet as a:</Label>
@@ -107,14 +100,7 @@ export default function Signup() {
             {/* Full name */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="name"
-                required
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Jane Dlamini"
-                className="bg-background"
-              />
+              <Input id="name" required value={name} onChange={e => setName(e.target.value)} placeholder="Jane Dlamini" className="bg-background" />
             </div>
 
             {/* Specialty (artists only) */}
@@ -136,46 +122,34 @@ export default function Signup() {
             {role === SignupInputRole.brand && (
               <div className="space-y-2">
                 <Label htmlFor="businessName">Brand / Agency Name <span className="text-destructive">*</span></Label>
-                <Input
-                  id="businessName"
-                  required
-                  value={businessName}
-                  onChange={e => setBusinessName(e.target.value)}
-                  placeholder="Lumi Beauty SA"
-                  className="bg-background"
-                />
+                <Input id="businessName" required value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="Lumi Beauty SA" className="bg-background" />
               </div>
             )}
 
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="bg-background"
-              />
+              <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="bg-background" />
             </div>
 
             {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Min 8 characters"
-                className="bg-background"
-                minLength={8}
-              />
+              <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 8 characters" className="bg-background" minLength={8} />
             </div>
 
+            {/* Referral code */}
+            <div className="space-y-2">
+              <Label htmlFor="referralCode">Referral Code <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input
+                id="referralCode"
+                value={referralCode}
+                onChange={e => setReferralCode(e.target.value.toUpperCase())}
+                placeholder="e.g. AB12CD34EF"
+                className="bg-background font-mono tracking-wider"
+                maxLength={20}
+              />
+            </div>
           </div>
 
           <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
@@ -185,9 +159,7 @@ export default function Signup() {
 
         <div className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline font-medium">
-            Log in
-          </Link>
+          <Link href="/login" className="text-primary hover:underline font-medium">Log in</Link>
         </div>
       </div>
     </div>

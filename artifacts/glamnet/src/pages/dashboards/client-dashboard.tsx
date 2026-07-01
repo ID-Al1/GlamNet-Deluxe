@@ -1,11 +1,13 @@
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useGetClientDashboard } from "@workspace/api-client-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Heart, Scissors, Clock, Star, MapPin, BadgeCheck } from "lucide-react";
+import { Calendar, Heart, Scissors, Clock, Star, MapPin, BadgeCheck, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-primary/20 text-primary border border-primary/30",
@@ -26,9 +28,31 @@ function StatCardSkeleton() {
   );
 }
 
+async function markAppointmentComplete(appointmentId: string) {
+  const res = await fetch(`${import.meta.env.BASE_URL}api/appointments/${appointmentId}/complete`, {
+    method: "PATCH",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to mark appointment complete");
+  }
+  return res.json();
+}
+
 export default function ClientDashboard() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: dashboard, isLoading, error } = useGetClientDashboard();
+
+  const completeMutation = useMutation({
+    mutationFn: markAppointmentComplete,
+    onSuccess: () => {
+      toast.success("Appointment marked as complete! You can now leave a review.");
+      qc.invalidateQueries({ queryKey: ["clientDashboard"] });
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to mark complete"),
+  });
 
   if (error) return <div className="p-8 text-center text-destructive">Failed to load dashboard</div>;
 
@@ -116,10 +140,28 @@ export default function ClientDashboard() {
                         {new Date(apt.date).toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" })} at {apt.time}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <span className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full ${STATUS_STYLES[apt.status] ?? STATUS_STYLES.pending}`}>
                         {apt.status}
                       </span>
+                      {apt.status === "confirmed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                          onClick={() => completeMutation.mutate(apt.id)}
+                          disabled={completeMutation.isPending}
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />Mark Complete
+                        </Button>
+                      )}
+                      {apt.status === "completed" && (
+                        <Link href={`/reviews/${apt.id}`}>
+                          <Button size="sm" variant="outline" className="gap-1.5">
+                            <Star className="h-3.5 w-3.5" />Leave Review
+                          </Button>
+                        </Link>
+                      )}
                       <Link href="/messages">
                         <Button variant="outline" size="sm">Message</Button>
                       </Link>

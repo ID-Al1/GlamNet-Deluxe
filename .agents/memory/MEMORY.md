@@ -1,4 +1,6 @@
 - [GlamNet stack & auth](glamnet-stack.md) — Express 5 + Drizzle + Postgres, React + Vite + Wouter, Tailwind v4, custom HMAC-SHA256 JWT in localStorage key `glamnet_auth`.
+- [GlamNet drizzle-kit push workaround](glamnet-drizzle-push.md) — drizzle-kit push hits interactive TTY prompt for unique constraints on tables with existing rows; use direct SQL via node + pg module instead.
+- [GlamNet team/referral/review features](glamnet-team-referral-review.md) — team bookings, referrals, and reviews implemented as additive features; design decisions documented.
 - [GlamNet schema decisions](glamnet-schema.md) — houseCalls boolean added to stylist_profiles; servicesTable.stylistId references stylistProfilesTable.id (not userId).
 - [video-js vertical export](video-js-vertical-export.md) — export is fixed 16:9; make Reels via a centered 9:16 stage with branded fill (no black bars), then crop.
 - [Stripe connector credential key](stripe-credential-key.md) — Replit connector API returns `secret` not `secret_key`; stripe schema tables must be created by running migrations script before first server startup.

@@ -17,6 +17,7 @@ import BookingSuccess from "@/pages/booking/success";
 import Messages from "@/pages/messages/index";
 import CastingCalls from "@/pages/casting/index";
 import ProfileSetup from "@/pages/profile/setup";
+import LeaveReview from "@/pages/reviews/[appointmentId]";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ function Router() {
             <Route path="/booking/success" component={BookingSuccess} />
             <Route path="/messages" component={Messages} />
             <Route path="/casting" component={CastingCalls} />
+            <Route path="/reviews/:appointmentId" component={LeaveReview} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

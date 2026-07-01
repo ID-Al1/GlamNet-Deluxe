@@ -13,6 +13,7 @@ export const usersTable = pgTable("users", {
   businessName: text("business_name"),
   avatarUrl: text("avatar_url"),
   stripeCustomerId: text("stripe_customer_id"),
+  referralCode: text("referral_code").unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

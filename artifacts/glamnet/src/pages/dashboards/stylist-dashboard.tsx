@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
 import { useGetStylistDashboard, useUpdateMyStylistProfile } from "@workspace/api-client-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { toast } from "sonner";
 import {
   DollarSign, Calendar as CalendarIcon, Activity, Star,
-  Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap,
+  Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap, Users, Check, X,
 } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -49,13 +52,64 @@ function AppointmentSkeleton() {
   );
 }
 
+async function fetchTeamInvitations() {
+  const res = await fetch(`${import.meta.env.BASE_URL}api/team-invitations`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load invitations");
+  return res.json() as Promise<any[]>;
+}
+
+async function respondToInvitation(appointmentId: string, memberId: string, status: "confirmed" | "declined") {
+  const res = await fetch(`${import.meta.env.BASE_URL}api/appointments/${appointmentId}/team-members/${memberId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to respond to invitation");
+  return res.json();
+}
+
+async function fetchReferrals() {
+  const res = await fetch(`${import.meta.env.BASE_URL}api/referrals`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to load referrals");
+  return res.json() as Promise<{
+    referrals: any[];
+    bonusPerReferral: number;
+    pendingBonusZAR: number;
+    totalReferrals: number;
+    completedReferrals: number;
+  }>;
+}
+
 export default function StylistDashboard() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: dashboard, isLoading, error, refetch } = useGetStylistDashboard();
   const updateProfile = useUpdateMyStylistProfile();
   const [copied, setCopied] = useState(false);
 
-  const referralLink = user ? `${window.location.origin}/signup?ref=${user.id.slice(0, 8)}` : "";
+  const referralCode = (user as any)?.referralCode ?? null;
+  const referralLink = referralCode ? `${window.location.origin}/signup?ref=${referralCode}` : "";
+
+  const { data: invitations = [], isLoading: invLoading } = useQuery({
+    queryKey: ["team-invitations"],
+    queryFn: fetchTeamInvitations,
+  });
+
+  const { data: referralData } = useQuery({
+    queryKey: ["referrals"],
+    queryFn: fetchReferrals,
+  });
+
+  const respond = useMutation({
+    mutationFn: ({ appointmentId, memberId, status }: { appointmentId: string; memberId: string; status: "confirmed" | "declined" }) =>
+      respondToInvitation(appointmentId, memberId, status),
+    onSuccess: (_, vars) => {
+      toast.success(vars.status === "confirmed" ? "Invitation accepted!" : "Invitation declined.");
+      qc.invalidateQueries({ queryKey: ["team-invitations"] });
+    },
+    onError: () => toast.error("Failed to respond to invitation"),
+  });
 
   const stats = useMemo(() => {
     if (!dashboard) return null;
@@ -73,22 +127,18 @@ export default function StylistDashboard() {
   };
 
   const handleCopy = () => {
+    if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
 
   if (error) {
-    return (
-      <div className="p-8 text-center text-destructive">
-        Failed to load dashboard. Please refresh.
-      </div>
-    );
+    return <div className="p-8 text-center text-destructive">Failed to load dashboard. Please refresh.</div>;
   }
 
   return (
     <div className="container py-6 sm:py-8 max-w-6xl space-y-6 sm:space-y-8 px-4">
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
@@ -97,8 +147,7 @@ export default function StylistDashboard() {
         </div>
         <Link href="/casting">
           <Button variant="outline" className="gap-2 shrink-0">
-            <Briefcase className="h-4 w-4" />
-            Find Castings
+            <Briefcase className="h-4 w-4" />Find Castings
           </Button>
         </Link>
       </div>
@@ -119,7 +168,6 @@ export default function StylistDashboard() {
                 <p className="text-xs text-muted-foreground mt-1">This month</p>
               </CardContent>
             </Card>
-
             <Card className="bg-card/50 backdrop-blur border-border/50">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Upcoming</CardTitle>
@@ -130,7 +178,6 @@ export default function StylistDashboard() {
                 <p className="text-xs text-muted-foreground mt-1">Appointments</p>
               </CardContent>
             </Card>
-
             <Card className="bg-card/50 backdrop-blur border-border/50">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Bookings</CardTitle>
@@ -141,7 +188,6 @@ export default function StylistDashboard() {
                 <p className="text-xs text-muted-foreground mt-1">All time</p>
               </CardContent>
             </Card>
-
             <Card className="bg-card/50 backdrop-blur border-border/50">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Profile Strength</CardTitle>
@@ -174,20 +220,15 @@ export default function StylistDashboard() {
                       <p className="font-semibold">House Calls</p>
                       <p className="text-sm text-muted-foreground mt-0.5">
                         {houseCalls
-                          ? "You're open to travelling to clients. They can request you at their location."
-                          : "Enable this to offer on-location services. Charge a travel premium."}
+                          ? "You're open to travelling to clients."
+                          : "Enable this to offer on-location services."}
                       </p>
                     </div>
-                    <Switch
-                      checked={houseCalls}
-                      onCheckedChange={handleHouseCallsToggle}
-                      disabled={updateProfile.isPending}
-                    />
+                    <Switch checked={houseCalls} onCheckedChange={handleHouseCallsToggle} disabled={updateProfile.isPending} />
                   </div>
                   {houseCalls && (
                     <div className="mt-3 flex items-center gap-1.5 text-xs text-primary font-medium">
-                      <Zap className="h-3 w-3" />
-                      House calls enabled — shown on your profile
+                      <Zap className="h-3 w-3" />House calls enabled — shown on your profile
                     </div>
                   )}
                 </div>
@@ -204,18 +245,30 @@ export default function StylistDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">Referral Link</p>
-                  <p className="text-sm text-muted-foreground mt-0.5 mb-3">
-                    Invite other artists to GlamNet. Every sign-up through your link boosts your profile ranking.
+                  {referralData && (
+                    <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+                      {referralData.totalReferrals} referred · {referralData.completedReferrals} completed
+                      {referralData.pendingBonusZAR > 0 && (
+                        <span className="ml-2 text-primary font-medium">· R{referralData.pendingBonusZAR} pending</span>
+                      )}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Share your code to invite artists and clients. Every sign-up boosts your profile ranking.
                   </p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0 bg-background border border-border/60 rounded-lg px-3 py-2 text-xs text-muted-foreground font-mono truncate">
-                      {referralLink}
+                  {referralLink ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 bg-background border border-border/60 rounded-lg px-3 py-2 text-xs text-muted-foreground font-mono truncate">
+                        {referralLink}
+                      </div>
+                      <Button size="sm" variant="outline" onClick={handleCopy} className="shrink-0 gap-1.5">
+                        {copied ? <CheckCheck className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
                     </div>
-                    <Button size="sm" variant="outline" onClick={handleCopy} className="shrink-0 gap-1.5">
-                      {copied ? <CheckCheck className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
-                      {copied ? "Copied" : "Copy"}
-                    </Button>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Log out and back in to see your referral link.</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -228,6 +281,14 @@ export default function StylistDashboard() {
         <TabsList className="mb-6">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="appointments">All Appointments</TabsTrigger>
+          <TabsTrigger value="invitations" className="relative">
+            Invitations
+            {invitations.length > 0 && (
+              <Badge className="ml-2 h-4 w-4 p-0 text-[10px] flex items-center justify-center bg-primary text-primary-foreground rounded-full">
+                {invitations.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -254,9 +315,7 @@ export default function StylistDashboard() {
                       </div>
                       <div className="flex items-center gap-3">
                         <p className="font-serif font-bold text-xl">R{apt.price.toLocaleString()}</p>
-                        <span className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full ${STATUS_STYLES.confirmed}`}>
-                          Confirmed
-                        </span>
+                        <span className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full ${STATUS_STYLES.confirmed}`}>Confirmed</span>
                       </div>
                     </div>
                   </Card>
@@ -308,6 +367,66 @@ export default function StylistDashboard() {
           ) : (
             <div className="text-center py-16 border rounded-2xl border-dashed border-border/50 space-y-3">
               <p className="text-muted-foreground">No upcoming appointments</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Team Invitations */}
+        <TabsContent value="invitations" className="space-y-4">
+          {invLoading ? (
+            <><AppointmentSkeleton /><AppointmentSkeleton /></>
+          ) : invitations.length > 0 ? (
+            <div className="grid gap-4">
+              {invitations.map((inv: any) => (
+                <Card key={inv.id} className="p-6 border-border/50">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        <p className="font-semibold">Team Booking — {inv.role}</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Client: {inv.clientName}</p>
+                      <p className="text-sm text-muted-foreground">Service: {inv.serviceName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(inv.date).toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })} at {inv.time}
+                      </p>
+                      <p className="text-sm font-medium">
+                        Your share: {inv.payoutPercentage}% of R{inv.price?.toLocaleString() ?? "—"}
+                        {" = "}
+                        <span className="text-primary">R{((inv.price ?? 0) * (inv.payoutPercentage / 100) * 0.82).toFixed(0)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">(after platform cut)</span>
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 border-destructive/50 text-destructive hover:bg-destructive/10"
+                        onClick={() => respond.mutate({ appointmentId: inv.appointmentId, memberId: inv.id, status: "declined" })}
+                        disabled={respond.isPending}
+                      >
+                        <X className="h-3.5 w-3.5" />Decline
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => respond.mutate({ appointmentId: inv.appointmentId, memberId: inv.id, status: "confirmed" })}
+                        disabled={respond.isPending}
+                      >
+                        <Check className="h-3.5 w-3.5" />Accept
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 border rounded-2xl border-dashed border-border/50 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-muted mx-auto flex items-center justify-center">
+                <Users className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="font-medium">No pending team invitations</p>
+              <p className="text-sm text-muted-foreground">You'll be notified here when a client or lead artist invites you to a team booking.</p>
             </div>
           )}
         </TabsContent>

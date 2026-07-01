@@ -7,6 +7,9 @@ import messagesRouter from "./messages";
 import castingRouter from "./casting";
 import dashboardRouter from "./dashboard";
 import stripeRouter from "./stripe";
+import teamMembersRouter from "./team-members";
+import referralsRouter from "./referrals";
+import reviewsRouter from "./reviews";
 
 const router: IRouter = Router();
 
@@ -18,5 +21,8 @@ router.use(messagesRouter);
 router.use(castingRouter);
 router.use(dashboardRouter);
 router.use(stripeRouter);
+router.use(teamMembersRouter);
+router.use(referralsRouter);
+router.use(reviewsRouter);
 
 export default router;
