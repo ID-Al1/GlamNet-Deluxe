@@ -60,8 +60,8 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
 
-      {/* ── HERO — search-first, full-width image ── */}
-      <section className="relative w-full min-h-[78vh] flex flex-col items-center justify-center overflow-hidden">
+      {/* ── HERO — pulled up behind transparent sticky header ── */}
+      <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden -mt-16">
         {/* Background image */}
         <div
           className="absolute inset-0 bg-cover bg-center"

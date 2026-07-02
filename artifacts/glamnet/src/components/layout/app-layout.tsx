@@ -25,18 +25,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   const navItems = user ? NAV_AUTH : NAV_PUBLIC;
+  const isHome = location === "/";
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
-      {/* Always-white header — clean and consistent */}
-      <header className="sticky top-0 z-50 w-full bg-white border-b border-border/60">
+      {/* Transparent on home (overlays hero), white with border everywhere else */}
+      <header className={`sticky top-0 z-50 w-full transition-colors duration-200 ${
+        isHome ? "bg-transparent border-none" : "bg-white border-b border-border/60"
+      }`}>
         <div className="container flex h-16 items-center justify-between max-w-6xl">
           <Link href="/" className="flex items-center shrink-0" onClick={() => setOpen(false)}>
             <img
               src="/logo-transparent.png"
               alt="GlamNet"
-              className="object-contain"
-              style={{ width: 110, height: "auto" }}
+              className="object-contain transition-all duration-200"
+              style={{
+                width: 110,
+                height: "auto",
+                filter: isHome ? "brightness(0) invert(1)" : "none",
+              }}
             />
           </Link>
 
@@ -45,9 +52,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {navItems.map(({ href, label }) => (
               <Link key={href} href={href}>
                 <span className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                  location === href || location.startsWith(href + "/")
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  isHome
+                    ? "text-white/80 hover:text-white"
+                    : location === href || location.startsWith(href + "/")
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
                 }`}>
                   {label}
                 </span>
@@ -63,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               size="icon"
               onClick={toggle}
               aria-label="Toggle theme"
-              className="hidden md:flex text-muted-foreground hover:text-foreground"
+              className={`hidden md:flex ${isHome ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:text-foreground"}`}
             >
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
@@ -71,12 +80,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Desktop auth */}
             {user ? (
               <div className="hidden md:flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{user.name}</span>
+                <span className={`text-sm ${isHome ? "text-white/80" : "text-muted-foreground"}`}>{user.name}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className="text-muted-foreground hover:text-destructive"
+                  className={isHome ? "text-white/70 hover:text-white hover:bg-white/10" : "text-muted-foreground hover:text-destructive"}
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -84,10 +93,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             ) : (
               <div className="hidden md:flex items-center gap-2">
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className="text-sm font-medium">Log in</Button>
+                  <Button variant="ghost" size="sm" className={`text-sm font-medium ${isHome ? "text-white/80 hover:text-white hover:bg-white/10" : ""}`}>Log in</Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm" className="text-sm font-medium rounded-full px-5">Sign up</Button>
+                  <Button size="sm" className={`text-sm font-medium rounded-full px-5 ${isHome ? "bg-white text-foreground hover:bg-white/90" : ""}`}>Sign up</Button>
                 </Link>
               </div>
             )}
