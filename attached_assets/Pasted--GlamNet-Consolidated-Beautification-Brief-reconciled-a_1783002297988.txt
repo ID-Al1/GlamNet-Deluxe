@@ -1,0 +1,125 @@
+# GlamNet — Consolidated Beautification Brief (reconciled against live app + real repo)
+
+**Date:** 2026-07-02
+**Sources verified first-hand:**
+- Live app: https://glam-net.replit.app/ (landing, `/stylists`, `/stylists/sp_demo001`, `/book/sp_demo001`, `/casting`, `/login`, `/signup` reachable; artist/brand dashboards are behind auth and were not entered)
+- Private repo: `github.com/ID-Al1/Glamnet-Stylist-App` — read: `artifacts/mockup-sandbox/src/components/mockups/*` (ClientHome, ArtistProfile, ArtistDashboard, BrandDashboard), `artifacts/mockup-sandbox/src/glamnet/{data,colors,theme,types,hooks}.ts`, `artifacts/api-server/src/app.ts`, `artifacts/mobile/app/` tree, `GLAMNET_GAPS_ROADMAP.md`, full top-level tree.
+
+---
+
+## 0. CRITICAL SCOPE FINDING — read this before anything else
+
+**The live web app's frontend source code is not in the GitHub repo.**
+
+Evidence:
+- Repo top level is only: `.agents/`, `artifacts/`, `attached_assets/` (2 PDFs), `lib/`, `scripts/` + config files. There is **no `client/`, `web/`, or `src/` for the live site** (checked; `/client` 404s).
+- `artifacts/api-server/src/app.ts` mounts **only `/api`** — it serves no static frontend.
+- `artifacts/mobile/` is an Expo (React Native) app — but the live site uses web-DOM libraries (react-day-picker calendar, hamburger drawer, footer links), so the live site is *not* the Expo web export.
+- `artifacts/mockup-sandbox/` is a design sandbox with state-based navigation (no router, no auth) — it is *not* what's deployed at glam-net.replit.app (live site has `/login`, `/signup`, real signups like "Test Placer" / "Alwande Khoza", live DB IDs like `sp_demo001`).
+
+**Conclusion:** the live frontend lives only inside the Replit workspace (the `glam-net` Replit app), which has never been pushed to this GitHub repo. **The implementation session must run inside Replit (or the live client must be pushed to GitHub first).** Everything in `mockup-sandbox/` is a *reference design*, not the production code. Do not "beautify the mockups" and call it done — that was the disconnected-prototype trap this brief exists to prevent.
+
+**First action of the implementation session:** open the Replit workspace, locate the web client (likely `client/` or `src/` with React + shadcn/Tailwind — the live UI shows shadcn-style calendar and theme toggle), and map its routes to this checklist before touching anything.
+
+---
+
+## 1. Settled decisions (fixed direction — do not reopen)
+
+1. **Tagline:** "Beauty. Your Way."
+2. **Palette (a blend):** cream base background, black for text and hero-image scrims, **gold as the accent** (sparkle icons, verified badge, highlights), existing brand **rose #C4526E demoted to small secondary highlights only**. Saved tokens for reference: rose `#C4526E`, gold `#B8893A`, cream `#F9F6F2`.
+   - Repo state today (`mockup-sandbox/src/glamnet/colors.ts`): LIGHT theme uses canvas `#FAF7F4`, charcoal `#1C1A19`, accent **terracotta `#B8765C`**, taupe `#E8E1DA`, sage `#7C8B6F`, gold `#B8893A` (defined but barely used). DARK theme uses rose `#C4526E` as accent. `theme.ts` has a second, dark-only token set (`bg #15100C`, rose, gold). **Neither matches the decided palette** — the live site meanwhile leans rose/pink for primary buttons. A single token pass (cream/black/gold, rose secondary) is needed and should be the first visual change, since everything else inherits from it.
+3. **Solo vs studio profiles — activity-based tiering.** Profile richness scales with real activity: newer/less active artists get a lighter profile (fewer stats, no team section, no business-hours panel); more completed bookings + longer tenure unlocks the fuller studio-style profile automatically. Whatever tier renders, **the completed-bookings count is always genuinely displayed** — it's the trust signal driving the tiering.
+   - **Flag: this is a genuinely new mechanic, not a tweak.** Nothing in the repo supports it: `types.ts` `Artist` has no `completedBookings`, `responseTime`, `memberSince`, `languages`, or team fields; no threshold rule exists anywhere. It needs: (a) a computed activity metric from the real `bookings` table (which exists in `lib/db`; roadmap Stage 1 adds `agreedRate`/`talentRole`/`city`), (b) a threshold rule (e.g. `completedBookings >= N && tenureDays >= M` unlocks the rich profile), (c) two profile layout variants. Design it as its own task; do not bundle into the visual pass.
+
+---
+
+## 2. Screen 1 — Client Home: element-by-element status
+
+Brief's numbered list vs. live `/stylists` page and repo `ClientHome.tsx` (mockup reference).
+
+| # | Brief element | Live app (`/stylists`) | Repo mockup (`ClientHome.tsx`) | Verdict |
+|---|---|---|---|---|
+| 1 | Serif wordmark + personal greeting + notifications bell | Partial: logo image top-left, serif "Discover Talent" heading. No greeting (no auth-aware home), no bell | Serif "Discover Artists" heading only | **Partial — greeting + bell are net-new** (greeting needs logged-in state; live app has auth, so feasible) |
+| 2 | Search bar naming real crafts + gold sparkle AI button | Search exists but placeholder is "Search by name..." — name-only. No sparkle/AI button | Search by name/specialty/skill exists | **Partial — reword placeholder (cheap); AI-search button is net-new** (flag: needs a backend behavior decision — don't ship a dead sparkle button) |
+| 3 | Near-you map card with image pins, "View map" link | Missing entirely | Missing (city filter chips only: CT, JHB, DBN, PTA, Sandton, Soweto, Stellenbosch) | **Net-new — flag before building** (needs geo data + map lib; biggest new dependency on this screen) |
+| 4 | Categories row as image tiles + "See all" | Partial: plain text chips (All/Makeup/Hair/Barber/Nails/Lashes/Brows/Skincare) | Text chips (slightly different set incl. Photo) | **Partial — chips exist, image-tile treatment is the beautification work.** Use brand textures, not stock faces |
+| 5 | Trending Looks row (saveable cards, save counts, play icon) | Missing entirely | Missing | **Net-new — flag before building.** Also needs a save/looks data model; save counts must be real or the row ships as an honest empty state |
+| 6 | Available Now artist cards (photo, craft, rating, review count, distance) | Partial: cards have name/specialty/location/rating(count) + View Profile. **No photos (blank image area), no availability signal, no distance** | Has availability dot + "Fully booked" state, verified/PRO badges, rate — but initials avatars, no photos | **Partial — the strongest already-scaffolded win.** Add availability filter/badge, real photos with shimmer placeholder, distance later (needs geo) |
+| 7 | Bottom nav, 5 tabs (Home, Explore, Bookings, Inbox, Profile) | Missing — top navbar + hamburger drawer instead | Missing | **Net-new — flag before building.** This is a navigation-structure change; brief says don't change nav structure without flagging. Decide: mobile-only bottom nav vs. keeping desktop top nav |
+
+**Also on live Client Home:** zero-review artists render as "0 (0)" — direct guardrail violation, must show "New artist". Artist cards have a large empty image block (looks broken) — needs image or designed placeholder.
+
+---
+
+## 3. Screen 2 — Artist/Studio Profile: element-by-element status
+
+Live `/stylists/sp_demo001` vs. repo `ArtistProfile.tsx` + the richer `ArtistDetailView` embedded inside `ClientHome.tsx`.
+
+| # | Brief element | Live app | Repo mockups | Verdict |
+|---|---|---|---|---|
+| 1 | Full-width hero image | A large empty beige block renders where the hero should be (reads as broken) | No hero — avatar row | **Partial/broken — needs real upload + designed empty state urgently** |
+| 2 | Profile photo overlapping hero + gold verified badge | No photo, no badge | Initials avatar; **verified badge exists but sage-green "✓ Verified"**, plus gold "PRO" badge | **Partial — restyle verified to the gold tick per palette decision; wire to real `verifications` table (exists in `lib/db` per roadmap Gap 5)** |
+| 3 | Specialties line | Single specialty ("Makeup") | `skills[]` pills exist in mockup | **Partial — join skills into a specialties line** |
+| 4 | Trust row: rating, reviews, completed bookings; zero reviews → "New artist" | Rating + review count only; no bookings count; zero shows "0 (0)" | Same, no bookings count | **Partial — completed-bookings count is net-new (needs bookings query); "New artist" empty state is a must-fix** |
+| 5 | Location, distance, open status | "Johannesburg, Sandton" only | Location only | **Partial — distance + open-now are net-new (geo + hours data)** |
+| 6 | Quick actions: Message, Call, Directions, Share (+Website) | Book Now + Message only | Book CTA only | **Partial — Call/Directions/Share net-new (need phone + address fields)** |
+| 7 | Tabs: About, Portfolio, Services, Availability, Reviews | Two tabs only: "Services & Pricing", "Portfolio" | Sections, not tabs (About/skills/portfolio/pricing) | **Partial — About/Availability/Reviews tabs are net-new; Reviews needs a review-list UI, Availability needs calendar data** |
+| 8 | Info panel: hours, member since, languages | Missing | Missing; no fields in `types.ts` | **Net-new (data model + UI) — tier-gated per decision 3** |
+| 9 | Stats row: Bookings, Rating, Response Rate, Team Members | Missing | Missing | **Net-new. Response Rate has no backend metric yet. Team Members: note the mobile app already has `team/`, `book-team/`, `team-builder.tsx` — a Team Bookings feature exists on mobile; surface it on the client-facing web profile, do NOT blend with Brand job-board** |
+| 10 | Sticky "Book Appointment" bottom button with gold sparkle | Inline "Book Now" near top; not sticky | Full-width inline CTA | **Partial — make sticky + gold sparkle restyle** |
+
+**Zero-state rule check:** live shows real portfolio tabs but the demo artist's portfolio content wasn't populated; the mockups use gradient placeholder tiles (acceptable as brand-texture empty states if kept clearly non-portrait).
+
+---
+
+## 4. Other screens observed (context for the same design system)
+
+- **Landing page (live `/`):** already close to the editorial look (serif display, cream bg) but primary color is rose and the tagline block says "Where Beauty Meets Opportunity" — swap emphasis per palette decision and add "Beauty. Your Way." where the tagline lives.
+- **Booking flow (live `/book/:id`):** exists — service select, optional notes, react-day-picker calendar, total, Confirm Booking. No time-slot picker surfaced, no payment step visible. Functional but visually the barest screen; needs the shared card/button restyle only (payment wiring is out of scope for beautification).
+- **Casting Calls (live `/casting`):** page + filter chips exist but the list is empty **with no empty state at all** — blank space. Needs a designed empty state ("No open castings yet").
+- **Artist & Brand dashboards (live):** behind auth, not inspected. Repo mockups show the intended design: `ArtistDashboard.tsx` (earnings card "R0 / This month", availability toggle, pending-requests card, Career Insights + Open Castings teasers — honest empty states already) and `BrandDashboard.tsx` (campaign cards: budget, applicants, deadline, confirmed-progress bar). The implementation session must verify what the live authed screens actually contain.
+
+---
+
+## 5. Guardrail audit — violations found in the repo (fix during the pass)
+
+1. **Fake faces:** `glamnet/data.ts` gives all 32 mock artists `randomuser.me` portrait URLs — stock/AI-adjacent faces presented as GlamNet artists. Violates guardrail #3. Live site correctly shows no fake faces (but shows broken-empty image areas instead). **Remove randomuser portraits from any code path that could ship; replace with initials/brand-texture placeholders.**
+2. **Fake stats:** `data.ts` `PLATFORM_STATS` (380 professionals, 2 400 bookings, 47 brands) and invented ratings/review counts throughout mock data. Fine in a sandbox, must never render on the live app.
+3. **"0 (0)" ratings on live** instead of "New artist" (guardrail #2 / brief Screen 2 item 4).
+4. **No shimmer loading placeholders** anywhere on live — hero and card image areas render as flat empty blocks (guardrail #6).
+5. SA locations: **compliant** — both live and mock data are fully South African. No US placeholders found.
+6. Minor code bug to fix if touching `mockup-sandbox/ArtistProfile.tsx`: the Book CTA style contains a malformed string — `fontFamily: "'Inter', sans-serif', marginTop: 8"` (the marginTop is trapped inside the font string).
+
+---
+
+## 6. Competitor-driven features to fold in (validated in local prototype; counters Airstyl/Malakyt gaps)
+
+1. **"Available now" + response-time signal on client home artist cards** ("responds in ~10 min"). Attaches to Screen 1 #6. Mockup `ClientHome.tsx` already has the availability dot + "Fully booked" state to build on. **Must share one visual language with the profile's Response Rate stat (Screen 2 #9)** — same pill/icon treatment on card and profile. Requires a `responseTime` metric (net-new backend: compute from message/booking-request reply timestamps; until real data exists, show nothing rather than a fake number).
+2. **"Book again" one-tap shortcut** on client home for returning clients — jumps straight into `/book/:id` with the previous artist/service preselected. Needs logged-in booking history (live app has real bookings, so scaffolded). Place as a slim card above Available Now.
+3. **Artist dashboard: NET earnings labeling + response-time nudge.** Repo `ArtistDashboard.tsx` shows "R0 / This month" with no gross/net qualifier — must read explicitly as net after GlamNet's commission (e.g. "R0 net, after commission"). Add a nudge card: "Your response time: — . Fast responders get booked more often." (Confirm the live authed dashboard's current state first.)
+4. **Brand campaign cards: "avg artist response time" stat.** Repo `BrandDashboard.tsx` cards show Budget / Applicants / Deadline — add a fourth stat once the response-time metric exists. Reinforces the anti-Malakyt pitch (job board beats DMing artists one by one).
+
+---
+
+## 7. Punch list — first focused implementation session (in order)
+
+Scoped to what one session can realistically land. Items 1–6 are already-scaffolded, high-impact, low-architecture. Items marked LATER need new data models/deps — do not start them in session 1.
+
+1. **Locate the live client code in the Replit workspace** and map its routes/components to this brief. If it's not under version control with GitHub, push it. (Blocker for everything; 30 min.)
+2. **Design-token pass:** implement the decided palette (cream `#F9F6F2` base, black text/scrims, gold `#B8893A` accent, rose `#C4526E` secondary) + serif headings/Inter body in the live client's theme file. One consistent system — no per-screen styling.
+3. **Kill the broken-empty image blocks:** shimmer loading placeholders + honest brand-texture empty states for artist-card images and the profile hero.
+4. **"New artist" rule:** replace every "0 (0)" with a "New artist" badge (client home cards + profile trust row).
+5. **Gold verified badge component:** single shared component, wired to the existing `verifications` backend (roadmap Gap 5); render on cards + profile header.
+6. **Client home card upgrade:** availability signal ("Available now" pill), specialties line, restyled per tokens. Search placeholder → "Find braiders, barbers, MUAs, nail techs...". Category chips → image tiles (brand textures).
+7. **Profile quick wins:** sticky "Book Appointment" button with gold sparkle; specialties line under name; Casting page empty state.
+8. LATER (needs new architecture — separate sessions): activity-based profile tiering + completed-bookings/trust row (needs bookings aggregation + threshold rule); response-time metric (backend) then card signal + dashboard nudge + brand-card stat; map card (geo + map lib); Trending Looks (saves data model); bottom nav (navigation-structure decision); AI sparkle search (behavior undefined); About/Availability/Reviews profile tabs; info panel fields (hours/member-since/languages); Team Members stat surfaced from the existing mobile team feature.
+
+---
+
+## 8. Reference file index (for the implementing session)
+
+- Live app: `https://glam-net.replit.app/` → `/stylists`, `/stylists/:id`, `/book/:id`, `/casting`, `/login`, `/signup`
+- Repo design reference: `artifacts/mockup-sandbox/src/components/mockups/ClientHome.tsx` (richest — includes `ArtistDetailView`, `FeaturedCard`, availability dot, verified/PRO badges), `ArtistProfile.tsx`, `ArtistDashboard.tsx`, `BrandDashboard.tsx`, plus `BookingFlow.tsx`, `BookingConfirmation.tsx`, `BookingRequests.tsx`, `CreateCampaign.tsx`, `ApplicantReview.tsx`, `Onboarding.tsx`
+- Tokens: `artifacts/mockup-sandbox/src/glamnet/colors.ts` (LIGHT/DARK), `theme.ts` (dark-only set), `types.ts` (Artist model — note missing tiering fields), `data.ts` (mock data — contains the randomuser.me portraits to purge), `hooks.ts` (`useIsDesktop`)
+- Backend that already exists to wire against: `artifacts/api-server/src/routes/` (portfolio, verification, payments, referrals, insights, subscriptions, contracts, analytics), `lib/db` schemas, `GLAMNET_GAPS_ROADMAP.md` (stage-by-stage wiring guide)
+- Team Bookings precedent (mobile): `artifacts/mobile/app/team/`, `book-team/`, `team-builder.tsx`

@@ -47,8 +47,8 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight leading-[1.05]">
-            Where Beauty <br />
-            <em className="text-primary not-italic">Meets Opportunity</em>
+            Beauty.<br />
+            <em className="text-primary not-italic">Your Way.</em>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">

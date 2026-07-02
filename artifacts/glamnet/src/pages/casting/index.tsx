@@ -3,6 +3,7 @@ import { useListCastingCalls } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Briefcase } from "lucide-react";
 
 const SPECIALTIES = ["All", "Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
 
@@ -41,8 +42,16 @@ export default function CastingCalls() {
           ))}
         </div>
       ) : castings?.length === 0 ? (
-        <div className="text-center py-20 border rounded-xl border-dashed">
-          <p className="text-muted-foreground">No casting calls available right now.</p>
+        <div className="text-center py-24 border rounded-2xl border-dashed border-border/50 space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+            <Briefcase className="h-6 w-6 text-primary" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="font-serif text-xl font-bold">No open castings yet</p>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+              Brands haven't posted any casting calls yet. Check back soon — this is where paid campaigns from top SA brands go live.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid gap-6">
