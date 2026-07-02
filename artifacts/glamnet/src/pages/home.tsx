@@ -58,7 +58,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-background">
 
       {/* ── HERO — pulled up behind transparent sticky header ── */}
       <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden -mt-16">
@@ -113,7 +113,7 @@ export default function Home() {
 
       {/* ── FEATURED ARTISTS ── */}
       {featured.length > 0 && (
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-background">
           <div className="container max-w-6xl px-4">
             <div className="flex items-end justify-between mb-10">
               <div>
@@ -171,7 +171,7 @@ export default function Home() {
       )}
 
       {/* ── HOW IT WORKS ── */}
-      <section className="py-20 bg-white border-t border-border/50">
+      <section className="py-20 bg-background border-t border-border/50">
         <div className="container max-w-5xl px-4">
           <div className="text-center mb-14 space-y-3">
             <p className="text-primary text-xs font-semibold uppercase tracking-widest">Simple & fast</p>
@@ -183,7 +183,7 @@ export default function Home() {
               { step: "02", title: "Book", desc: "Pick a time that works. Confirmed instantly — no back-and-forth." },
               { step: "03", title: "Glow", desc: "Your artist arrives prepared. You leave looking and feeling incredible." },
             ].map(({ step, title, desc }) => (
-              <div key={step} className="relative p-8 rounded-2xl border border-border/60 bg-white hover:border-primary/30 transition-colors">
+              <div key={step} className="relative p-8 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors">
                 <p className="text-5xl font-serif font-bold text-muted/60 mb-4 select-none" style={{ color: "rgba(184,137,58,0.18)" }}>{step}</p>
                 <h3 className="text-lg font-serif font-bold mb-2">{title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
@@ -199,7 +199,7 @@ export default function Home() {
       </section>
 
       {/* ── FOR ARTISTS — image + features ── */}
-      <section className="py-20 bg-white border-t border-border/50">
+      <section className="py-20 bg-background border-t border-border/50">
         <div className="container max-w-6xl px-4">
           <div className="flex flex-col lg:flex-row gap-14 items-center">
             {/* Editorial image */}
@@ -224,7 +224,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {ARTIST_PERKS.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="flex gap-3 p-4 rounded-xl border border-border/60 hover:border-primary/30 transition-colors bg-white">
+                  <div key={title} className="flex gap-3 p-4 rounded-xl border border-border/60 hover:border-primary/30 transition-colors bg-card">
                     <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <Icon className="h-4 w-4 text-primary" />
                     </div>
@@ -245,7 +245,7 @@ export default function Home() {
       </section>
 
       {/* ── FOR BRANDS ── */}
-      <section className="py-20 border-t border-border/50 bg-white">
+      <section className="py-20 border-t border-border/50 bg-background">
         <div className="container max-w-5xl px-4">
           <div className="text-center mb-14 space-y-3">
             <p className="text-primary text-xs font-semibold uppercase tracking-widest">For brands & agencies</p>
@@ -260,7 +260,7 @@ export default function Home() {
               { n: "02", title: "Artists apply", desc: "Verified professionals from across SA see your call and send proposals." },
               { n: "03", title: "Hire with confidence", desc: "Review portfolios and ratings — then book directly through the platform." },
             ].map(({ n, title, desc }) => (
-              <div key={n} className="p-8 rounded-2xl border border-border/60 bg-white hover:border-primary/30 transition-colors space-y-3">
+              <div key={n} className="p-8 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors space-y-3">
                 <p className="font-serif font-bold text-4xl select-none" style={{ color: "rgba(184,137,58,0.20)" }}>{n}</p>
                 <h3 className="font-serif font-bold text-lg">{title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
@@ -278,7 +278,7 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="py-20 border-t border-border/50 bg-white">
+      <section className="py-20 border-t border-border/50 bg-background">
         <div className="container max-w-2xl px-4 text-center space-y-6">
           <h2 className="text-2xl md:text-4xl font-serif">Ready to get started?</h2>
           <p className="text-muted-foreground text-base">

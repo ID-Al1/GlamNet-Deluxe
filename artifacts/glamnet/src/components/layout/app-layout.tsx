@@ -109,10 +109,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80 bg-white border-l border-border/60 p-0">
+              <SheetContent side="right" className="w-80 bg-background border-l border-border/60 p-0">
                 <div className="flex flex-col h-full">
                   <div className="flex items-center px-6 py-5 border-b border-border/60">
-                    <img src="/logo-transparent.png" alt="GlamNet" className="h-8 w-auto object-contain" />
+                    <img src="/logo-transparent.png" alt="GlamNet" className="h-8 w-auto object-contain dark:[filter:brightness(0)_invert(1)]" />
                   </div>
 
                   {user && (
@@ -186,11 +186,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="border-t border-border/60 bg-white py-10 mt-auto">
+      <footer className="border-t border-border/60 bg-background py-10 mt-auto">
         <div className="container max-w-6xl px-4">
           <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-8">
             <div className="space-y-3">
-              <img src="/logo-transparent.png" alt="GlamNet" className="h-8 w-auto object-contain" />
+              <img src="/logo-transparent.png" alt="GlamNet" className="h-8 w-auto object-contain dark:[filter:brightness(0)_invert(1)]" />
               <p className="text-sm text-muted-foreground max-w-xs">
                 The definitive platform for South Africa's beauty industry.
               </p>
