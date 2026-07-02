@@ -30,6 +30,18 @@ uri = "file://attached_assets/glamnet-logo-v2.png"
 type = "image"
 title = "GlamNet charcoal gold wordmark"
 
+[[generated]]
+id = "HrKgpubsEF4ps-9GGV5zx"
+uri = "file://artifacts/glamnet/public/hero-bg.png"
+type = "image"
+title = "GlamNet luxury salon hero background"
+
+[[generated]]
+id = "m0v_pqryZ5NAdy1xXuHUh"
+uri = "file://artifacts/glamnet/public/for-artists-bg.png"
+type = "image"
+title = "GlamNet beauty hands editorial"
+
 [[outputs]]
 id = "aMXWg6pLTUM0Nr67CAcr5"
 uri = "file://artifacts/glamnet-video/public/audio/bg_music.mp3"
