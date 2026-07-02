@@ -18,6 +18,18 @@ uri = "file://artifacts/glamnet-video/public/images/texture.png"
 type = "image"
 title = "Luxury beauty texture"
 
+[[generated]]
+id = "_Lk83_CUnKPI9B9qOG1qA"
+uri = "file://attached_assets/glamnet-logo-v1.png"
+type = "image"
+title = "GlamNet gold serif logo"
+
+[[generated]]
+id = "_43zdyUJ2sGDjEUkIGOAv"
+uri = "file://attached_assets/glamnet-logo-v2.png"
+type = "image"
+title = "GlamNet charcoal gold wordmark"
+
 [[outputs]]
 id = "aMXWg6pLTUM0Nr67CAcr5"
 uri = "file://artifacts/glamnet-video/public/audio/bg_music.mp3"
