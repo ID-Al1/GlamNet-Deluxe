@@ -131,8 +131,9 @@ export async function sendNotification(
     // Dynamic import so the module loads even if twilio package is absent
     const twilio = (await import("twilio")).default;
     const client = twilio(sid, token);
+    const fromFormatted = from.startsWith("whatsapp:") ? from : `whatsapp:${from}`;
     await client.messages.create({
-      from,
+      from: fromFormatted,
       to: `whatsapp:${to}`,
       body,
     });
