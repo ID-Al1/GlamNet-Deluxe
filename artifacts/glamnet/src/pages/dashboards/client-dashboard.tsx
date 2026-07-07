@@ -6,7 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Heart, Scissors, Clock, Star, MapPin, BadgeCheck, CheckCircle, MessageCircle } from "lucide-react";
+import { Calendar, Heart, Scissors, Clock, Star, MapPin, BadgeCheck, CheckCircle, MessageCircle, Bell } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import { toast } from "sonner";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -53,6 +56,26 @@ export default function ClientDashboard() {
     },
     onError: (err: any) => toast.error(err.message || "Failed to mark complete"),
   });
+
+  const [phone, setPhone] = useState((user as any)?.phone ?? "");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const savePhone = async () => {
+    setSavingPhone(true);
+    try {
+      const token = localStorage.getItem("glamnet_token");
+      const res = await fetch(`${import.meta.env.BASE_URL}api/auth/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ phone }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Phone number saved — WhatsApp notifications enabled!");
+    } catch {
+      toast.error("Could not save phone number");
+    } finally {
+      setSavingPhone(false);
+    }
+  };
 
   if (error) return <div className="p-8 text-center text-destructive">Failed to load dashboard</div>;
 
@@ -120,6 +143,7 @@ export default function ClientDashboard() {
         <TabsList className="mb-6">
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
           <TabsTrigger value="recommended">Recommended</TabsTrigger>
+          <TabsTrigger value="settings"><Bell className="h-3.5 w-3.5 mr-1.5" />Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="appointments" className="space-y-4">
@@ -229,6 +253,36 @@ export default function ClientDashboard() {
               <Link href="/stylists"><Button variant="outline">Browse all artists</Button></Link>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card className="max-w-md border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4 text-primary" />WhatsApp Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add your WhatsApp number and we'll message you when your booking is confirmed, declined, or completed — no app refresh needed.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="phone">WhatsApp number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+27 82 123 4567"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="bg-background"
+                />
+                <p className="text-xs text-muted-foreground">South African numbers accepted (e.g. 082 123 4567 or +27 82 123 4567)</p>
+              </div>
+              <Button onClick={savePhone} disabled={savingPhone} className="w-full">
+                {savingPhone ? "Saving…" : "Save number"}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

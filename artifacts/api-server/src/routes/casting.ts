@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { db, castingCallsTable, castingApplicationsTable, stylistProfilesTable } from "@workspace/db";
+import { db, castingCallsTable, castingApplicationsTable, stylistProfilesTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { sendNotification } from "../lib/notifications";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { CreateCastingCallBody, UpdateCastingCallBody } from "@workspace/api-zod";
@@ -119,6 +120,18 @@ router.post("/casting/:castingId/apply", requireAuth, async (req, res) => {
   await db.update(castingCallsTable).set({ applicantCount: call.applicantCount + 1 }).where(eq(castingCallsTable.id, call.id));
 
   res.json({ message: "Applied successfully" });
+
+  // Notify brand of new application — non-fatal
+  setImmediate(async () => {
+    try {
+      const [brandUser] = await db.select().from(usersTable).where(eq(usersTable.id, call.brandId));
+      await sendNotification(brandUser?.phone, "casting.applied", {
+        applicantName: profile.name,
+        castingTitle: call.title,
+        brandName: call.brandName,
+      });
+    } catch { /* non-fatal */ }
+  });
 });
 
 export default router;

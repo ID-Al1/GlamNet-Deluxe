@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { db, appointmentsTable, stylistProfilesTable, servicesTable } from "@workspace/db";
+import { db, appointmentsTable, stylistProfilesTable, servicesTable, usersTable } from "@workspace/db";
 import { eq, and, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod";
+import { sendNotification } from "../lib/notifications";
 
 const router = Router();
 
@@ -72,6 +73,17 @@ router.post("/appointments", requireAuth, async (req, res) => {
     notes: notes ?? null,
   }).returning();
 
+  // Notify stylist of new booking (non-fatal)
+  try {
+    const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
+    await sendNotification(stylistUser?.phone, "booking.created", {
+      clientName: user.name,
+      serviceName: service.name,
+      date,
+      time,
+    });
+  } catch { /* non-fatal */ }
+
   res.status(201).json(formatAppt(appt));
 });
 
@@ -85,6 +97,11 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
   const parsed = UpdateAppointmentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
   const data = parsed.data;
+
+  // Fetch the appointment before updating so we have context for notifications
+  const [before] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, req.params.appointmentId));
+  if (!before) { res.status(404).json({ error: "Not found" }); return; }
+
   const [appt] = await db.update(appointmentsTable).set({
     ...(data.status && { status: data.status as any }),
     ...(data.date && { date: data.date }),
@@ -92,7 +109,39 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
     ...(data.notes !== undefined && { notes: data.notes }),
   }).where(eq(appointmentsTable.id, req.params.appointmentId)).returning();
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
+
   res.json(formatAppt(appt));
+
+  // Fire notifications asynchronously after responding — non-fatal
+  if (data.status && data.status !== before.status) {
+    setImmediate(async () => {
+      try {
+        const [clientUser] = await db.select().from(usersTable).where(eq(usersTable.id, appt.clientId));
+        const sharedData = {
+          stylistName: appt.stylistName,
+          clientName: appt.clientName,
+          serviceName: appt.serviceName,
+          date: appt.date,
+          time: appt.time,
+        };
+
+        if (data.status === "confirmed") {
+          await sendNotification(clientUser?.phone, "booking.confirmed", sharedData);
+        } else if (data.status === "declined" || data.status === "cancelled") {
+          await sendNotification(clientUser?.phone, "booking.declined", sharedData);
+        } else if (data.status === "completed") {
+          // Notify client
+          await sendNotification(clientUser?.phone, "booking.completed", sharedData);
+          // Notify stylist too
+          const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, appt.stylistId));
+          if (profile) {
+            const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
+            await sendNotification(stylistUser?.phone, "booking.completed", sharedData);
+          }
+        }
+      } catch { /* non-fatal */ }
+    });
+  }
 });
 
 export default router;

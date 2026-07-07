@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db, usersTable, appointmentsTable, stylistProfilesTable, servicesTable, conversationsTable } from "@workspace/db";
+import { sendNotification } from "../lib/notifications";
 import { eq, and } from "drizzle-orm";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -183,6 +184,19 @@ router.post("/stripe/confirm-booking", requireAuth, async (req, res) => {
 
   logger.info({ appointmentId: appt.id, sessionId, conversationId }, 'Appointment created after payment');
   res.status(201).json({ ...appt, conversationId });
+
+  // Notify stylist of new paid booking — non-fatal, fires after response
+  setImmediate(async () => {
+    try {
+      const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
+      await sendNotification(stylistUser?.phone, "booking.created", {
+        clientName: user.name,
+        serviceName: service.name,
+        date,
+        time,
+      });
+    } catch { /* non-fatal */ }
+  });
 });
 
 export default router;

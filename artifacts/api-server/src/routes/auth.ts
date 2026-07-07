@@ -53,6 +53,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     role: u.role,
     businessName: u.businessName ?? null,
     avatarUrl: u.avatarUrl ?? null,
+    phone: u.phone ?? null,
     referralCode: u.referralCode ?? null,
     createdAt: u.createdAt.toISOString(),
   };
@@ -140,6 +141,22 @@ router.post("/auth/login", async (req, res) => {
 
 router.post("/auth/logout", (_req, res) => {
   res.json({ message: "Logged out" });
+});
+
+router.patch("/auth/me", async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) { res.status(401).json({ error: "Not authenticated" }); return; }
+  const userId = verifyToken(auth.slice(7));
+  if (!userId) { res.status(401).json({ error: "Invalid token" }); return; }
+  const { name, phone, businessName, avatarUrl } = req.body as Record<string, string | undefined>;
+  const [user] = await db.update(usersTable).set({
+    ...(name && { name }),
+    ...(phone !== undefined && { phone: phone || null }),
+    ...(businessName !== undefined && { businessName: businessName || null }),
+    ...(avatarUrl !== undefined && { avatarUrl: avatarUrl || null }),
+  }).where(eq(usersTable.id, userId)).returning();
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  res.json(formatUser(user));
 });
 
 router.get("/auth/me", async (req, res) => {

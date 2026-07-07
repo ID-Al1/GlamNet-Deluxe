@@ -12,6 +12,7 @@ export const usersTable = pgTable("users", {
   role: roleEnum("role").notNull(),
   businessName: text("business_name"),
   avatarUrl: text("avatar_url"),
+  phone: text("phone"),
   stripeCustomerId: text("stripe_customer_id"),
   referralCode: text("referral_code").unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

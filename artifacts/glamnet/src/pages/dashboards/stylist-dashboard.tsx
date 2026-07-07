@@ -12,8 +12,10 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import {
   DollarSign, Calendar as CalendarIcon, Activity, Star,
-  Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap, Users, Check, X, MessageCircle,
+  Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap, Users, Check, X, MessageCircle, Bell,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-primary/20 text-primary border border-primary/30",
@@ -87,6 +89,25 @@ export default function StylistDashboard() {
   const { data: dashboard, isLoading, error, refetch } = useGetStylistDashboard();
   const updateProfile = useUpdateMyStylistProfile();
   const [copied, setCopied] = useState(false);
+  const [phone, setPhone] = useState((user as any)?.phone ?? "");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const savePhone = async () => {
+    setSavingPhone(true);
+    try {
+      const token = localStorage.getItem("glamnet_token");
+      const res = await fetch(`${import.meta.env.BASE_URL}api/auth/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ phone }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Phone number saved — WhatsApp notifications enabled!");
+    } catch {
+      toast.error("Could not save phone number");
+    } finally {
+      setSavingPhone(false);
+    }
+  };
 
   const referralCode = (user as any)?.referralCode ?? null;
   const referralLink = referralCode ? `${window.location.origin}/signup?ref=${referralCode}` : "";
@@ -290,6 +311,7 @@ export default function StylistDashboard() {
             )}
           </TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="settings"><Bell className="h-3.5 w-3.5 mr-1.5" />Notifications</TabsTrigger>
         </TabsList>
 
         {/* Active — confirmed bookings only */}
@@ -469,6 +491,37 @@ export default function StylistDashboard() {
               <p className="text-muted-foreground">No recent activity</p>
             </div>
           )}
+        </TabsContent>
+
+        {/* Notification settings */}
+        <TabsContent value="settings">
+          <Card className="max-w-md border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4 text-primary" />WhatsApp Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add your WhatsApp number and we'll message you the moment a client books or when a casting application comes in — so you never miss a booking.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="phone">WhatsApp number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+27 82 123 4567"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="bg-background"
+                />
+                <p className="text-xs text-muted-foreground">South African numbers accepted (e.g. 082 123 4567 or +27 82 123 4567)</p>
+              </div>
+              <Button onClick={savePhone} disabled={savingPhone} className="w-full">
+                {savingPhone ? "Saving…" : "Save number"}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
