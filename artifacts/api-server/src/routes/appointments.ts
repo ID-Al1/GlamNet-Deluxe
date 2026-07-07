@@ -126,7 +126,14 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
         };
 
         if (data.status === "confirmed") {
+          // Notify client
           await sendNotification(clientUser?.phone, "booking.confirmed", sharedData);
+          // Notify stylist too — both sides should know a booking is locked in
+          const [confirmedProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, appt.stylistId));
+          if (confirmedProfile) {
+            const [confirmedStylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, confirmedProfile.userId));
+            await sendNotification(confirmedStylistUser?.phone, "booking.confirmed.stylist", sharedData);
+          }
         } else if (data.status === "declined" || data.status === "cancelled") {
           await sendNotification(clientUser?.phone, "booking.declined", sharedData);
         } else if (data.status === "completed") {

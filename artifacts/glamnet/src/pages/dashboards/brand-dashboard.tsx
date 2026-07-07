@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { Briefcase, Users, DollarSign, Target, Plus, Star } from "lucide-react";
+import { Briefcase, Users, DollarSign, Target, Plus, Star, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 const SPECIALTIES = ["Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
@@ -101,6 +101,26 @@ export default function BrandDashboard() {
   const { data: dashboard, isLoading, error, refetch } = useGetBrandDashboard();
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const [phone, setPhone] = useState((user as any)?.phone ?? "");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const savePhone = async () => {
+    setSavingPhone(true);
+    try {
+      const token = localStorage.getItem("glamnet_token");
+      const res = await fetch(`${import.meta.env.BASE_URL}api/auth/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ phone }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Phone number saved — WhatsApp notifications enabled!");
+    } catch {
+      toast.error("Could not save phone number");
+    } finally {
+      setSavingPhone(false);
+    }
+  };
+
   if (error) return <div className="p-8 text-center text-destructive">Failed to load dashboard</div>;
 
   return (
@@ -175,6 +195,7 @@ export default function BrandDashboard() {
           <TabsTrigger value="castings">Active Castings</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="discover">Discover Talent</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="castings" className="space-y-4">
@@ -261,6 +282,36 @@ export default function BrandDashboard() {
               <Button className="gap-2"><Users className="h-4 w-4" />Browse All Artists</Button>
             </Link>
           </div>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card className="max-w-md border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4 text-primary" />WhatsApp Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add your WhatsApp number and we'll message you the moment a stylist applies to one of your casting calls — no app refresh needed.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="phone">WhatsApp number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+27 82 123 4567"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="bg-background"
+                />
+                <p className="text-xs text-muted-foreground">South African numbers accepted (e.g. 082 123 4567 or +27 82 123 4567)</p>
+              </div>
+              <Button onClick={savePhone} disabled={savingPhone} className="w-full">
+                {savingPhone ? "Saving…" : "Save number"}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -121,15 +121,22 @@ router.post("/casting/:castingId/apply", requireAuth, async (req, res) => {
 
   res.json({ message: "Applied successfully" });
 
-  // Notify brand of new application — non-fatal
+  // Notify brand AND admin of new application — non-fatal
   setImmediate(async () => {
+    const notificationData = {
+      applicantName: profile.name,
+      castingTitle: call.title,
+      brandName: call.brandName,
+    };
     try {
       const [brandUser] = await db.select().from(usersTable).where(eq(usersTable.id, call.brandId));
-      await sendNotification(brandUser?.phone, "casting.applied", {
-        applicantName: profile.name,
-        castingTitle: call.title,
-        brandName: call.brandName,
-      });
+      await sendNotification(brandUser?.phone, "casting.applied", notificationData);
+    } catch { /* non-fatal */ }
+    try {
+      const adminPhone = process.env["ADMIN_WHATSAPP_PHONE"];
+      if (adminPhone) {
+        await sendNotification(adminPhone, "casting.applied", notificationData);
+      }
     } catch { /* non-fatal */ }
   });
 });
