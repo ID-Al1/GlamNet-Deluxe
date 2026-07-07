@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useUpdateMyStylistProfile } from "@workspace/api-client-react";
@@ -92,10 +92,14 @@ export default function ProfileSetup() {
 
   const isArtist = user?.role === "stylist";
 
-  if (!isArtist) {
-    setLocation("/dashboard");
-    return null;
-  }
+  // Redirect non-stylist users safely inside an effect, never during render
+  useEffect(() => {
+    if (!isArtist) {
+      setLocation("/dashboard");
+    }
+  }, [isArtist, setLocation]);
+
+  if (!isArtist) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">

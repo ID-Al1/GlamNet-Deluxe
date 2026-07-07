@@ -43,9 +43,13 @@ export default function Messages() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-select conversation from URL params (?conversation=id or ?stylistId=X or ?clientId=X)
+  // Auto-select conversation from URL params — runs only once when conversations first loads.
+  // Guard prevents re-firing on every background refetch (new array reference from react-query).
+  const autoSelectedRef = useRef(false);
   useEffect(() => {
-    if (!conversations?.length) return;
+    if (autoSelectedRef.current || !conversations?.length) return;
+    autoSelectedRef.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const convParam = params.get("conversation");
     const stylistParam = params.get("stylistId");
@@ -68,15 +72,19 @@ export default function Messages() {
 
   const selectedConv = conversations?.find(c => c.id === selectedId);
 
-  const { data: messages = [] } = useQuery({
+  const { data: messagesData } = useQuery({
     queryKey: ["messages", selectedId],
     queryFn: () => fetchMessages(selectedId!),
     enabled: !!selectedId,
     refetchInterval: 4000,
   });
+  // Stable empty array so the scroll effect doesn't fire on every render when there are no messages
+  const messages = messagesData ?? [];
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const sendMutation = useMutation({
