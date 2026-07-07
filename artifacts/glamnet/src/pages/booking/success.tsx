@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { CheckCircle, Loader2, XCircle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -11,6 +11,7 @@ export default function BookingSuccess() {
   const [state, setState] = useState<State>("loading");
   const [detail, setDetail] = useState<{ date: string; time: string; serviceName?: string } | null>(null);
   const [teamWarning, setTeamWarning] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -32,6 +33,8 @@ export default function BookingSuccess() {
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to confirm booking");
         const appt = await res.json();
+
+        if (appt.conversationId) setConversationId(appt.conversationId);
 
         // Process pending team members from a team booking (if any)
         const pending = sessionStorage.getItem("pendingTeamMembers");
@@ -116,16 +119,33 @@ export default function BookingSuccess() {
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            Payment received. You can view your appointment in the dashboard.
+            Payment received. A conversation with your stylist is ready — use it to coordinate any details.
           </p>
           {teamWarning && (
             <p className="text-sm text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
               {teamWarning}
             </p>
           )}
-          <Button onClick={() => setLocation("/dashboard")} size="lg" className="mt-2 w-full">
-            View Dashboard
-          </Button>
+          <div className="w-full space-y-2 mt-2">
+            {conversationId && (
+              <Button
+                onClick={() => setLocation(`/messages?conversation=${conversationId}`)}
+                size="lg"
+                className="w-full gap-2"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Message your stylist
+              </Button>
+            )}
+            <Button
+              onClick={() => setLocation("/dashboard")}
+              size="lg"
+              variant={conversationId ? "outline" : "default"}
+              className="w-full"
+            >
+              View Dashboard
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

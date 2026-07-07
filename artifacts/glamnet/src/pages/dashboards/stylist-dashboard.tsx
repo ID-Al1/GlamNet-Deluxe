@@ -12,7 +12,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import {
   DollarSign, Calendar as CalendarIcon, Activity, Star,
-  Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap, Users, Check, X,
+  Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap, Users, Check, X, MessageCircle,
 } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -316,6 +316,11 @@ export default function StylistDashboard() {
                       <div className="flex items-center gap-3">
                         <p className="font-serif font-bold text-xl">R{apt.price.toLocaleString()}</p>
                         <span className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full ${STATUS_STYLES.confirmed}`}>Confirmed</span>
+                        <Link href={`/messages?clientId=${(apt as any).clientId}`}>
+                          <Button size="sm" variant="outline" className="gap-1.5">
+                            <MessageCircle className="h-3.5 w-3.5" />Message
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </Card>

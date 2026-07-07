@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Heart, Scissors, Clock, Star, MapPin, BadgeCheck, CheckCircle } from "lucide-react";
+import { Calendar, Heart, Scissors, Clock, Star, MapPin, BadgeCheck, CheckCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -162,8 +162,10 @@ export default function ClientDashboard() {
                           </Button>
                         </Link>
                       )}
-                      <Link href="/messages">
-                        <Button variant="outline" size="sm">Message</Button>
+                      <Link href={`/messages?stylistId=${apt.stylistId}`}>
+                        <Button variant="outline" size="sm" className="gap-1.5">
+                          <MessageCircle className="h-3.5 w-3.5" />Message
+                        </Button>
                       </Link>
                     </div>
                   </div>

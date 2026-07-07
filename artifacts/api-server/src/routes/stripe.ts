@@ -1,6 +1,14 @@
 import { Router } from "express";
-import { db, usersTable, appointmentsTable, stylistProfilesTable, servicesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, appointmentsTable, stylistProfilesTable, servicesTable, conversationsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT GUARDRAIL — PayFast migration pending
+// Stripe is wired in temporarily. DO NOT rebuild notification flows, webhooks,
+// or booking confirmation logic in a way that assumes Stripe stays forever.
+// When PayFast replaces Stripe, only this file + stripeClient.ts + the success
+// page need updating — everything else must remain payment-agnostic.
+// ─────────────────────────────────────────────────────────────────────────────
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { getUncachableStripeClient } from "../stripeClient";
@@ -120,7 +128,11 @@ router.post("/stripe/confirm-booking", requireAuth, async (req, res) => {
   const existing = await db.select().from(appointmentsTable)
     .where(eq(appointmentsTable.stripeSessionId, sessionId));
   if (existing.length > 0) {
-    res.json(existing[0]);
+    const appt = existing[0];
+    const existingConv = await db.select().from(conversationsTable)
+      .where(and(eq(conversationsTable.clientId, user.id), eq(conversationsTable.stylistId, appt.stylistId)));
+    const conversationId = existingConv[0]?.id ?? null;
+    res.json({ ...appt, conversationId });
     return;
   }
 
@@ -149,8 +161,28 @@ router.post("/stripe/confirm-booking", requireAuth, async (req, res) => {
     stripeSessionId: sessionId,
   }).returning();
 
-  logger.info({ appointmentId: appt.id, sessionId }, 'Appointment created after payment');
-  res.status(201).json(appt);
+  // Auto-create a conversation thread between client and stylist so they can
+  // coordinate immediately after booking — no manual "Start conversation" needed.
+  let conversationId: string | null = null;
+  try {
+    const existingConv = await db.select().from(conversationsTable)
+      .where(and(eq(conversationsTable.clientId, user.id), eq(conversationsTable.stylistId, stylistId)));
+    if (existingConv.length > 0) {
+      conversationId = existingConv[0].id;
+    } else {
+      const [conv] = await db.insert(conversationsTable).values({
+        id: randomUUID(),
+        clientId: user.id,
+        stylistId,
+      }).returning();
+      conversationId = conv.id;
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Could not auto-create conversation after booking — non-fatal');
+  }
+
+  logger.info({ appointmentId: appt.id, sessionId, conversationId }, 'Appointment created after payment');
+  res.status(201).json({ ...appt, conversationId });
 });
 
 export default router;
