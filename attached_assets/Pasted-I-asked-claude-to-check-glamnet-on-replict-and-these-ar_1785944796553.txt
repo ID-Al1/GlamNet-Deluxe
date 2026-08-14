@@ -1,0 +1,863 @@
+I asked claude to check glamnet on replict and these are the updates 
+
+# Bonisa — full package brief for Replit
+
+## How to use this
+
+This is the single source of truth for restyling the existing GlamNet/Bonisa app on Replit. It merges three things into one document: the visual redesign brief, the approved home-screen mockup (`bonisa_home.html`), and the current state of the codebase, including behavior that was recently fixed and must not be regressed.
+
+It is a **skin change plus the specific behaviors listed in section 10**. Do not rebuild the app.
+
+---
+
+## 1. Rules of engagement (read first)
+
+**Do not change:**
+- Any existing feature, screen, route, database field, API call, auth flow or booking logic
+- Any real data, seeded data or placeholder data already in the project
+- The number of screens or the navigation structure
+- Any component's behaviour, state or props — especially the behaviors in section 10, which were deliberate fixes
+
+**Only change:**
+- Colours, fonts, spacing, corner radii, shadows, borders
+- The logo mark and wordmark
+- Icons (replace every emoji with a proper line icon)
+- The greeting block on the home screen
+- Where and how photography appears
+
+**Names:** replace every instance of `GlamNet` with `Bonisa` in UI text, page titles, meta tags, alt text and the manifest. Leave variable names, file names, folder names, package names and database keys alone unless they break the build.
+
+**No invented content.** The mockup (`bonisa_home.html`) shows sample salons, prices, distances and names purely to illustrate layout — none of that text ships. Every slot is a container filled from data that already exists in the app. If a data source does not exist yet, hide the section entirely (label included). Never render a made-up value, a permanent skeleton loader, or filler.
+
+**Payments:** the payment provider is **undecided**. Never reference PayFast or any specific provider anywhere — UI, comments, or docs. The confirm step says only "Payment processed securely."
+
+---
+
+## 2. What the app is
+
+Bonisa is a South African marketplace connecting beauty professionals (makeup, hair, nails, barbering) with clients who book them directly, and with brands who hire several artists at once for campaigns. Tagline: **Reveal Your Beauty**.
+
+Three apps in one codebase, one login, three totally separate job screens:
+
+- **Client** (`/client`) — "I need to look amazing." Browse artists, book a slot, pay. **Direct booking only. No applying, ever.**
+- **Artist** (`/artist`) — "I need work." See requests, accept/decline, track earnings. Earnings always shown **net of the 18% commission** — the number that lands in their pocket, never gross.
+- **Brand** (`/brand`) — "I need talent." Post a campaign, review applicants, confirm. **Applying exists only here.**
+
+If an "apply" button is ever being built in the Client app, stop — wrong app.
+
+### Routes (do not add or remove)
+
+```
+/                              RoleGate → Onboarding (no saved role) or Splash → dashboard (saved role)
+/client                        Client home — dashboard, browse, search
+/client/artist/:id             Artist profile
+/client/artist/:id/book        Booking flow (3 steps)
+/client/confirmation           Booking confirmation
+/artist                        Artist dashboard
+/artist/requests               Booking requests
+/brand                         Brand dashboard
+/brand/create                  Create campaign
+/brand/campaign/:id/applicants Applicant review
+*                              Redirect to /
+```
+
+---
+
+## 3. Design tokens
+
+Define once in the global stylesheet or theme file, reference everywhere. No hardcoded colours in components — this rule has been broken before (a form kept old-brand hex values after a restyle) and it's the first thing to audit.
+
+```
+--plum:        #6D1F36   primary, buttons, active states
+--plum-light:  #8E3C56   logo petal, secondary accents
+--plum-dark:   #591A2C   logo petal, hero gradient
+--cream:       #FDF8F0   page background
+--ink:         #231519   all text
+--gold:        #C1793A   ratings, notification dot, small highlights, logo centre ring
+--line:        #EFE3D3   borders and dividers
+--surface:     #FFFFFF   cards on top of cream
+--sage:        #7C8B6F   confirmed / success states only
+```
+
+Text colour is always `--ink`, varied by opacity: 100% headings, 60% body, 45% captions, 40% section labels.
+
+**The accent rule:** one or two plum touches per screen max. A screen full of plum has no focal point.
+
+**Type**
+- Display: Playfair Display, weights 500 and 600. Only for: logo wordmark, the user's name in the greeting, hero headlines, artist names, large numbers, and the confirmation screen's italic artist signature.
+- Body and UI: Inter, weights 400, 500, 600. Everything else.
+- Never Playfair on buttons, labels, form fields or body copy.
+
+Scale: 29px greeting name / 25px hero headline / 13.5px card titles / 12.5px buttons / 11px meta text / 10px uppercase section labels with 1.5px letter spacing.
+
+**Shape**
+- Cards and list rows: 20px radius, 1px `--line` border, white fill
+- Images and thumbnails: 15–22px radius
+- Buttons and chips: 999px pills, 11px small rectangular buttons
+- Shadows: `0 2px 10px rgba(109,31,54,0.04)` only. No hard drop shadows anywhere.
+
+Spacing: 20px screen padding, 26px between major sections, 11px between stacked cards. Max content width `max-w-lg`, centred.
+
+---
+
+## 4. Logo
+
+The mark is three petals radiating from a small centred circle — a flower opening: the visual form of "revealing". This exact SVG is canonical:
+
+```html
+<svg viewBox="0 0 64 64" width="30" height="30" role="img" aria-label="Bonisa">
+  <path d="M32 32 C26 26 24 14 32 4 C40 14 38 26 32 32 Z" fill="#6D1F36"/>
+  <path d="M32 32 C37 24 46 22 52 27 C49 37 40 40 32 32 Z" fill="#8E3C56"/>
+  <path d="M32 32 C27 24 18 22 12 27 C15 37 24 40 32 32 Z" fill="#591A2C"/>
+  <circle cx="32" cy="32" r="4.5" fill="#FDF8F0" stroke="#C1793A" stroke-width="1.2"/>
+</svg>
+```
+
+**Wordmark:** "Bonisa" in Playfair Display 600, 19px, 9px right of the mark, vertically centred.
+
+**Rules:** mark + wordmark in the app bar and splash. Mark alone for favicon, app icon, anything under 24px. On a plum background swap the centre circle fill to `--cream`, petals unchanged. Never recolour petals, never rotate, never add a container shape, never place on a busy photo without solid backing.
+
+**Motion (splash and onboarding only):** the mark opens **layer by layer from the centre** — centre circle first, then the three petals folding open in sequence (each on a 3D hinge with soft shading), finishing in the static mark above. Duration ~1s total, `cubic-bezier(0.16,1,0.3,1)`. In the app bar and everywhere else the mark is **static** — the bloom is an arrival moment, not a repeating animation. Respect `prefers-reduced-motion`: show the static mark instantly.
+
+---
+
+## 5. Greeting (French — non-negotiable)
+
+Two lines, top of the client home screen, above everything else. The same French greeting also appears on the Splash and Onboarding screens paired with the wordmark ("Bonjour, Bonisa").
+
+Line one changes with device local time:
+
+| Local time | Greeting |
+|---|---|
+| 00:00–11:59 | `Bonjour,` |
+| 12:00–17:59 | `Bon après-midi,` |
+| 18:00–23:59 | `Bonsoir,` |
+
+13px, `--ink` at 45% opacity, sentence case, comma included. Keep accents exactly as written (`après`), page must be UTF-8. Never translate to English or any other language, never add a fourth variant. **No English "Good morning/afternoon/evening" anywhere in the product.**
+
+Line two: the signed-in user's **first name only**, Playfair 600, 29px. No name on file → show line one alone. Never print a placeholder name.
+
+### Launch sequence (already built — preserve it)
+
+App open with a saved role: Splash screen → logo blooms open → French greeting fades in right after (~0.95s delay) → auto-navigate to that role's dashboard at ~2.2s. No tap required. First-time visitors (no saved role) get the Onboarding role picker instead, with the same bloom + greeting, then the wordmark, question, role cards and Continue button fading up in sequence after the bloom.
+
+---
+
+## 6. Client home screen
+
+Follow `bonisa_home.html` as the layout reference. Every `[ ]` is a slot filled by existing app data — the mockup's literal text (salon names, prices, distances) does not ship.
+
+```
+┌──────────────────────────────────┐
+│ [logo] Bonisa      [bell][avatar]│  app bar, cream, 1px bottom border
+├──────────────────────────────────┤
+│  [french greeting],              │
+│  [user first name]               │
+│  ( pin  [user area]  [radius] )  │  location pill — only if location data exists
+│  [ search icon   search hint ]   │
+│  ┌─ hero: photo + plum veil ─┐   │  186px, Playfair headline, white pill CTA
+│  SERVICE CATEGORIES        All   │  circular icon chips from existing categories
+│  NEXT APPOINTMENT                │  solid plum card — only if one exists
+│  LOOKS / FOR YOUR MOMENT  See all│  horizontal rail, 132px cards, label chips
+│  RECOMMENDED NEAR YOU     See all│  white row cards
+│  [end note when list is done]    │
+├──────────────────────────────────┤
+│  ⌂    ⌕    ▤    ✉    ○           │  tab bar
+└──────────────────────────────────┘
+```
+
+**Component specs**
+
+- *App bar:* logo + wordmark left; right side is the notification bell (white circle, 1px `--line`, gold dot **only when unread notifications exist**) and the user's avatar (initials on plum, 36px circle, double ring: 2px cream + 1.5px `--line`).
+- *Location pill:* white, fully rounded, pin icon + area + radius caption. Render **only** if the app has location data for the user; otherwise omit — do not hardcode a suburb.
+- *Hero:* photo layer → plum gradient veil (`linear-gradient(105deg, rgba(89,26,44,.94) 30%, rgba(109,31,54,.72) 100%)`) → text: uppercase eyebrow (9.5px, 1.6px tracking, 62% white), Playfair 25px headline, white pill CTA.
+- *Category chips:* perfect circles, white fill, 1px `--line` border, plum line icon centred, 10.5px caption under. Use the **categories that exist in the app's data** — same source that filters the artist list, so no chip can ever lead to an empty result. Icon chips or photo chips: pick one approach for all, never mix.
+- *Next appointment card:* solid plum, white text, date block left (Playfair number + tiny uppercase month on a lighter plum tile), service + provider + time centre, "View →" right. **Data comes from the persisted latest booking (see section 10), falling back to seeded data only if the user hasn't booked.** Hide entirely if neither exists.
+- *Look rail:* 132px wide cards, 150px image with a small cream label chip bottom-left, title + one support line under. Horizontal scroll, edge-bleed (negative margin so cards run to screen edge).
+- *Row card:* 58px thumbnail, title (13.5px/600), one meta line (ellipsis overflow), fact row (gold star rating, price, optional sage "next available" slot), plum Book button pinned right (11px radius). The Book button must deep-link into the booking flow with that service preselected — not just open a profile.
+- *End note:* small centred 11px line at 30% opacity when the list is exhausted (e.g. "You have seen everything nearby") — a small realism touch that tells the user the list is real and finite.
+- *Empty states:* a section with no data hides itself completely, label included.
+
+---
+
+## 7. Realism rules
+
+The app must feel like a real product in a real city, not a template.
+
+- **South African number formatting everywhere:** prices as `R680` and `R1 200` (space thousands separator, no cents), ratings with a decimal comma (`4,9`), distances as `2,4 km`, 24-hour times (`16:00`) in list metadata. Keep the booking flow's existing 12-hour slot display (`11:00 AM`) as is — do not churn it.
+- **Ratings always carry review counts** — `4,9 (212)` reads real; a bare `4,9` reads fake. Both values come from existing data.
+- **Availability is specific, not generic:** "Today 16:00" beats "Available now" wherever a real next-slot value exists in data; fall back to the existing available/booked-today dot otherwise.
+- **Response-time stats stay:** "responds in ~10 min" on client-facing cards, and the artist dashboard's response-time nudge ("Fast responders get booked 3× more often") are product differentiators, not decoration. Keep them.
+- **Photography is the main visual material.** Where photos appear: hero, look cards, provider thumbnails, artist profile header, portfolios. Where they never appear: behind body text, inside buttons, as page backgrounds, as filler in empty sections. Subject matter: real beauty work and the people wearing it — braids, locs, nails, lashes, makeup, close crops of finished results, portraits cropped so the look is the subject. Warm natural light, skin tones that reflect the actual user base. Always `object-fit: cover`. Photo carrying text gets the plum veil first. No filters, no black and white, no heavy vignettes.
+- **Missing image = branded fallback, not stock:** a `--line` coloured block with the logo mark centred at 20% opacity (the existing `BeautyImage` component already does gradient fallback + fade-in on load — keep that behavior, restyle the fallback to this spec).
+- **Motion is quiet and purposeful:** content fades up on load (~0.5s ease-out), list cards stagger by ~60ms, images fade in when loaded rather than popping. Nothing loops, nothing bounces. Respect `prefers-reduced-motion` on everything.
+- **Nothing pretends to work.** Controls without a built destination render visibly disabled (40% opacity, `disabled`, "Coming soon" title) — never tappable-looking and silently dead. Currently that's: Bookings/Messages/Profile tabs, the artist profile's message and "more" buttons. The tab bar's five labels are Home, Search, Bookings, Messages, Profile (Search focuses the home search field).
+
+---
+
+## 8. Icons
+
+**Remove every emoji from the interface** — including the ⭐ star ratings and ⚡ speed indicators currently in the app. Replace with one consistent line icon set (Lucide or hand-rolled SVGs in the same manner):
+
+- Stroke only, no filled or duotone — one exception: the rating star renders filled in `--gold`
+- Stroke width 1.9 (1.7 acceptable inside small chips)
+- 21px tab bar, 17px app bar, 16px inline with text, 20–22px category chips
+- Round caps and joins, colour `currentColor` throughout
+
+Tab bar: house, magnifier, calendar, speech bubble, person outline. Active: `--plum`, 600 label. Inactive: `--ink` at 35% opacity. Disabled tabs: as inactive but 40% overall opacity + `disabled`.
+
+Service categories need one distinct icon each, drawn in the same style (the mockup contains ready SVGs for braids, nails, lashes, makeup, locs — reuse whichever match the app's actual categories, draw missing ones in the same manner).
+
+---
+
+## 9. The other screens (restyle with the same system)
+
+Apply tokens, type, shape, icon and photo rules to every screen. Specific notes:
+
+- **Artist profile:** full-bleed photo header with floating back / heart / more buttons (white 90% circles), content card overlapping the photo with rounded top. Verified badge (plum circle, white check) beside the name. Tag pills, Book Now + disabled message button, availability line, bio, horizontal portfolio rail, services list where **each service row has its own Book button** deep-linking with that service preselected. No "See all" on the portfolio while every photo is already shown — a link promising more content than exists is a fake.
+- **Booking flow:** numbered stepper (plum circles, ✓ when complete, connecting hairlines), service summary card once past step 1, 7-day date scroll, stacked time-slot list. Confirm step: summary card with total, lock icon + "Payment processed securely", Confirm & Pay.
+- **Booking confirmation:** the signature moment. Sage check circle, "Booking confirmed" label, small logo mark, then the artist's name in Playfair **italic** at large size — like a handwritten appointment card. Appointment card below, two actions. This screen persists the booking (section 10).
+- **Artist dashboard:** net earnings card (net of 18%, labelled so), availability toggle (sage when open), response-time card, upcoming list, requests CTA.
+- **Artist requests:** request cards with accept (sage tint) / decline (line tint) pairs.
+- **Brand dashboard:** + New campaign button, campaign cards with applicant/confirmed/needed stats and avg response time line.
+- **Create campaign:** tokenised form fields (white, 1px `--line`, plum focus border — **audit this file specifically for leftover hardcoded old-brand hex**), artist count picker pills, publish button.
+- **Applicant review:** summary pills (sage/plum/line), three sections — Confirmed, Pending review, Declined — confirm/decline pairs on pending cards.
+- **Onboarding:** bloom + greeting + wordmark + "Who are you?" + three role cards (radio-style selection, plum when active) + Continue. Remembers the choice.
+
+---
+
+## 10. Existing behaviors that must survive the restyle
+
+These were deliberate fixes. Regressing any of them is a bug:
+
+1. **Booking persistence:** completing a booking saves it (localStorage until the API exists) and the client home's "Next appointment" card shows that real booking in preference to seeded data. A user's booking never vanishes after confirming.
+2. **Session version gate:** the stored role is version-gated; bumping the version constant forces every returning visitor through onboarding once (used for the GlamNet→Bonisa cutover). Keep the mechanism.
+3. **Deep-link booking:** every Book button that names a service (home recommendation card, artist profile service rows) opens the booking flow with that service preselected, landing on date/time — never a bare profile link labelled "Book".
+4. **Category/filter sync:** the browse categories and the filter chips derive from one shared list. No category may exist that has zero matching providers and no filter.
+5. **Honest disabled controls:** anything without a real destination renders disabled with "Coming soon" (see section 7). Don't wire them to wrong destinations; don't make them look alive.
+6. **Notification bell:** opens a real dropdown fed by existing notification data, with unread markers; the gold dot appears only when unread items exist.
+7. **Saved artists:** the heart on an artist profile is a real persisted toggle (filled plum when saved).
+8. **Image fallback:** photos fade in on load; a failed or missing image shows the branded fallback, never a broken-image icon.
+9. **French greetings only** — including the home dashboard's greeting. No English time-of-day greeting anywhere.
+10. **Net earnings:** artists see earnings after the 18% commission, labelled as such, never gross.
+
+---
+
+## 11. Done checklist
+
+- [ ] No emoji anywhere in the interface (stars and lightning included)
+- [ ] Every colour from a token; grep for `#B8765C`, `#E8E1DA`, `#1C1A19`, `#FAF7F4` returns nothing
+- [ ] Playfair only on logo, greeting name, hero headline, artist names, large numbers, confirmation signature
+- [ ] Zero invented names, prices, ratings, reviews, locations or salons added
+- [ ] Every visible GlamNet now reads Bonisa; no PayFast reference anywhere
+- [ ] Greeting is French on every screen that greets, correct accents, correct time windows
+- [ ] Splash bloom plays layer-by-layer, then auto-navigates; static mark everywhere else
+- [ ] SA formatting: R-space prices, decimal-comma ratings and distances, review counts shown
+- [ ] All ten behaviors in section 10 verified working after the restyle
+- [ ] Empty sections hide themselves; disabled controls look disabled
+- [ ] Every existing feature works exactly as before
+- [ ] Layout holds from 360px wide up to tablet
+- [ ] Keyboard focus visible on every interactive element; `prefers-reduced-motion` respected
+
+Then i found an issue :so i found a issue which is the payment situation where the client can confirm they received there services and that the artist can confirm that they have seen their client this is an improtant beacuse i want once the confirmation has been made the artist pay of 82% is automatically  received by them and my 18% is recevied  this is how i phrased it to replict agentNow where’s that money go when it’s paid going so I need a build that splits the artist pay by 82% and I receive my 18% so build that once automatically as soon as confirmation of work is done so a build there as well for both client and artist confirm for work done this a important because we won’t be able to tell who lying so this need be sold incase of disputes of any kind there must be a way to mitigate that so there pay be released once this has been validated
+
+But i already told replict about the pay situation 
+
+So i need you tie everything together 
+
+
+12. Production Marketplace Architecture (Critical Addition)
+
+This section extends the existing specification.
+
+It does not replace any previous requirement.
+
+If any requirement in this section conflicts with an earlier section, this section takes precedence.
+
+⸻
+
+Payment Philosophy
+
+Bonisa is a managed marketplace.
+
+The platform is responsible for safely holding client funds until services have been successfully delivered.
+
+Payments are never transferred directly from client to artist.
+
+Every completed booking follows an escrow workflow.
+
+The implementation must be designed so the underlying payment provider can be changed later without changing the product behaviour.
+
+No payment provider names should appear anywhere in the UI.
+
+⸻
+
+Escrow Payment Model
+
+When the client pays for a booking:
+
+The booking amount is immediately divided internally into two balances.
+
+Artist Allocation
+
+82%
+
+Platform Allocation
+
+18%
+
+These balances are accounting values only.
+
+Neither balance is released immediately.
+
+Both remain inside platform escrow until the booking has been validated.
+
+⸻
+
+Booking Lifecycle
+
+Every booking must move through the following states.
+
+Draft
+
+↓
+
+Awaiting Payment
+
+↓
+
+Confirmed
+
+↓
+
+Upcoming
+
+↓
+
+In Progress
+
+↓
+
+Awaiting Completion Confirmation
+
+↓
+
+Completed
+
+or
+
+Payment On Hold
+
+or
+
+Cancelled
+
+⸻
+
+Appointment Completion
+
+At the scheduled appointment time the booking automatically enters
+
+Awaiting Completion Confirmation
+
+Both parties are independently asked to confirm.
+
+Client
+
+Question
+
+“Did you receive your appointment?”
+
+Actions
+
+• Yes, everything went well
+
+• Report a problem
+
+Artist
+
+Question
+
+“Did you complete this appointment?”
+
+Actions
+
+• Yes, appointment completed
+
+• Report an issue
+
+Neither party can see the other’s response before submitting their own.
+
+⸻
+
+Automatic Escrow Release
+
+If BOTH confirmations are positive:
+
+Booking Status
+
+Completed
+
+Immediately perform:
+
+• Release 82% to artist
+
+• Release 18% to Bonisa
+
+• Record permanent payment transaction
+
+• Update artist earnings dashboard
+
+• Lock booking from further edits
+
+• Mark appointment complete
+
+This should happen automatically.
+
+No administrator intervention.
+
+⸻
+
+Dispute Protection
+
+If confirmations do not match
+
+OR
+
+either party reports an issue
+
+OR
+
+only one side confirms
+
+then:
+
+Booking Status
+
+Payment On Hold
+
+Funds remain inside escrow.
+
+Nothing is paid.
+
+The system automatically creates a dispute.
+
+⸻
+
+Confirmation Timeout
+
+If only one side confirms:
+
+Display
+
+Waiting for the other party.
+
+Continue reminding the other user.
+
+After the configured timeout (default 48 hours):
+
+Escalate for manual review.
+
+The timeout must be configurable.
+
+⸻
+
+Dispute Evidence
+
+The architecture should allow future uploads of:
+
+Photos
+
+Videos
+
+Documents
+
+Chat history
+
+Location verification
+
+Time stamps
+
+These do not need to be fully built now.
+
+The database structure should support them.
+
+⸻
+
+Fraud Prevention
+
+Record the following:
+
+Booking ID
+
+Client ID
+
+Artist ID
+
+Confirmation timestamps
+
+GPS (optional future)
+
+Device ID
+
+IP address (backend)
+
+Booking edits
+
+Cancellation history
+
+Payment events
+
+Notification events
+
+Every action should have an audit trail.
+
+Nothing payment-related should ever disappear from history.
+
+⸻
+
+Payout Engine
+
+Never execute payout directly from a button press.
+
+Instead:
+
+User confirms
+
+↓
+
+Booking validated
+
+↓
+
+Ready For Release
+
+↓
+
+Payment service performs payout
+
+↓
+
+Payment successful
+
+↓
+
+Booking marked Completed
+
+↓
+
+Artist dashboard updates
+
+↓
+
+Platform revenue updates
+
+If payout fails:
+
+Booking returns to
+
+Payment Pending
+
+and retries safely.
+
+⸻
+
+Artist Earnings
+
+Always show NET earnings.
+
+Never show gross booking values as available earnings.
+
+Artist Dashboard should contain:
+
+Pending Earnings
+
+Money currently held in escrow.
+
+Available Earnings
+
+Money already released.
+
+Lifetime Earnings
+
+Historical net earnings.
+
+⸻
+
+Platform Revenue
+
+Structure the backend so future admin reporting can show:
+
+Gross Booking Volume
+
+Platform Revenue
+
+Pending Escrow
+
+Released Escrow
+
+Refunds
+
+Disputes
+
+Cancelled Bookings
+
+Average Booking Value
+
+Average Completion Time
+
+Repeat Clients
+
+Top Artists
+
+No admin UI is required yet.
+
+Only prepare the architecture.
+
+⸻
+
+Cancellation Rules
+
+Before payment
+
+Booking simply expires.
+
+After payment but before appointment
+
+Refund policy applies.
+
+After appointment begins
+
+Cancellation becomes a dispute workflow.
+
+Never automatically release funds after service start without validation.
+
+⸻
+
+Notifications
+
+Automatically notify both users when:
+
+Booking confirmed
+
+Appointment tomorrow
+
+Appointment today
+
+Artist arrived (future)
+
+Client confirmed
+
+Artist confirmed
+
+Payment released
+
+Dispute opened
+
+Dispute resolved
+
+Notifications should use the existing notification system.
+
+Do not create a second notification framework.
+
+⸻
+
+Database Readiness
+
+Prepare data models for:
+
+Bookings
+
+Payments
+
+Escrow
+
+Transactions
+
+Payouts
+
+Disputes
+
+Notifications
+
+Audit Logs
+
+No existing database fields should be removed.
+
+Only extend.
+
+⸻
+
+API Readiness
+
+Keep business logic separate from UI.
+
+The future backend should expose services similar to:
+
+Create Booking
+
+Create Payment
+
+Create Escrow
+
+Confirm Completion
+
+Release Escrow
+
+Open Dispute
+
+Resolve Dispute
+
+Fetch Earnings
+
+Fetch Transactions
+
+Do not hardcode payment logic inside React components.
+
+⸻
+
+Security
+
+Never trust client-side confirmation.
+
+The backend must validate:
+
+Booking ownership
+
+User role
+
+Booking status
+
+Duplicate confirmations
+
+Payment state
+
+Prevent:
+
+Double payouts
+
+Duplicate confirmations
+
+Manual status edits
+
+Negative balances
+
+Replay attacks
+
+⸻
+
+Existing Behaviour Protection
+
+The following behaviours remain mandatory:
+
+Booking persistence
+
+Session version gate
+
+Deep-link booking
+
+Category synchronisation
+
+Notification dropdown
+
+Saved artists
+
+Image fallback
+
+French greetings
+
+Net earnings
+
+These must continue working exactly as implemented.
+
+⸻
+
+Production Quality Rules
+
+Do not introduce fake data.
+
+Do not introduce placeholder pricing.
+
+Do not introduce fake reviews.
+
+Do not invent availability.
+
+Hide sections that lack real data.
+
+Every new feature must work with existing persisted booking data.
+
+⸻
+
+Future Scalability
+
+The architecture should allow future support for:
+
+Promo codes
+
+Gift cards
+
+Wallet balance
+
+Tips
+
+Split payments
+
+Partial refunds
+
+Rescheduling
+
+Subscriptions
+
+Membership tiers
+
+Artist verification
+
+Identity verification
+
+Tax reporting
+
+Invoice generation
+
+Business analytics
+
+These should not be built now.
+
+Only ensure the architecture does not prevent them later.
+
+⸻
+
+Final Implementation Rule
+
+Every change must preserve existing behaviour.
+
+This update is intended to make Bonisa production-ready without rebuilding the application.
+
+The current codebase should be treated as the foundation.
+
+All work should extend it rather than replace it.
+
+Writing & Code Style Requirement
+
+The project should read and feel like software built by a human product and engineering team.
+
+Avoid repetitive AI-style formatting and wording.
+
+Do not overuse hyphens, em dashes, or stacked bullet lists where normal sentences or headings communicate the same information more naturally.
+
+Write comments in a concise, developer-friendly style.
+
+Avoid phrases such as “ensure that,” “seamlessly,” “robust,” “leverage,” “comprehensive,” “critical,” “non-negotiable,” or other repetitive AI-style wording unless genuinely necessary.
+
+Keep comments short and practical.
+
+Use natural language throughout the UI.
+
+Where a paragraph communicates the requirement more clearly than a long list, prefer the paragraph.
+
+Keep documentation clean, direct, and professional, similar to documentation written by experienced software engineers.
+
+The implementation should prioritize readability and maintainability over excessive comments.
+
+Do not rewrite working code simply for stylistic reasons.
+
+Only modify code when it improves the product, fixes a bug, or is required by this specification

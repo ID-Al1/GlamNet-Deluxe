@@ -5,12 +5,17 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { MessageMessageType } from './messageMessageType';
 
 export interface Message {
   id: string;
   conversationId: string;
-  senderId: string;
+  /** @nullable */
+  senderId?: string | null;
   senderName: string;
   content: string;
+  messageType: MessageMessageType;
+  /** @nullable */
+  mediaUrl?: string | null;
   createdAt: string;
 }

@@ -1,19 +1,33 @@
 import { Router } from "express";
 import {
-  db, reviewsTable, appointmentsTable, stylistProfilesTable, usersTable, bookingTeamMembersTable,
+  db, reviewsTable, appointmentsTable, stylistProfilesTable, usersTable,
+  bookingTeamMembersTable, reviewHelpfulVotesTable,
 } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
-import { sql } from "drizzle-orm";
 import { maybeCompleteReferral } from "./referrals";
+import { wasUploadedBy } from "../lib/upload-registry";
+
+/**
+ * Returns true if `objectPath` is referenced in any review's media_items.
+ * Used by the storage layer to grant public access to review attachments.
+ */
+export async function canAccessReviewMedia(objectPath: string): Promise<boolean> {
+  const matches = await db
+    .select({ id: reviewsTable.id })
+    .from(reviewsTable)
+    .where(sql`${reviewsTable.mediaItems} @> ${JSON.stringify([{ path: objectPath }])}::jsonb`)
+    .limit(1);
+  return matches.length > 0;
+}
 
 const router = Router();
 
 // Client submits a review after a completed appointment
 router.post("/reviews", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { appointmentId, stylistId, rating, text } = req.body;
+  const { appointmentId, stylistId, rating, text, mediaItems } = req.body;
 
   if (!appointmentId || !stylistId || !rating) {
     res.status(400).json({ error: "appointmentId, stylistId, and rating are required" });
@@ -22,6 +36,31 @@ router.post("/reviews", requireAuth, async (req, res) => {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     res.status(400).json({ error: "rating must be an integer between 1 and 5" });
     return;
+  }
+
+  // Validate and verify ownership of each media item
+  const rawItems: unknown[] = Array.isArray(mediaItems) ? mediaItems : [];
+  if (rawItems.length > 10) {
+    res.status(400).json({ error: "Maximum 10 media items per review" });
+    return;
+  }
+  const sanitizedItems: { path: string; mimeType: string }[] = [];
+  for (const item of rawItems) {
+    if (
+      typeof item !== "object" || item === null ||
+      typeof (item as any).path !== "string" ||
+      typeof (item as any).mimeType !== "string"
+    ) {
+      res.status(400).json({ error: "Each media item must have path and mimeType strings" });
+      return;
+    }
+    const { path, mimeType } = item as { path: string; mimeType: string };
+    // Verify the client actually uploaded this object (ownership check)
+    if (!wasUploadedBy(path, user.id)) {
+      res.status(403).json({ error: "Media item not owned by you or upload window expired" });
+      return;
+    }
+    sanitizedItems.push({ path, mimeType: mimeType.slice(0, 100) });
   }
 
   // Verify the appointment exists, belongs to this client, and is completed
@@ -37,8 +76,7 @@ router.post("/reviews", requireAuth, async (req, res) => {
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
   if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
 
-  // Verify the stylist is actually tied to this appointment — either the lead
-  // stylist or a confirmed team member. Prevents reviewing arbitrary profiles.
+  // Verify the stylist is actually tied to this appointment
   const isLeadStylist = appt.stylistId === stylistId;
   let isTeamMember = false;
   if (!isLeadStylist) {
@@ -46,6 +84,7 @@ router.post("/reviews", requireAuth, async (req, res) => {
       .where(and(
         eq(bookingTeamMembersTable.appointmentId, appointmentId),
         eq(bookingTeamMembersTable.stylistId, stylistId),
+        eq(bookingTeamMembersTable.status, "confirmed"),
       ));
     isTeamMember = !!member;
   }
@@ -69,6 +108,7 @@ router.post("/reviews", requireAuth, async (req, res) => {
     revieweeId: stylistId,
     rating,
     text: text?.trim() || null,
+    mediaItems: sanitizedItems,
   }).returning();
 
   // Recompute stylist's average rating and review count from actual data
@@ -78,10 +118,77 @@ router.post("/reviews", requireAuth, async (req, res) => {
     .set({ rating: Math.round(avg * 10) / 10, reviewCount: allReviews.length })
     .where(eq(stylistProfilesTable.id, stylistId));
 
-  // Check if this completed booking triggers a referral completion
   await maybeCompleteReferral(user.id);
 
   res.status(201).json({ ...review, createdAt: review.createdAt.toISOString() });
+});
+
+// Stylist replies to a review
+router.patch("/reviews/:id/reply", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const { id } = req.params;
+  const { replyText } = req.body;
+
+  if (!replyText?.trim()) {
+    res.status(400).json({ error: "replyText is required" });
+    return;
+  }
+
+  const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
+  if (!review) { res.status(404).json({ error: "Review not found" }); return; }
+
+  // Only the stylist who was reviewed can reply
+  const [profile] = await db.select().from(stylistProfilesTable)
+    .where(and(eq(stylistProfilesTable.id, review.revieweeId), eq(stylistProfilesTable.userId, user.id)));
+  if (!profile) {
+    res.status(403).json({ error: "Only the reviewed professional can reply" });
+    return;
+  }
+
+  const [updated] = await db.update(reviewsTable)
+    .set({ replyText: replyText.trim(), replyCreatedAt: new Date() })
+    .where(eq(reviewsTable.id, id))
+    .returning();
+
+  res.json({ ...updated, createdAt: updated.createdAt.toISOString(), replyCreatedAt: updated.replyCreatedAt?.toISOString() ?? null });
+});
+
+// Toggle helpful vote on a review
+router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const { id } = req.params;
+
+  const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
+  if (!review) { res.status(404).json({ error: "Review not found" }); return; }
+
+  // Check if already voted
+  const [existing] = await db.select().from(reviewHelpfulVotesTable)
+    .where(and(eq(reviewHelpfulVotesTable.reviewId, id), eq(reviewHelpfulVotesTable.userId, user.id)));
+
+  let voted: boolean;
+  if (existing) {
+    // Remove vote
+    await db.delete(reviewHelpfulVotesTable)
+      .where(and(eq(reviewHelpfulVotesTable.reviewId, id), eq(reviewHelpfulVotesTable.userId, user.id)));
+    await db.update(reviewsTable)
+      .set({ helpfulCount: Math.max(0, review.helpfulCount - 1) })
+      .where(eq(reviewsTable.id, id));
+    voted = false;
+  } else {
+    // Add vote
+    await db.insert(reviewHelpfulVotesTable).values({
+      id: randomUUID(),
+      reviewId: id,
+      userId: user.id,
+    });
+    await db.update(reviewsTable)
+      .set({ helpfulCount: review.helpfulCount + 1 })
+      .where(eq(reviewsTable.id, id));
+    voted = true;
+  }
+
+  const [updated] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
+  res.json({ helpfulCount: updated.helpfulCount, voted });
 });
 
 // Mark an appointment as completed (client confirms service received)
@@ -102,7 +209,6 @@ router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, r
     .where(eq(appointmentsTable.id, appointmentId))
     .returning();
 
-  // Completing a booking is the trigger for referral completion — not the review.
   await maybeCompleteReferral(user.id);
 
   res.json({ ...updated, createdAt: updated.createdAt.toISOString() });
@@ -110,23 +216,63 @@ router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, r
 
 // Get reviews for a stylist profile (public)
 router.get("/reviews", async (req, res) => {
-  const { stylistId } = req.query as { stylistId?: string };
+  const { stylistId, sort, minRating, withPhotos } = req.query as {
+    stylistId?: string;
+    sort?: string;
+    minRating?: string;
+    withPhotos?: string;
+  };
   if (!stylistId) { res.status(400).json({ error: "stylistId query param required" }); return; }
+
+  // Build order clause
+  let orderClause;
+  switch (sort) {
+    case "highest":
+      orderClause = desc(reviewsTable.rating);
+      break;
+    case "lowest":
+      orderClause = asc(reviewsTable.rating);
+      break;
+    case "helpful":
+      orderClause = desc(reviewsTable.helpfulCount);
+      break;
+    default:
+      orderClause = desc(reviewsTable.createdAt);
+  }
+
+  const conditions = [eq(reviewsTable.revieweeId, stylistId)];
+  if (minRating) {
+    const min = parseInt(minRating, 10);
+    if (!isNaN(min) && min >= 1 && min <= 5) {
+      conditions.push(sql`${reviewsTable.rating} >= ${min}`);
+    }
+  }
+  if (withPhotos === "true") {
+    conditions.push(sql`jsonb_array_length(${reviewsTable.mediaItems}) > 0`);
+  }
 
   const reviews = await db
     .select({
       id: reviewsTable.id,
       rating: reviewsTable.rating,
       text: reviewsTable.text,
+      mediaItems: reviewsTable.mediaItems,
+      replyText: reviewsTable.replyText,
+      replyCreatedAt: reviewsTable.replyCreatedAt,
+      helpfulCount: reviewsTable.helpfulCount,
       createdAt: reviewsTable.createdAt,
       reviewerName: usersTable.name,
     })
     .from(reviewsTable)
     .leftJoin(usersTable, eq(reviewsTable.reviewerId, usersTable.id))
-    .where(eq(reviewsTable.revieweeId, stylistId))
-    .orderBy(sql`${reviewsTable.createdAt} DESC`);
+    .where(and(...conditions))
+    .orderBy(orderClause);
 
-  res.json(reviews.map(r => ({ ...r, createdAt: r.createdAt.toISOString() })));
+  res.json(reviews.map(r => ({
+    ...r,
+    createdAt: r.createdAt.toISOString(),
+    replyCreatedAt: r.replyCreatedAt?.toISOString() ?? null,
+  })));
 });
 
 export default router;

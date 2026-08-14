@@ -9,14 +9,20 @@ export const conversationsTable = pgTable("conversations", {
   lastMessageAt: timestamp("last_message_at").notNull().defaultNow(),
   clientUnread: integer("client_unread").notNull().default(0),
   stylistUnread: integer("stylist_unread").notNull().default(0),
+  clientLastReadAt: timestamp("client_last_read_at"),
+  stylistLastReadAt: timestamp("stylist_last_read_at"),
+  clientTypingUntil: timestamp("client_typing_until"),
+  stylistTypingUntil: timestamp("stylist_typing_until"),
 });
 
 export const messagesTable = pgTable("messages", {
   id: text("id").primaryKey(),
   conversationId: text("conversation_id").notNull().references(() => conversationsTable.id, { onDelete: "cascade" }),
-  senderId: text("sender_id").notNull().references(() => usersTable.id),
+  senderId: text("sender_id").references(() => usersTable.id),
   senderName: text("sender_name").notNull(),
   content: text("content").notNull(),
+  messageType: text("message_type").notNull().default("text"),
+  mediaUrl: text("media_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

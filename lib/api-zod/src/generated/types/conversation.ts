@@ -14,4 +14,9 @@ export interface Conversation {
   lastMessage?: string | null;
   lastMessageAt: string;
   unreadCount: number;
+  isOtherTyping?: boolean;
+  /** @nullable */
+  clientLastReadAt?: string | null;
+  /** @nullable */
+  stylistLastReadAt?: string | null;
 }

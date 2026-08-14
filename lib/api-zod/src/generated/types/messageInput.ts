@@ -5,8 +5,11 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { MessageInputMessageType } from './messageInputMessageType';
 
 export interface MessageInput {
   /** @minLength 1 */
   content: string;
+  messageType?: MessageInputMessageType;
+  mediaUrl?: string;
 }

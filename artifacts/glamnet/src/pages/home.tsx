@@ -1,51 +1,61 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useListStylists } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Search, MapPin, Star, Sparkles, Calendar, TrendingUp, Briefcase, Zap, ShieldCheck, Home as HomeIcon, Gift, ArrowRight, BadgeCheck } from "lucide-react";
+import { Search, Star, Play, ChevronDown } from "lucide-react";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { ArtistInitials } from "@/components/ui/artist-initials";
+import { formatRating } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
+import { SERVICE_CATEGORIES } from "@/lib/categories";
 
-const HERO_CATEGORIES = [
-  "Hair", "Makeup", "Nails", "Barber", "Skincare", "Lashes", "Brows",
+import heroMomentsImg from "@assets/generated_images/hero-moments.jpg";
+import dateNightImg from "@assets/generated_images/moment-datenight.jpg";
+import weddingImg from "@assets/generated_images/moment-wedding.jpg";
+import graduationImg from "@assets/generated_images/moment-graduation.jpg";
+import birthdayImg from "@assets/generated_images/moment-birthday.jpg";
+import lemonadeImg from "@assets/generated_images/look-lemonade.jpg";
+
+const MOMENTS = [
+  { label: "Date Night",  image: dateNightImg },
+  { label: "Wedding",     image: weddingImg },
+  { label: "Graduation",  image: graduationImg },
+  { label: "Birthday",    image: birthdayImg },
 ];
 
-const AVATAR_PALETTES = [
-  ["hsl(38 40% 88%)", "hsl(38 50% 72%)", "hsl(38 40% 30%)"],
-  ["hsl(350 35% 86%)", "hsl(350 45% 70%)", "hsl(350 35% 32%)"],
-  ["hsl(200 38% 86%)", "hsl(200 48% 70%)", "hsl(200 38% 30%)"],
-  ["hsl(150 35% 86%)", "hsl(150 45% 70%)", "hsl(150 35% 28%)"],
-  ["hsl(280 35% 86%)", "hsl(280 45% 70%)", "hsl(280 35% 30%)"],
-];
-
-function ArtistInitials({ name }: { name: string }) {
-  const initials = name.trim().split(/\s+/).map(w => w[0] ?? "").join("").slice(0, 2).toUpperCase();
-  const p = AVATAR_PALETTES[name.charCodeAt(0) % AVATAR_PALETTES.length];
+function SectionHeading({ title, actionLabel, href }: { title: string; actionLabel?: string; href?: string }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${p[0]}, ${p[1]})` }}>
-      <span className="font-serif font-bold text-4xl select-none" style={{ color: p[2] }}>{initials}</span>
+    <div className="flex items-center justify-between mb-5">
+      <h2 className="text-[11px] font-bold tracking-[0.14em] uppercase text-foreground/60">{title}</h2>
+      {actionLabel && href && (
+        <Link href={href}>
+          <span className="text-[11px] text-primary font-semibold hover:opacity-80 transition-opacity">{actionLabel}</span>
+        </Link>
+      )}
     </div>
   );
 }
 
-const ARTIST_PERKS = [
-  { icon: HomeIcon, title: "House Calls", desc: "Enable house calls and charge a travel premium." },
-  { icon: TrendingUp, title: "Track Every Rand", desc: "Revenue dashboard and monthly earnings in one place." },
-  { icon: Gift, title: "Referral Rewards", desc: "Share your link. Every artist you refer earns you both a bonus." },
-  { icon: Briefcase, title: "Casting Calls", desc: "Apply to paid brand campaigns from top SA brands." },
-  { icon: Zap, title: "Instant Bookings", desc: "Clients book and pay directly. No phone tag, no no-shows." },
-  { icon: ShieldCheck, title: "Verified Badge", desc: "Get certified and unlock 3× more profile views." },
-];
-
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+
+  // Authenticated users belong on their dashboard
+  if (user) {
+    setLocation("/dashboard");
+    return null;
+  }
 
   const { data: stylists } = useListStylists({ specialty: undefined }, {
-    query: { staleTime: 60_000 },
+    query: { staleTime: 60_000, queryKey: ["stylists", "home-featured"] },
   });
 
-  const featured = stylists?.filter(s => s.rating >= 4.5).slice(0, 3) ?? [];
+  const topStylists = useMemo(
+    () => (stylists ?? []).slice().sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+    [stylists],
+  );
+  const featured = topStylists[0];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,250 +63,253 @@ export default function Home() {
     setLocation(q ? `/stylists?search=${encodeURIComponent(q)}` : "/stylists");
   };
 
-  const handleCategory = (cat: string) => {
-    setLocation(`/stylists?specialty=${encodeURIComponent(cat)}`);
-  };
-
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col bg-background overflow-x-hidden">
 
-      {/* ── HERO — pulled up behind transparent sticky header ── */}
-      <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden -mt-16">
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/hero-bg.png')" }}
-        />
-        {/* Scrim */}
-        <div className="absolute inset-0 bg-black/52" />
+      {/* ══════════════════════════════════════════════════════
+          HERO — full-viewport, aspirational imagery
+      ══════════════════════════════════════════════════════ */}
+      <section className="relative min-h-dvh flex flex-col">
+        {/* Full-bleed background */}
+        <div className="absolute inset-0">
+          <img
+            src={heroMomentsImg}
+            alt="A woman ready for her reveal"
+            className="w-full h-full object-cover object-center"
+            fetchPriority="high"
+          />
+          {/* Multi-stop gradient: bottom-heavy dark for text legibility, subtle at top */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/75" />
+          {/* Warm burgundy tint to tie into brand */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[hsl(348_55%_10%)/80%] via-transparent to-transparent" />
+        </div>
 
-        <div className="relative z-10 w-full max-w-2xl mx-auto px-4 text-center space-y-7 py-24">
-          <div className="space-y-3">
-            <p className="text-white/70 text-sm font-medium uppercase tracking-widest">South Africa's Beauty Marketplace</p>
-            <h1 className="text-white text-4xl md:text-6xl font-serif font-bold leading-tight">
-              Beauty. Your Way.
-            </h1>
-            <p className="text-white/80 text-base md:text-lg max-w-md mx-auto">
-              Discover and book South Africa's finest beauty professionals — instantly.
-            </p>
-          </div>
+        {/* Hero content — vertically centred, slightly low */}
+        <div className="relative z-10 flex flex-col flex-1 justify-end pb-10 px-6 sm:px-8 max-w-2xl mx-auto w-full">
 
-          {/* Search bar */}
-          <form onSubmit={handleSearch} className="flex items-center bg-white rounded-full shadow-2xl overflow-hidden max-w-xl mx-auto">
-            <Search className="h-4 w-4 text-muted-foreground ml-4 shrink-0" />
+          {/* Eyebrow */}
+          <p className="text-[10px] font-bold tracking-[0.22em] uppercase text-white/60 mb-4">
+            South Africa's Premier Beauty Platform
+          </p>
+
+          {/* Tagline */}
+          <h1 className="font-serif font-bold text-white leading-[1.05] mb-6">
+            <span className="block text-[clamp(2.8rem,8vw,4.5rem)]">Greet Your</span>
+            <span className="block text-[clamp(3rem,9vw,5rem)] text-[hsl(39_33%_88%)]">Reveal.</span>
+          </h1>
+
+          {/* Sub-copy */}
+          <p className="text-sm text-white/70 mb-8 leading-relaxed max-w-xs">
+            Find, book, and celebrate with South Africa's finest hair, beauty, and barber artists.
+          </p>
+
+          {/* Search bar — frosted glass */}
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center gap-3 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-4 py-3.5 mb-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
+          >
+            <Search className="h-4 w-4 text-white/60 shrink-0" />
             <input
               type="text"
+              placeholder="Find an artist or service…"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Find braiders, nail techs, MUAs, barbers..."
-              className="flex-1 px-3 py-3.5 text-sm bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+              className="flex-1 bg-transparent text-white placeholder:text-white/45 text-sm font-medium outline-none"
             />
-            <Button type="submit" className="rounded-full m-1 px-6 h-10 shrink-0 font-semibold">
-              Search
-            </Button>
+            {searchQuery && (
+              <button type="submit" className="shrink-0 px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-xl transition-colors">
+                Go
+              </button>
+            )}
           </form>
 
-          {/* Category pills */}
-          <div className="flex gap-2 flex-wrap justify-center">
-            {HERO_CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => handleCategory(cat)}
-                className="px-4 py-1.5 rounded-full text-white/90 text-sm font-medium transition-colors border border-white/30 hover:bg-white/20 hover:text-white"
-              >
-                {cat}
-              </button>
+          {/* Quick-access category chips */}
+          <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar -mx-1 px-1">
+            {SERVICE_CATEGORIES.slice(0, 6).map(cat => (
+              <Link key={cat.name} href={`/stylists?specialty=${encodeURIComponent(cat.name)}`}>
+                <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/12 backdrop-blur-sm border border-white/20 text-white text-[11px] font-semibold whitespace-nowrap hover:bg-white/20 transition-colors cursor-pointer">
+                  {cat.name}
+                </span>
+              </Link>
             ))}
           </div>
         </div>
+
+        {/* Scroll indicator */}
+        <a href="#content" aria-label="Scroll to discover" className="absolute bottom-5 right-6 z-10 flex flex-col items-center gap-1 text-white/40 hover:text-white/70 transition-colors">
+          <ChevronDown className="h-5 w-5 animate-bounce" />
+        </a>
       </section>
 
-      {/* ── FEATURED ARTISTS ── */}
-      {featured.length > 0 && (
-        <section className="py-16 bg-background">
-          <div className="container max-w-6xl px-4">
-            <div className="flex items-end justify-between mb-10">
-              <div>
-                <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Top rated</p>
-                <h2 className="text-2xl md:text-3xl font-serif">Recommended for you</h2>
-              </div>
-              <Link href="/stylists">
-                <Button variant="ghost" className="text-sm text-muted-foreground hover:text-primary gap-1">
-                  See all <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
+      {/* ══════════════════════════════════════════════════════
+          BELOW-FOLD CONTENT
+      ══════════════════════════════════════════════════════ */}
+      <div id="content" className="bg-background">
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {featured.map(stylist => (
-                <Link key={stylist.id} href={`/stylists/${stylist.id}`}>
-                  <Card className="overflow-hidden group hover:shadow-md transition-all duration-200 cursor-pointer border-border/60">
-                    <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-                      <ArtistInitials name={stylist.name} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                      {stylist.verified && (
-                        <div className="absolute top-3 right-3">
-                          <VerifiedBadge size="sm" variant="pill" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <h3 className="text-white font-serif text-lg font-bold leading-tight">{stylist.name}</h3>
-                        <p className="text-sm font-medium mt-0.5" style={{ color: "#D4A855" }}>{stylist.specialty}</p>
+        {/* ── FOR YOUR MOMENT ── */}
+        <section className="pt-10 pb-2">
+          <div className="px-5 sm:px-8">
+            <SectionHeading title="For Your Moment" actionLabel="See All" href="/stylists" />
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 sm:px-8 pb-4 hide-scrollbar snap-x snap-mandatory">
+            {MOMENTS.map(moment => (
+              <Link key={moment.label} href={`/stylists?search=${encodeURIComponent(moment.label)}`}>
+                <div className="snap-start shrink-0 relative w-[108px] h-[144px] rounded-[20px] overflow-hidden cursor-pointer group">
+                  <img
+                    src={moment.image}
+                    alt={moment.label}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <span className="absolute bottom-3 left-0 w-full text-center text-white text-[10px] font-bold tracking-wide px-2 leading-tight">
+                    {moment.label}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── TOP ARTISTS ── */}
+        {topStylists.length > 0 && (
+          <section className="px-5 sm:px-8 py-8">
+            <SectionHeading title="Top Artists" actionLabel="Browse All" href="/stylists" />
+            <div className="space-y-3">
+              {topStylists.slice(0, 4).map(stylist => (
+                <div
+                  key={stylist.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setLocation(`/stylists/${stylist.id}`)}
+                  onKeyDown={e => e.key === "Enter" && setLocation(`/stylists/${stylist.id}`)}
+                  className="flex items-center justify-between p-3.5 rounded-[20px] bg-card border border-border/40 shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group mb-3 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 relative">
+                      <ArtistInitials name={stylist.name} textClassName="text-base" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-bold text-sm text-foreground">{stylist.name}</p>
+                        {stylist.verified && <VerifiedBadge variant="icon" size="sm" />}
+                      </div>
+                      <p className="text-[11px] text-primary font-semibold mt-0.5">{stylist.specialty}</p>
+                      <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
+                        {stylist.reviewCount ? (
+                          <>
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            <span className="font-semibold text-foreground">{formatRating(stylist.rating ?? 0)}</span>
+                            <span>({stylist.reviewCount})</span>
+                          </>
+                        ) : (
+                          <span>New artist</span>
+                        )}
+                        {stylist.location ? <span>· {stylist.location}</span> : null}
                       </div>
                     </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5" /> {stylist.location}
-                        </span>
-                        {(stylist.reviewCount ?? 0) > 0 ? (
-                          <span className="flex items-center gap-1">
-                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                            <span className="font-semibold">{(stylist.rating ?? 0).toFixed(1)}</span>
-                            <span className="text-muted-foreground">({stylist.reviewCount})</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: "#B8893A" }}>
-                            <Sparkles className="h-3 w-3" /> New artist
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                  </div>
+                  <Link href={`/book/${stylist.id}`} onClick={e => e.stopPropagation()}>
+                    <Button size="sm" className="rounded-full text-xs font-bold px-4 h-8 shrink-0">Book</Button>
+                  </Link>
+                </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── AI RECOMMENDS ── */}
+        {featured && (
+          <section className="px-5 sm:px-8 pb-8">
+            <SectionHeading title="Recommended For You" actionLabel="See All" href="/stylists" />
+            <div className="bg-card rounded-[24px] p-4 flex items-center justify-between border border-border/40 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-[60px] h-[60px] rounded-xl overflow-hidden shrink-0 relative">
+                  <img src={lemonadeImg} alt={featured.name} className="w-full h-full object-cover" />
+                  {/* Actual artist avatar layered on top */}
+                  <div className="absolute inset-0 opacity-0">
+                    <ArtistInitials name={featured.name} textClassName="text-base" />
+                  </div>
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-foreground">{featured.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{featured.specialty} · Trending this week</p>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    {featured.reviewCount ? (
+                      <>
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <span className="text-xs font-semibold">{formatRating(featured.rating ?? 0)}</span>
+                        <span className="text-[10px] text-muted-foreground">({featured.reviewCount})</span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">New artist</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href={`/book/${featured.id}`}>
+                  <Button size="sm" className="rounded-full text-xs font-bold px-4 h-8">Book</Button>
+                </Link>
+                <Link href={`/stylists/${featured.id}`}>
+                  <button className="w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted transition-colors" aria-label="View profile">
+                    <Play className="h-3 w-3 ml-0.5" />
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── BROWSE BY SERVICE ── */}
+        <section className="px-5 sm:px-8 pb-10">
+          <SectionHeading title="Browse Services" />
+          <div className="grid grid-cols-4 gap-3">
+            {SERVICE_CATEGORIES.slice(0, 4).map(cat => (
+              <Link key={cat.name} href={`/stylists?specialty=${encodeURIComponent(cat.name)}`}>
+                <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                  <div className="w-full aspect-square rounded-[22px] bg-card border border-border/40 shadow-sm flex items-center justify-center group-hover:border-primary/30 group-hover:shadow-md transition-all">
+                    {cat.icon}
+                  </div>
+                  <span className="text-[11px] font-semibold text-foreground/80">{cat.name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── AUTH CTA ── */}
+        <section className="px-5 sm:px-8 pb-16 pt-4">
+          <div className="relative rounded-[28px] overflow-hidden bg-primary px-7 py-10 text-center shadow-lg">
+            {/* Subtle pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.06]" style={{
+              backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+            }} />
+            <div className="relative z-10">
+              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/60 mb-3">Join Bonisa Today</p>
+              <h2 className="font-serif font-bold text-white text-2xl leading-snug mb-2">
+                Your next look<br />is waiting.
+              </h2>
+              <p className="text-xs text-white/70 mb-7 leading-relaxed">
+                Create your free account to book artists, save favourites, and track your appointments.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/signup">
+                  <Button className="w-full sm:w-auto bg-white text-primary hover:bg-white/95 font-bold rounded-full px-7 h-11 text-sm shadow-md">
+                    Create Free Account
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="ghost" className="w-full sm:w-auto text-white/80 hover:text-white hover:bg-white/10 font-semibold rounded-full px-7 h-11 text-sm border border-white/20">
+                    Log In
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
-      )}
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="py-20 bg-background border-t border-border/50">
-        <div className="container max-w-5xl px-4">
-          <div className="text-center mb-14 space-y-3">
-            <p className="text-primary text-xs font-semibold uppercase tracking-widest">Simple & fast</p>
-            <h2 className="text-2xl md:text-4xl font-serif">Book in 3 easy steps</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { step: "01", title: "Search", desc: "Filter by specialty, city, and rating to find your perfect match." },
-              { step: "02", title: "Book", desc: "Pick a time that works. Confirmed instantly — no back-and-forth." },
-              { step: "03", title: "Glow", desc: "Your artist arrives prepared. You leave looking and feeling incredible." },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="relative p-8 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors">
-                <p className="text-5xl font-serif font-bold text-muted/60 mb-4 select-none" style={{ color: "rgba(184,137,58,0.18)" }}>{step}</p>
-                <h3 className="text-lg font-serif font-bold mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-10">
-            <Link href="/stylists">
-              <Button size="lg" className="rounded-full px-10">Browse Artists</Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOR ARTISTS — image + features ── */}
-      <section className="py-20 bg-background border-t border-border/50">
-        <div className="container max-w-6xl px-4">
-          <div className="flex flex-col lg:flex-row gap-14 items-center">
-            {/* Editorial image */}
-            <div className="w-full lg:w-[45%] rounded-2xl overflow-hidden shadow-xl shrink-0">
-              <img
-                src="/for-artists-bg.png"
-                alt="Beauty professional at work"
-                className="w-full h-full object-cover aspect-[4/3]"
-              />
-            </div>
-
-            <div className="w-full lg:w-[55%] space-y-8">
-              <div className="space-y-3">
-                <p className="text-primary text-xs font-semibold uppercase tracking-widest">For artists & barbers</p>
-                <h2 className="text-2xl md:text-4xl font-serif leading-snug">
-                  Everything you need<br />to grow your business
-                </h2>
-                <p className="text-muted-foreground leading-relaxed">
-                  Your studio in your pocket. Manage bookings, earn more, and get discovered by brands — all in one place.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {ARTIST_PERKS.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="flex gap-3 p-4 rounded-xl border border-border/60 hover:border-primary/30 transition-colors bg-card">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{title}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Link href="/signup">
-                <Button size="lg" className="rounded-full px-10">Join as an Artist</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOR BRANDS ── */}
-      <section className="py-20 border-t border-border/50 bg-background">
-        <div className="container max-w-5xl px-4">
-          <div className="text-center mb-14 space-y-3">
-            <p className="text-primary text-xs font-semibold uppercase tracking-widest">For brands & agencies</p>
-            <h2 className="text-2xl md:text-4xl font-serif">Find the right talent, fast</h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">
-              Post a casting call and receive applications from verified beauty professionals across South Africa.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { n: "01", title: "Post a casting call", desc: "Describe the campaign, set your budget, specify the specialty you need." },
-              { n: "02", title: "Artists apply", desc: "Verified professionals from across SA see your call and send proposals." },
-              { n: "03", title: "Hire with confidence", desc: "Review portfolios and ratings — then book directly through the platform." },
-            ].map(({ n, title, desc }) => (
-              <div key={n} className="p-8 rounded-2xl border border-border/60 bg-card hover:border-primary/30 transition-colors space-y-3">
-                <p className="font-serif font-bold text-4xl select-none" style={{ color: "rgba(184,137,58,0.20)" }}>{n}</p>
-                <h3 className="font-serif font-bold text-lg">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-10">
-            <Link href="/casting">
-              <Button size="lg" variant="outline" className="rounded-full px-10 border-border/70 hover:border-primary/40">
-                View Open Castings →
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ── */}
-      <section className="py-20 border-t border-border/50 bg-background">
-        <div className="container max-w-2xl px-4 text-center space-y-6">
-          <h2 className="text-2xl md:text-4xl font-serif">Ready to get started?</h2>
-          <p className="text-muted-foreground text-base">
-            Join South Africa's beauty community. It's free to sign up.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link href="/signup">
-              <Button size="lg" className="rounded-full px-10 h-12 text-base">Create your account</Button>
-            </Link>
-            <Link href="/stylists">
-              <Button size="lg" variant="outline" className="rounded-full px-10 h-12 text-base border-border/70">
-                Browse talent first
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
+      </div>
     </div>
   );
 }

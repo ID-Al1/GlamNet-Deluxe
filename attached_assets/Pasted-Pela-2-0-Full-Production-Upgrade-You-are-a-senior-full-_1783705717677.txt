@@ -1,0 +1,305 @@
+Pela 2.0 — Full Production Upgrade
+
+You are a senior full-stack engineer, senior product designer, and UI/UX expert. Analyze the entire existing codebase before making changes.
+
+Do NOT rebuild from scratch unless absolutely necessary. Instead, refactor, improve, and fix the current application while preserving working functionality.
+
+Your goal is to transform Pela into a production-ready beauty marketplace comparable to Booksy, Fresha, StyleSeat, and Uber, with a premium Apple-quality user experience.
+
+⸻
+
+Phase 1: Full Project Audit
+
+First, inspect the entire codebase and generate an internal checklist.
+
+Identify:
+
+* Broken pages
+* UI inconsistencies
+* Dead code
+* Duplicate components
+* Missing loading states
+* Missing error handling
+* Missing empty states
+* Poor responsiveness
+* Performance bottlenecks
+* Security concerns
+* Broken navigation
+* Broken authentication
+* Broken API calls
+* Booking bugs
+* Payment bugs
+* Stripe implementation issues
+
+Fix everything you find before adding new features.
+
+⸻
+
+Design System
+
+Create one unified design language throughout the app.
+
+Improve:
+
+* Typography hierarchy
+* Spacing
+* Card layouts
+* Shadows
+* Icons
+* Buttons
+* Forms
+* Animations
+* Responsive layouts
+
+Color palette:
+
+* Cream (#F8F5F0)
+* Soft Plum (#6E4B72)
+* Baby Blue (#7BC6FF)
+* Orange (#FF8A3D)
+
+The interface should feel luxurious, clean, modern, and trustworthy.
+
+⸻
+
+Home Screen
+
+Redesign the homepage with:
+
+* Hero search section
+* Current location
+* Nearby professionals
+* Interactive map preview
+* Categories
+* Trending styles
+* Featured professionals
+* Available today
+* Promotions
+* Recently viewed
+* AI recommendations
+* Popular nearby
+
+Add smooth animations and loading skeletons.
+
+⸻
+
+Professional Profiles
+
+Redesign profiles with:
+
+* Cover image
+* Avatar
+* Verified badge
+* Ratings
+* Reviews
+* Portfolio
+* Services
+* Pricing
+* Availability
+* Business hours
+* Team members
+* Languages
+* About section
+* Social media links
+* Directions
+* Call
+* Message
+* Share
+
+Sticky “Book Appointment” button.
+
+⸻
+
+Booking System
+
+Refactor the booking flow into:
+
+1. Service
+2. Professional
+3. Date
+4. Time
+5. Extras
+6. Review
+7. Payment
+8. Confirmation
+
+Prevent:
+
+* Double bookings
+* Invalid time slots
+* Race conditions
+* Booking conflicts
+
+⸻
+
+Stripe Payments (Highest Priority)
+
+The payment system must be completely audited and rebuilt if necessary.
+
+Ensure payments are 100% reliable.
+
+Implement Stripe correctly using best practices.
+
+Support:
+
+* Card payments
+* Apple Pay
+* Google Pay
+* Link
+* Saved cards
+* Deposits
+* Full payments
+* Tips
+* Coupons
+* Promo codes
+* Refunds
+* Partial refunds
+* Payment history
+* Receipts
+* Email confirmations
+* SMS confirmations
+* Stripe webhooks
+* Idempotency keys
+* Retry failed payments
+* Payment status tracking
+
+Booking status must stay synchronized with payment status.
+
+A booking must never be confirmed unless payment succeeds (unless “Pay at Appointment” is enabled).
+
+Validate all payment flows.
+
+Fix every payment-related bug.
+
+⸻
+
+Authentication
+
+Review and improve:
+
+* Login
+* Registration
+* Password reset
+* Session handling
+* Route protection
+* Authentication persistence
+
+Handle all authentication errors gracefully.
+
+⸻
+
+Messaging
+
+Modern chat system:
+
+* Typing indicator
+* Read receipts
+* Images
+* Voice notes
+* Booking updates
+* Push notifications
+
+⸻
+
+Reviews
+
+Only verified customers can leave reviews.
+
+Support:
+
+* Photos
+* Videos
+* Replies
+* Helpful votes
+* Sorting
+* Filtering
+
+⸻
+
+Search
+
+Improve search with filters for:
+
+* Service
+* Price
+* Distance
+* Rating
+* Availability
+* Home service
+* Mobile stylist
+* Languages
+* Verified professionals
+
+⸻
+
+Performance
+
+Optimize:
+
+* Lazy loading
+* Code splitting
+* Image compression
+* API requests
+* Database queries
+* Caching
+* Bundle size
+
+⸻
+
+Accessibility
+
+Improve:
+
+* Keyboard navigation
+* Screen reader support
+* Contrast
+* Touch targets
+* Responsive layouts
+
+⸻
+
+Error Handling
+
+Every API request should have:
+
+* Loading state
+* Success state
+* Error state
+* Retry mechanism
+
+No blank pages or silent failures.
+
+⸻
+
+Code Quality
+
+Refactor code to:
+
+* Remove duplication
+* Improve component reuse
+* Add TypeScript types
+* Improve naming
+* Add comments where needed
+* Follow best practices
+* Remove unused code
+
+⸻
+
+Final Validation
+
+Before finishing:
+
+* Test every screen.
+* Test every button.
+* Test every form.
+* Test authentication.
+* Test bookings.
+* Test Stripe payments.
+* Test notifications.
+* Test responsiveness on mobile, tablet, and desktop.
+
+Resolve every issue found.
+
+Do not leave placeholder content, unfinished components, or broken functionality.
+
+The final application should look and behave like a polished, venture-backed beauty marketplace ready for production deployment.

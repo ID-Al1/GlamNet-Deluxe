@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useGetStylist } from "@workspace/api-client-react";
+import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
-import { Users, X, Plus, Search } from "lucide-react";
+import { Users, X, Plus, Search, Check, ChevronLeft, ChevronRight, Loader2, BadgeCheck, CreditCard, Landmark } from "lucide-react";
+import { TIMES, isSlotInPast } from "@/lib/bookingSlots";
 
-const TIMES = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+type PaymentMode = "full" | "deposit";
+
 const ROLES = ["Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
+const EMPTY_STYLISTS: { id: string; name: string; specialty: string; location: string }[] = [];
+
+const STEPS = ["Service", "Professional", "Date", "Time", "Extras", "Review", "Payment"] as const;
+type Step = (typeof STEPS)[number];
 
 interface TeamMemberEntry {
   stylistId: string;
@@ -39,12 +46,16 @@ async function createCheckoutSession(data: {
   time: string;
   notes?: string;
   isTeamBooking?: boolean;
-}): Promise<{ url: string; appointmentId?: string }> {
+  paymentMode?: PaymentMode;
+  depositPct?: number;
+  tipAmount?: number;
+  _token?: string;
+}): Promise<{ url: string | null; appointmentId?: string; conversationId?: string | null }> {
+  const { _token, ...body } = data;
   const res = await fetch(`${import.meta.env.BASE_URL}api/stripe/checkout`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json", ...(_token ? { Authorization: `Bearer ${_token}` } : {}) },
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -53,23 +64,14 @@ async function createCheckoutSession(data: {
   return res.json();
 }
 
-async function addTeamMember(appointmentId: string, member: Omit<TeamMemberEntry, "stylistName">) {
-  const res = await fetch(`${import.meta.env.BASE_URL}api/appointments/${appointmentId}/team-members`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(member),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "Failed to add team member");
-  }
-  return res.json();
-}
-
 export default function BookStylist() {
   const [, params] = useRoute("/book/:stylistId");
+  const [, setLocation] = useLocation();
+  const { token } = useAuth();
   const stylistId = params?.stylistId;
+
+  const [stepIndex, setStepIndex] = useState(0);
+  const step: Step = STEPS[stepIndex];
 
   const [serviceId, setServiceId] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -83,12 +85,15 @@ export default function BookStylist() {
   const [searchResults, setSearchResults] = useState<{ id: string; name: string; specialty: string; location: string }[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>("full");
+  const [depositPct, setDepositPct] = useState(50);
+  const [tipAmount, setTipAmount] = useState(0);
 
   const { data: stylist, isLoading } = useGetStylist(stylistId || "", {
     query: { enabled: !!stylistId, queryKey: ["stylist", stylistId] },
   });
 
-  const { data: allStylists = [] } = useQuery({
+  const { data: allStylists = EMPTY_STYLISTS } = useQuery({
     queryKey: ["all-stylists"],
     queryFn: fetchAllStylists,
     enabled: isTeamBooking,
@@ -109,13 +114,12 @@ export default function BookStylist() {
   const checkout = useMutation({
     mutationFn: createCheckoutSession,
     onSuccess: async (data) => {
-      // If team booking and we have an appointmentId before redirect, add members
-      // Note: in Stripe flow, appointmentId comes back from success page; team members
-      // are stored in sessionStorage for the success page to process
       if (isTeamBooking && teamMembers.length > 0) {
         sessionStorage.setItem("pendingTeamMembers", JSON.stringify(teamMembers));
       }
-      window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      }
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to start checkout.");
@@ -123,29 +127,56 @@ export default function BookStylist() {
   });
 
   if (isLoading || !stylist)
-    return <div className="p-12 text-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="p-12 flex items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        Loading...
+      </div>
+    );
+
+  const selectedService = stylist.services.find((s) => s.id === serviceId);
+  const totalPayout = teamMembers.reduce((sum, m) => sum + m.payoutPercentage, 0);
+
+  const availableTimes = date
+    ? TIMES.filter((t) => !isSlotInPast(date, t))
+    : TIMES;
+
+  function stepError(s: Step): string | null {
+    if (s === "Service" && !serviceId) return "Please select a service.";
+    if (s === "Date" && !date) return "Please select a date.";
+    if (s === "Date" && date && date < new Date(new Date().setHours(0, 0, 0, 0))) return "Selected date is in the past.";
+    if (s === "Time" && !time) return "Please select a time.";
+    if (s === "Time" && date && time && isSlotInPast(date, time)) return "Selected time is in the past.";
+    if (s === "Time" && time && !TIMES.includes(time)) return "Selected time is outside business hours.";
+    if (s === "Extras" && isTeamBooking && teamMembers.length === 0) return "Add at least one team member, or turn off Team Booking.";
+    if (s === "Extras" && isTeamBooking && totalPayout > 100) return `Total payout splits (${totalPayout}%) exceed 100%.`;
+    return null;
+  }
+
+  const goNext = () => {
+    const err = stepError(step);
+    if (err) { toast.error(err); return; }
+    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+  };
+  const goBack = () => setStepIndex((i) => Math.max(i - 1, 0));
 
   const handleBook = () => {
-    if (!serviceId || !date || !time) {
-      toast.error("Please select a service, date, and time.");
-      return;
-    }
-    if (isTeamBooking && teamMembers.length === 0) {
-      toast.error("Add at least one team member, or turn off Team Booking.");
-      return;
-    }
-    const totalPayout = teamMembers.reduce((sum, m) => sum + m.payoutPercentage, 0);
-    if (isTeamBooking && totalPayout > 100) {
-      toast.error(`Total payout splits (${totalPayout}%) exceed 100%.`);
-      return;
+    for (const s of STEPS) {
+      if (s === "Review" || s === "Payment") continue;
+      const err = stepError(s);
+      if (err) { toast.error(err); setStepIndex(STEPS.indexOf(s)); return; }
     }
     checkout.mutate({
       stylistId: stylist.id,
       serviceId,
-      date: format(date, "yyyy-MM-dd"),
+      date: format(date!, "yyyy-MM-dd"),
       time,
       notes: notes || undefined,
       isTeamBooking,
+      paymentMode,
+      depositPct: paymentMode === "deposit" ? depositPct : undefined,
+      tipAmount: tipAmount > 0 ? tipAmount : undefined,
+      _token: token ?? undefined,
     });
   };
 
@@ -166,224 +197,504 @@ export default function BookStylist() {
     setTeamMembers(prev => prev.filter(m => m.stylistId !== stylistId));
   };
 
-  const selectedService = stylist.services.find((s) => s.id === serviceId);
-  const totalPayout = teamMembers.reduce((sum, m) => sum + m.payoutPercentage, 0);
-
   return (
-    <div className="container py-8 sm:py-12 max-w-4xl space-y-8 px-4">
+    <div className="container py-8 sm:py-12 max-w-3xl space-y-8 px-4">
       <div className="space-y-2">
         <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight">Book Appointment</h1>
         <p className="text-muted-foreground">with {stylist.name}</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
-        <div className="space-y-8">
-          {/* Service */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Select Service</Label>
-            <div className="grid gap-3">
-              {stylist.services.map((s) => (
-                <Card
-                  key={s.id}
-                  className={`cursor-pointer transition-colors ${serviceId === s.id ? "border-primary bg-primary/5" : "hover:border-border/80"}`}
-                  onClick={() => setServiceId(s.id)}
-                >
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{s.name}</h4>
-                      <p className="text-sm text-muted-foreground">{s.duration} mins</p>
-                    </div>
-                    <div className="font-serif font-bold text-lg">R{s.price}</div>
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Progress indicator */}
+      <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1">
+        {STEPS.map((s, i) => (
+          <div key={s} className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <div
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors ${
+                i < stepIndex
+                  ? "bg-primary text-primary-foreground"
+                  : i === stepIndex
+                  ? "bg-primary/15 text-primary border-2 border-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {i < stepIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
             </div>
+            <span className={`text-xs sm:text-sm whitespace-nowrap ${i === stepIndex ? "font-semibold" : "text-muted-foreground"}`}>
+              {s}
+            </span>
+            {i < STEPS.length - 1 && <div className="w-4 sm:w-8 h-px bg-border shrink-0" />}
           </div>
-
-          {/* Team Booking toggle */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-xl border-border/60 bg-card/50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Team Booking</p>
-                  <p className="text-xs text-muted-foreground">Invite more artists (e.g. hair + makeup + nails)</p>
-                </div>
-              </div>
-              <Switch checked={isTeamBooking} onCheckedChange={setIsTeamBooking} />
-            </div>
-
-            {isTeamBooking && (
-              <div className="space-y-4 pl-1">
-                {/* Current team */}
-                {teamMembers.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Team</p>
-                    {teamMembers.map(m => (
-                      <div key={m.stylistId} className="flex items-center justify-between p-3 border border-border/50 rounded-lg bg-card/50">
-                        <div>
-                          <p className="font-medium text-sm">{m.stylistName}</p>
-                          <p className="text-xs text-muted-foreground">{m.role} · {m.payoutPercentage}% payout</p>
-                        </div>
-                        <button onClick={() => removeMember(m.stylistId)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    {totalPayout > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Total payout splits: <span className={totalPayout > 100 ? "text-destructive font-semibold" : "text-primary font-semibold"}>{totalPayout}%</span>
-                        {totalPayout > 100 && " — exceeds 100%"}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Add member form */}
-                {!showSearch ? (
-                  <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => setShowSearch(true)}>
-                    <Plus className="h-3.5 w-3.5" />Add Team Member
-                  </Button>
-                ) : (
-                  <div className="space-y-3 border border-border/50 rounded-xl p-4 bg-card/30">
-                    <p className="text-sm font-medium">Add artist to team</p>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Role</Label>
-                        <Select value={selectedRole} onValueChange={setSelectedRole}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Payout %</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={100}
-                          value={selectedPayout}
-                          onChange={e => setSelectedPayout(Number(e.target.value))}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="relative" ref={searchRef}>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                          placeholder="Search artists by name, specialty…"
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          className="pl-8 h-8 text-xs"
-                          autoFocus
-                        />
-                      </div>
-                      {searchResults.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
-                          {searchResults.map(s => (
-                            <button
-                              key={s.id}
-                              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-accent text-left text-sm transition-colors"
-                              onClick={() => addMember(s)}
-                            >
-                              <div>
-                                <span className="font-medium">{s.name}</span>
-                                <span className="text-muted-foreground ml-2 text-xs">{s.specialty}</span>
-                              </div>
-                              <span className="text-xs text-muted-foreground">{s.location}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {searchQuery.length > 1 && searchResults.length === 0 && (
-                        <p className="text-xs text-muted-foreground mt-1 pl-1">No artists found matching "{searchQuery}"</p>
-                      )}
-                    </div>
-
-                    <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => setShowSearch(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Additional Notes (Optional)</Label>
-            <Textarea
-              placeholder="Any specific requests?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="resize-none h-24"
-            />
-          </div>
-        </div>
-
-        {/* Right col — date + time */}
-        <div className="space-y-8">
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Select Date</Label>
-            <Card className="p-3 inline-block bg-card/50">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md"
-                disabled={(d) => d < new Date() || d < new Date(new Date().setHours(0, 0, 0, 0))}
-              />
-            </Card>
-          </div>
-
-          {date && (
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Select Time</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {TIMES.map((t) => (
-                  <Button
-                    key={t}
-                    variant={time === t ? "default" : "outline"}
-                    className="w-full"
-                    onClick={() => setTime(t)}
-                  >
-                    {t}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        ))}
       </div>
 
-      {/* Footer */}
-      <div className="pt-6 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground uppercase tracking-wider font-medium">Total</p>
-          <p className="text-3xl font-serif font-bold">
-            {selectedService ? `R${selectedService.price}` : "—"}
-          </p>
-          {isTeamBooking && teamMembers.length > 0 && (
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              Team booking · {teamMembers.length + 1} artist{teamMembers.length > 0 ? "s" : ""}
-            </p>
+      <Card>
+        <CardContent className="p-5 sm:p-8 space-y-6 min-h-[320px]">
+          {step === "Service" && (
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Select a Service</Label>
+              <div className="grid gap-3">
+                {stylist.services.map((s) => (
+                  <Card
+                    key={s.id}
+                    className={`cursor-pointer transition-colors ${serviceId === s.id ? "border-primary bg-primary/5" : "hover:border-border/80"}`}
+                    onClick={() => setServiceId(s.id)}
+                  >
+                    <CardContent className="p-4 flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{s.name}</h4>
+                        <p className="text-sm text-muted-foreground">{s.duration} mins</p>
+                      </div>
+                      <div className="font-serif font-bold text-lg">R{s.price}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {stylist.services.length === 0 && (
+                  <div className="py-10 flex flex-col items-center text-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base">This artist is not ready to be booked yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">Check back soon or message them directly to enquire.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-        </div>
+
+          {step === "Professional" && (
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Your Professional</Label>
+              <Card className="border-primary/40 bg-primary/5">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center text-lg font-serif font-bold text-primary shrink-0">
+                    {stylist.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold truncate">{stylist.name}</p>
+                      {stylist.verified && <BadgeCheck className="h-4 w-4 text-primary shrink-0" />}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{stylist.specialty} · {stylist.location}</p>
+                  </div>
+                  <Badge variant="secondary" className="shrink-0">Selected</Badge>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center justify-between p-4 border rounded-xl border-border/60 bg-card/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Team Booking</p>
+                    <p className="text-xs text-muted-foreground">Invite more artists (e.g. hair + makeup + nails)</p>
+                  </div>
+                </div>
+                <Switch checked={isTeamBooking} onCheckedChange={setIsTeamBooking} />
+              </div>
+              {isTeamBooking && (
+                <p className="text-xs text-muted-foreground pl-1">You'll be able to add your team in the Extras step.</p>
+              )}
+            </div>
+          )}
+
+          {step === "Date" && (() => {
+            const DAY_MAP: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+            const availability: string[] = (stylist as any)?.availability ?? [];
+            const today = new Date(new Date().setHours(0, 0, 0, 0));
+            const upcoming = Array.from({ length: 60 }, (_, i) => {
+              const d = new Date(today);
+              d.setDate(today.getDate() + i);
+              return d;
+            }).filter((d) => availability.length === 0 || availability.some((day) => DAY_MAP[day] === d.getDay()));
+            return (
+              <div className="space-y-4">
+                <h2 className="text-[10px] font-bold tracking-widest uppercase text-foreground/70">Select Date</h2>
+                {availability.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Available: {availability.join(", ")}
+                  </p>
+                )}
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                  {upcoming.map((d, i) => {
+                    const isSelected = !!date && d.toDateString() === date.toDateString();
+                    const isToday = d.toDateString() === new Date().toDateString();
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => { setDate(new Date(d)); setTime(""); }}
+                        className={`flex flex-col items-center justify-center w-[54px] h-[76px] rounded-[20px] shrink-0 transition-colors border ${
+                          isSelected
+                            ? "bg-primary border-primary text-primary-foreground shadow-md"
+                            : "bg-card border-border/40 text-foreground hover:bg-card/80"
+                        }`}
+                      >
+                        <span className={`text-[10px] font-semibold mb-1 ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
+                          {isToday ? "Today" : d.toLocaleDateString("en-ZA", { weekday: "short" })}
+                        </span>
+                        <span className="text-lg font-serif font-bold leading-none">{d.getDate()}</span>
+                        <span className={`text-[10px] font-semibold mt-1 ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
+                          {d.toLocaleDateString("en-ZA", { month: "short" })}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {step === "Time" && (
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Select Time</Label>
+              {!date ? (
+                <p className="text-sm text-muted-foreground">Please go back and select a date first.</p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">{format(date, "EEEE, MMMM d, yyyy")}</p>
+                  <div className="flex flex-col gap-2.5">
+                    {TIMES.map((t) => {
+                      const disabled = isSlotInPast(date, t);
+                      const isSelected = time === t;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setTime(t)}
+                          className={`w-full py-4 rounded-[16px] text-xs font-bold transition-all border ${
+                            isSelected
+                              ? "bg-primary border-primary text-primary-foreground shadow-md"
+                              : disabled
+                                ? "bg-muted/40 border-border/30 text-muted-foreground/50 cursor-not-allowed"
+                                : "bg-card/50 border-border/40 text-foreground hover:bg-card"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {availableTimes.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No times left today — please choose a different date.</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {step === "Extras" && (
+            <div className="space-y-6">
+              {isTeamBooking && (
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Team</Label>
+                  {teamMembers.length > 0 && (
+                    <div className="space-y-2">
+                      {teamMembers.map(m => (
+                        <div key={m.stylistId} className="flex items-center justify-between p-3 border border-border/50 rounded-lg bg-card/50">
+                          <div>
+                            <p className="font-medium text-sm">{m.stylistName}</p>
+                            <p className="text-xs text-muted-foreground">{m.role} · {m.payoutPercentage}% payout</p>
+                          </div>
+                          <button onClick={() => removeMember(m.stylistId)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {totalPayout > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Total payout splits: <span className={totalPayout > 100 ? "text-destructive font-semibold" : "text-primary font-semibold"}>{totalPayout}%</span>
+                          {totalPayout > 100 && " — exceeds 100%"}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {!showSearch ? (
+                    <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => setShowSearch(true)}>
+                      <Plus className="h-3.5 w-3.5" />Add Team Member
+                    </Button>
+                  ) : (
+                    <div className="space-y-3 border border-border/50 rounded-xl p-4 bg-card/30">
+                      <p className="text-sm font-medium">Add artist to team</p>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Role</Label>
+                          <Select value={selectedRole} onValueChange={setSelectedRole}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Payout %</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={selectedPayout}
+                            onChange={e => setSelectedPayout(Number(e.target.value))}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="relative" ref={searchRef}>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            placeholder="Search artists by name, specialty…"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="pl-8 h-8 text-xs"
+                            autoFocus
+                          />
+                        </div>
+                        {searchResults.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+                            {searchResults.map(s => (
+                              <button
+                                key={s.id}
+                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-accent text-left text-sm transition-colors"
+                                onClick={() => addMember(s)}
+                              >
+                                <div>
+                                  <span className="font-medium">{s.name}</span>
+                                  <span className="text-muted-foreground ml-2 text-xs">{s.specialty}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">{s.location}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {searchQuery.length > 1 && searchResults.length === 0 && (
+                          <p className="text-xs text-muted-foreground mt-1 pl-1">No artists found matching "{searchQuery}"</p>
+                        )}
+                      </div>
+
+                      <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => setShowSearch(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Additional Notes (Optional)</Label>
+                <Textarea
+                  placeholder="Any specific requests?"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="resize-none h-24"
+                />
+              </div>
+            </div>
+          )}
+
+          {step === "Review" && (
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Review Your Booking</Label>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Professional</span>
+                  <span className="font-medium text-sm">{stylist.name}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Service</span>
+                  <span className="font-medium text-sm">{selectedService?.name ?? "—"}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Date &amp; Time</span>
+                  <span className="font-medium text-sm">{date ? format(date, "MMM d, yyyy") : "—"} at {time || "—"}</span>
+                </div>
+                {isTeamBooking && teamMembers.length > 0 && (
+                  <div className="flex justify-between items-start py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Team</span>
+                    <span className="font-medium text-sm text-right">
+                      {teamMembers.map(m => `${m.stylistName} (${m.role})`).join(", ")}
+                    </span>
+                  </div>
+                )}
+                {notes && (
+                  <div className="flex justify-between items-start py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Notes</span>
+                    <span className="font-medium text-sm text-right max-w-[60%]">{notes}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-sm font-semibold uppercase tracking-wide">Total</span>
+                  <span className="font-serif font-bold text-2xl">{selectedService ? `R${selectedService.price}` : "—"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === "Payment" && (
+            <div className="space-y-5">
+              <Label className="text-base font-semibold">Payment</Label>
+
+              {/* Payment mode */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">How would you like to pay?</Label>
+                <div className="grid gap-2">
+                  {([
+                    { value: "full", icon: CreditCard, label: "Pay in Full", desc: "Secure payment now via Stripe" },
+                    { value: "deposit", icon: Landmark, label: `Pay ${depositPct}% Deposit`, desc: "Pay a deposit now, remainder at appointment" },
+                  ] as const).map(({ value, icon: Icon, label, desc }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPaymentMode(value)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${
+                        paymentMode === value
+                          ? "border-primary bg-primary/5"
+                          : "border-border/60 hover:border-border bg-card/50"
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        paymentMode === value ? "bg-primary/15" : "bg-muted"
+                      }`}>
+                        <Icon className={`h-4 w-4 ${paymentMode === value ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${paymentMode === value ? "text-primary" : ""}`}>{label}</p>
+                        <p className="text-xs text-muted-foreground">{desc}</p>
+                      </div>
+                      {paymentMode === value && <Check className="h-4 w-4 text-primary shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+
+                {paymentMode === "deposit" && (
+                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 rounded-lg">
+                    <Label className="text-xs text-muted-foreground shrink-0">Deposit %</Label>
+                    <input
+                      type="range"
+                      min={10}
+                      max={90}
+                      step={10}
+                      value={depositPct}
+                      onChange={(e) => setDepositPct(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-semibold w-10 text-right">{depositPct}%</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Tip */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Add a tip (optional)</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {[0, 5, 10, 20].map((amt) => (
+                    <Button
+                      key={amt}
+                      type="button"
+                      size="sm"
+                      variant={tipAmount === amt ? "default" : "outline"}
+                      className="h-8 text-xs"
+                      onClick={() => setTipAmount(amt)}
+                    >
+                      {amt === 0 ? "No tip" : `R${amt}`}
+                    </Button>
+                  ))}
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="Custom (R)"
+                    value={tipAmount > 0 && ![5, 10, 20].includes(tipAmount) ? tipAmount : ""}
+                    onChange={(e) => setTipAmount(Math.max(0, Number(e.target.value)))}
+                    className="h-8 text-xs w-28"
+                  />
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="rounded-xl border border-border/60 bg-card/50 p-4 space-y-2 text-sm">
+                {selectedService && (
+                  <>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Service</span>
+                      <span>R{selectedService.price}</span>
+                    </div>
+                    {tipAmount > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Tip</span>
+                        <span>R{tipAmount}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold pt-1 border-t border-border/40">
+                      <span>
+                        {paymentMode === "deposit"
+                          ? `Deposit due now (${depositPct}%)`
+                          : "Total due now"}
+                      </span>
+                      <span className="font-serif text-lg">
+                        {paymentMode === "deposit"
+                          ? `R${(Math.round(selectedService.price * depositPct / 100 * 100) / 100 + tipAmount).toFixed(2)}`
+                          : `R${(selectedService.price + tipAmount).toFixed(2)}`}
+                      </span>
+                    </div>
+                    {paymentMode === "deposit" && (
+                      <div className="flex justify-between text-xs text-amber-600">
+                        <span>Balance due at appointment</span>
+                        <span>R{(Math.round((selectedService.price - selectedService.price * depositPct / 100) * 100) / 100).toFixed(2)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                You'll be redirected to a secure Stripe checkout. Apple Pay, Google Pay, Link, and saved cards are supported.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Footer nav */}
+      <div className="flex items-center justify-between gap-4">
         <Button
-          size="lg"
-          className="h-14 px-8 text-base w-full sm:w-auto"
-          disabled={!serviceId || !date || !time || checkout.isPending}
-          onClick={handleBook}
+          variant="outline"
+          onClick={goBack}
+          disabled={stepIndex === 0 || checkout.isPending}
+          className="gap-1.5"
         >
-          {checkout.isPending ? "Redirecting to payment..." : "Pay & Confirm Booking"}
+          <ChevronLeft className="h-4 w-4" />
+          Back
         </Button>
+
+        {step === "Payment" ? (
+          <Button
+            size="lg"
+            className="h-12 px-8 gap-1.5"
+            disabled={checkout.isPending}
+            onClick={handleBook}
+          >
+            {checkout.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Redirecting to payment...
+              </>
+            ) : (
+              "Pay & Confirm Booking"
+            )}
+          </Button>
+        ) : (
+          <Button onClick={goNext} className="gap-1.5">
+            Continue
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

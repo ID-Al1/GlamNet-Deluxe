@@ -1,9 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@100..900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Inter:wght@100..900&display=swap');
 
 @theme inline {
   --color-background: hsl(var(--background));
@@ -65,49 +65,56 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
 }
 
-/* ── LIGHT MODE — White & Gold ── */
+/* ── LIGHT MODE — Cream / Burgundy / Sand ── */
 :root {
   --app-font-sans: 'Inter', sans-serif;
-  --app-font-serif: 'Fraunces', serif;
+  --app-font-serif: 'Playfair Display', serif;
   --app-font-mono: Menlo, monospace;
-  --radius: .5rem;
+  --radius: 1rem;
 
-  --background: 0 0% 100%;
-  --foreground: 0 0% 9%;
-  --card: 0 0% 98%;
-  --card-foreground: 0 0% 9%;
-  --card-border: 220 13% 91%;
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --primary: 38 52% 47%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 0 0% 15%;
-  --muted: 220 14% 96%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 38 52% 47%;
-  --accent-foreground: 0 0% 100%;
+  --background: 40 33% 93%; /* #F6F0E4 approx */
+  --foreground: 350 25% 12%;
+  --card: 38 31% 88%; /* #EBE2D2 approx */
+  --card-foreground: 350 25% 12%;
+  --card-border: 38 24% 82%;
+  --border: 38 24% 82%;
+  --input: 38 24% 82%;
+  --primary: 348 55% 27%; /* Burgundy #6B1F2E */
+  --primary-foreground: 42 42% 95%;
+  --secondary: 38 28% 84%;
+  --secondary-foreground: 350 25% 14%;
+  --muted: 38 28% 86%;
+  --muted-foreground: 350 10% 40%;
+  --accent: 348 55% 27%;
+  --accent-foreground: 42 42% 95%;
   --destructive: 0 65% 51%;
   --destructive-foreground: 0 0% 100%;
-  --ring: 38 52% 47%;
-  --sidebar: 0 0% 98%;
-  --sidebar-foreground: 0 0% 9%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-primary: 38 52% 47%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 14% 96%;
-  --sidebar-accent-foreground: 0 0% 15%;
-  --sidebar-ring: 38 52% 47%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 9%;
-  --popover-border: 220 13% 91%;
-  --chart-1: 38 52% 47%;
-  --chart-2: 350 35% 58%;
-  --chart-3: 15 25% 50%;
-  --chart-4: 200 30% 50%;
-  --chart-5: 220 20% 55%;
+  --ring: 348 55% 27%;
+  --sidebar: 42 42% 95%;
+  --sidebar-foreground: 350 25% 12%;
+  --sidebar-border: 38 24% 80%;
+  --sidebar-primary: 348 55% 27%;
+  --sidebar-primary-foreground: 42 42% 95%;
+  --sidebar-accent: 38 28% 84%;
+  --sidebar-accent-foreground: 350 25% 14%;
+  --sidebar-ring: 348 55% 27%;
+  --popover: 38 31% 88%;
+  --popover-foreground: 350 25% 12%;
+  --popover-border: 38 24% 82%;
+  --chart-1: 348 55% 27%;
+  --chart-2: 38 28% 66%;
+  --chart-3: 348 45% 42%;
+  --chart-4: 38 30% 78%;
+  --chart-5: 350 10% 50%;
+
+  --baby-blue: 38 24% 76%;
+  --plum: 348 55% 27%;
+  --orange: 348 55% 27%;
+  --cream: 40 33% 93%;
 
   --button-outline: rgba(0,0,0,.08);
   --badge-outline: rgba(0,0,0,.04);
@@ -124,42 +131,47 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* ── DARK MODE — Gold & Charcoal ── */
+/* ── DARK MODE — Ink / Terracotta / Stone ── */
 .dark {
-  --background: 0 0% 6%;
-  --foreground: 0 0% 94%;
-  --card: 0 0% 10%;
-  --card-foreground: 0 0% 94%;
-  --card-border: 0 0% 18%;
-  --border: 0 0% 18%;
-  --input: 0 0% 20%;
-  --primary: 38 50% 58%;
-  --primary-foreground: 0 0% 6%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 85%;
-  --muted: 0 0% 13%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 38 50% 58%;
-  --accent-foreground: 0 0% 6%;
-  --destructive: 0 65% 51%;
+  --background: 350 20% 9%;
+  --foreground: 40 33% 92%;
+  --card: 350 18% 13%;
+  --card-foreground: 40 33% 92%;
+  --card-border: 350 14% 21%;
+  --border: 350 14% 21%;
+  --input: 350 14% 23%;
+  --primary: 349 42% 62%;
+  --primary-foreground: 350 20% 9%;
+  --secondary: 350 14% 19%;
+  --secondary-foreground: 40 28% 88%;
+  --muted: 350 14% 17%;
+  --muted-foreground: 40 12% 65%;
+  --accent: 349 42% 62%;
+  --accent-foreground: 350 20% 9%;
+  --destructive: 0 65% 55%;
   --destructive-foreground: 0 0% 96%;
-  --ring: 38 50% 58%;
-  --sidebar: 0 0% 8%;
-  --sidebar-foreground: 0 0% 88%;
-  --sidebar-border: 0 0% 16%;
-  --sidebar-primary: 38 50% 58%;
-  --sidebar-primary-foreground: 0 0% 6%;
-  --sidebar-accent: 0 0% 15%;
-  --sidebar-accent-foreground: 0 0% 85%;
-  --sidebar-ring: 38 50% 58%;
-  --popover: 0 0% 10%;
-  --popover-foreground: 0 0% 94%;
-  --popover-border: 0 0% 18%;
-  --chart-1: 38 50% 58%;
-  --chart-2: 350 35% 65%;
-  --chart-3: 15 25% 45%;
-  --chart-4: 200 30% 50%;
-  --chart-5: 220 20% 60%;
+  --ring: 349 42% 62%;
+  --sidebar: 350 20% 8%;
+  --sidebar-foreground: 40 28% 90%;
+  --sidebar-border: 350 14% 19%;
+  --sidebar-primary: 349 42% 62%;
+  --sidebar-primary-foreground: 350 20% 9%;
+  --sidebar-accent: 350 14% 19%;
+  --sidebar-accent-foreground: 40 28% 88%;
+  --sidebar-ring: 349 42% 62%;
+  --popover: 350 18% 13%;
+  --popover-foreground: 40 33% 92%;
+  --popover-border: 350 14% 21%;
+  --chart-1: 349 42% 62%;
+  --chart-2: 38 25% 60%;
+  --chart-3: 349 50% 48%;
+  --chart-4: 38 18% 45%;
+  --chart-5: 350 10% 55%;
+
+  --baby-blue: 38 20% 55%;
+  --plum: 349 42% 62%;
+  --orange: 349 42% 62%;
+  --cream: 350 18% 15%;
 
   --button-outline: rgba(255,255,255,.10);
   --badge-outline: rgba(255,255,255,.05);
@@ -186,4 +198,20 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-bold tracking-tight;
   }
+}
+
+/* Hide scrollbar for horizontal scroll areas */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Global Lucide icon defaults — spec: stroke-width 1.9, round caps */
+.lucide {
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

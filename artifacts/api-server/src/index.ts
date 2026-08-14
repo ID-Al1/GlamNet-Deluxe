@@ -2,6 +2,7 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import app from "./app";
 import { logger } from "./lib/logger";
+import { startEscrowTimeoutJob } from "./lib/escrowTimeout";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -50,3 +51,5 @@ app.listen(port, (err) => {
   }
   logger.info({ port }, "Server listening");
 });
+
+startEscrowTimeoutJob();

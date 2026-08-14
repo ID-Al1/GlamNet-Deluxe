@@ -147,6 +147,36 @@ paths:
           in: query
           schema:
             type: string
+        - name: minRating
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: houseCalls
+          in: query
+          schema:
+            type: boolean
+        - name: availabilityDay
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
+        - name: service
+          in: query
+          description: Filter by service name (partial match against stylist services)
+          schema:
+            type: string
+        - name: area
+          in: query
+          description: Filter by area/neighbourhood (proximity proxy)
+          schema:
+            type: string
       responses:
         "200":
           description: List of stylists
@@ -480,6 +510,55 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conversation"
 
+  /messages/conversations/{conversationId}/typing:
+    post:
+      operationId: signalTyping
+      tags: [messages]
+      summary: Signal that the current user is typing
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Accepted
+
+  /messages/conversations/{conversationId}/read:
+    post:
+      operationId: markConversationRead
+      tags: [messages]
+      summary: Mark a conversation as read for the current user
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Accepted
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [messages]
+      summary: Request a presigned upload URL for a media attachment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaUploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadUrlResponse"
+
   /casting:
     get:
       operationId: listCastingCalls
@@ -771,6 +850,30 @@ components:
           type: ["string", "null"]
         accentColor:
           type: ["string", "null"]
+        houseCalls:
+          type: boolean
+        phone:
+          type: ["string", "null"]
+        reputationScore:
+          type: ["number", "null"]
+          description: Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+        reputationBreakdown:
+          nullable: true
+          type: object
+          properties:
+            score:
+              type: number
+            cancellationRate:
+              type: number
+            repeatClientRate:
+              type: number
+            completedBookings:
+              type: integer
+            totalBookings:
+              type: integer
+        profileReadiness:
+          nullable: true
+          $ref: "#/components/schemas/ProfileReadiness"
 
     StylistProfileUpdate:
       type: object
@@ -795,6 +898,10 @@ components:
           type: array
           items:
             type: string
+        houseCalls:
+          type: boolean
+        accentColor:
+          type: string
 
     Service:
       type: object
@@ -940,6 +1047,12 @@ components:
           type: string
         unreadCount:
           type: integer
+        isOtherTyping:
+          type: boolean
+        clientLastReadAt:
+          type: ["string", "null"]
+        stylistLastReadAt:
+          type: ["string", "null"]
 
     ConversationParticipant:
       type: object
@@ -956,18 +1069,23 @@ components:
 
     Message:
       type: object
-      required: [id, conversationId, senderId, senderName, content, createdAt]
+      required: [id, conversationId, senderName, content, messageType, createdAt]
       properties:
         id:
           type: string
         conversationId:
           type: string
         senderId:
-          type: string
+          type: ["string", "null"]
         senderName:
           type: string
         content:
           type: string
+        messageType:
+          type: string
+          enum: [text, image, voice, system]
+        mediaUrl:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -978,6 +1096,31 @@ components:
         content:
           type: string
           minLength: 1
+        messageType:
+          type: string
+          enum: [text, image, voice]
+        mediaUrl:
+          type: string
+
+    MediaUploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+
+    MediaUploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
 
     StartConversationInput:
       type: object
@@ -1125,6 +1268,38 @@ components:
           type: string
         createdAt:
           type: string
+
+    ProfileReadinessCriterion:
+      type: object
+      required: [id, label, met, hint]
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        met:
+          type: boolean
+        hint:
+          type: string
+
+    ProfileReadiness:
+      type: object
+      required: [criteria, completedCount, totalCount, canBeBooked, isFullyReady]
+      properties:
+        criteria:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileReadinessCriterion"
+        completedCount:
+          type: integer
+        totalCount:
+          type: integer
+        canBeBooked:
+          type: boolean
+          description: True when the artist has at least one service listed — minimum for booking to work
+        isFullyReady:
+          type: boolean
+          description: True when all 7 readiness criteria are met
 
     CastingApplication:
       type: object

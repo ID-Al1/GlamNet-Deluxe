@@ -68,7 +68,7 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-lg space-y-8 bg-card p-8 rounded-2xl border border-border mt-10 mb-10">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-serif font-bold">Join GlamNet</h1>
+          <h1 className="text-3xl font-serif font-bold">Join Bonisa</h1>
           <p className="text-muted-foreground">Create your account to get started</p>
         </div>
 
@@ -76,23 +76,22 @@ export default function Signup() {
           <div className="space-y-4">
             {/* Role selection */}
             <div className="space-y-3">
-              <Label>I want to use GlamNet as a:</Label>
-              <RadioGroup value={role} onValueChange={v => setRole(v as SignupInputRole)} className="grid grid-cols-3 gap-3">
+              <Label id="role-group-label">I want to use Bonisa as a:</Label>
+              <RadioGroup value={role} onValueChange={v => setRole(v as SignupInputRole)} aria-labelledby="role-group-label" className="grid grid-cols-3 gap-3">
                 {ROLES.map(({ value, icon: Icon, label, desc }) => (
-                  <div
+                  <label
                     key={value}
-                    onClick={() => setRole(value)}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all space-y-2 ${
+                    className={`border rounded-xl p-4 cursor-pointer transition-all space-y-2 focus-within:ring-2 focus-within:ring-primary/50 ${
                       role === value ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/40"
                     }`}
                   >
                     <RadioGroupItem value={value} className="sr-only" />
-                    <Icon className={`h-5 w-5 ${role === value ? "text-primary" : "text-muted-foreground"}`} />
+                    <Icon className={`h-5 w-5 ${role === value ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
                     <div>
                       <div className="font-semibold text-sm">{label}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
                     </div>
-                  </div>
+                  </label>
                 ))}
               </RadioGroup>
             </div>

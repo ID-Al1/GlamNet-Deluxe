@@ -1,0 +1,1183 @@
+BONISA — MOBILE APP CONVERSION + PRODUCTION READINESS MASTER PROMPT
+
+ROLE
+
+You are the lead product engineer, mobile architect, UI engineer, backend engineer, and QA engineer responsible for taking the EXISTING Bonisa project in this Replit workspace and preparing it for production as a downloadable mobile application for:
+
+* Apple App Store
+* Google Play Store
+
+Bonisa is the evolution of the existing GlamNet project.
+
+IMPORTANT: This is NOT a request to start a new project from scratch.
+
+The existing Bonisa project already contains significant design work, functionality, branding, screens, components, and behavior.
+
+Your first responsibility is to inspect and understand the current codebase before making architectural decisions.
+
+Do not destroy, replace, or unnecessarily rewrite existing working functionality.
+
+⸻
+
+1. FIRST: AUDIT THE EXISTING PROJECT
+
+Before changing code, inspect the entire project.
+
+Identify:
+
+* Current framework
+* Current frontend architecture
+* Current backend architecture
+* Database
+* Authentication
+* API routes
+* Existing components
+* Existing screens
+* Existing navigation
+* Existing styling system
+* Existing Bonisa branding
+* Existing AI functionality
+* Existing maps/location functionality
+* Existing booking functionality
+* Existing artist/client/brand flows
+* Existing payment logic
+* Existing image upload functionality
+* Existing responsive behavior
+* Existing mock data
+* Existing unfinished features
+* Existing bugs
+* Existing environment variables
+* Existing third-party dependencies
+* Existing deployment configuration
+
+Determine whether the current application is:
+
+1. A web application,
+2. A React application that can be adapted,
+3. A mobile-ready architecture,
+4. Or something else.
+
+Do NOT immediately rewrite the application.
+
+Create a short internal migration plan based on the actual codebase.
+
+⸻
+
+2. MOBILE ARCHITECTURE
+
+The end goal is a REAL downloadable mobile application.
+
+The application must be suitable for:
+
+* iOS
+* Android
+
+If the current project is React-based, prefer a modern cross-platform architecture such as React Native + Expo where appropriate.
+
+If the current architecture can be converted without destroying functionality, reuse as much existing logic and design as possible.
+
+If some web-specific components cannot work properly in a native application, replace ONLY those components with appropriate native equivalents.
+
+Do NOT simply create a glorified web browser wrapper around the existing website unless there is a compelling technical reason and it is explicitly approved.
+
+The result should behave like a genuine mobile application.
+
+⸻
+
+3. PROTECT THE EXISTING BONISA WORK
+
+The existing Bonisa design and functionality are valuable.
+
+Before modifying anything:
+
+* Preserve working features.
+* Preserve existing screens where possible.
+* Preserve existing data models.
+* Preserve existing API behavior where possible.
+* Preserve existing authentication.
+* Preserve existing business logic.
+* Preserve the current Bonisa visual identity.
+* Preserve existing user flows unless they need modification for mobile usability.
+
+Do not casually rename files, delete components, replace the entire frontend, or reset the database.
+
+Do not introduce placeholder implementations where a working implementation already exists.
+
+Do not replace existing functionality with mock functionality.
+
+If something is already working, keep it working.
+
+⸻
+
+4. BONISA BRAND
+
+The product name is:
+
+BONISA
+
+Bonisa is a beauty discovery, booking, and professional marketplace platform.
+
+Current brand direction:
+
+Tagline: “Greet Your Reveal.”
+
+Do not revert the tagline to “Reveal Your Beauty.”
+
+The previous GlamNet name should not appear in the user-facing application unless there is a specific legal/technical reason.
+
+The application should feel:
+
+* Premium
+* Elegant
+* Modern
+* Warm
+* Editorial
+* Beauty-focused
+* Simple
+* Sophisticated
+* South African
+* Human
+* Not overly corporate
+* Not obviously AI-generated
+
+Avoid generic SaaS aesthetics.
+
+Avoid excessive gradients.
+
+Avoid excessive rounded cards.
+
+Avoid unnecessary shadows.
+
+Avoid visual clutter.
+
+Avoid generic AI-dashboard styling.
+
+⸻
+
+5. BONISA DESIGN SYSTEM
+
+Use the existing Bonisa design system already present in the project.
+
+Where the existing design system does not exist or is incomplete, use these approved design tokens as the foundation:
+
+–plum: #6D1F36
+–cream: #FDF8F0
+–ink: #231519
+–gold: #C1793A
+–line: #EFE3D3
+–sage: #7C8B6F
+
+Typography:
+
+Playfair Display
+
+Use for:
+
+* Bonisa wordmark
+* Hero headlines
+* Greeting
+* User’s first name
+* Artist names
+* Important editorial headings
+
+Inter
+
+Use for:
+
+* Body copy
+* Buttons
+* Navigation
+* Forms
+* Labels
+* Supporting information
+* UI elements
+
+The interface should feel intentionally designed, not like a template.
+
+⸻
+
+6. GREETING SYSTEM
+
+The greeting system is NON-NEGOTIABLE.
+
+The client home screen must use:
+
+00:00–11:59
+“Bonjour,”
+
+12:00–17:59
+“Bon après-midi,”
+
+18:00–23:59
+“Bonsoir,”
+
+The second line must display the signed-in user’s FIRST NAME ONLY.
+
+Example:
+
+Bonjour,
+Alwande
+
+The greeting should use Playfair Display.
+
+Do not use:
+
+“Good morning”
+“Good afternoon”
+“Good evening”
+
+Do not replace the French greetings with English.
+
+On splash/onboarding where applicable, preserve:
+
+“Bonjour, Bonisa”
+
+⸻
+
+7. MOBILE NAVIGATION
+
+Create a clean mobile navigation structure appropriate to the user’s role.
+
+Bonisa has THREE primary user roles:
+
+CLIENT
+
+Clients can:
+
+* Discover beauty professionals
+* Search for services
+* Search for artists
+* View artist profiles
+* View portfolios
+* Use AI-powered discovery
+* Use GlamMatch
+* Compare services
+* View pricing
+* Book services
+* Pay securely
+* Manage bookings
+* View booking history
+* Save/favourite artists
+* Manage profile
+* Receive notifications
+* Leave reviews where applicable
+
+ARTIST
+
+Artists can:
+
+* Create/manage profile
+* Upload portfolio
+* List services
+* Set prices
+* Manage availability
+* Receive bookings
+* Accept/decline bookings
+* View upcoming appointments
+* View completed services
+* Track earnings
+* View net earnings
+* Receive payments
+* Manage profile
+* Receive notifications
+
+BRAND
+
+Brands can:
+
+* Create/manage brand profile
+* Discover artists
+* Search talent
+* View artist portfolios
+* Create campaigns
+* Post opportunities
+* Manage campaigns
+* Communicate with artists
+* Track campaign activity
+
+Do not show irrelevant functionality to users based on their role.
+
+⸻
+
+8. HOME EXPERIENCE
+
+The Bonisa home screen should immediately communicate what the product does.
+
+The user should be able to:
+
+* Discover beauty
+* Search
+* Find artists
+* Find services
+* Explore recommendations
+* Access AI-powered discovery
+* See relevant nearby or recommended professionals
+
+Maintain the existing approved Bonisa home-screen design where it exists.
+
+The home screen should feel editorial and premium rather than like a generic marketplace.
+
+⸻
+
+9. AI-POWERED DISCOVERY
+
+Preserve and improve the existing AI architecture.
+
+The AI discovery experience should help a client find an appropriate beauty professional.
+
+The system should consider, where data is available:
+
+* Desired service
+* Hairstyle
+* Beauty category
+* Location
+* Budget
+* Availability
+* Artist profile
+* Portfolio
+* User preferences
+
+Do not fake AI results.
+
+If AI functionality is not yet connected to a production provider, create a clean service abstraction so the provider can be connected later without rebuilding the frontend.
+
+⸻
+
+10. GLAMMATCH™
+
+Preserve the GlamMatch concept.
+
+GlamMatch allows a client to upload a screenshot/photo/reference image of a hairstyle or beauty look.
+
+The system should:
+
+1. Allow image selection/camera upload.
+2. Process the image.
+3. Identify relevant characteristics where AI capabilities are available.
+4. Translate the result into useful beauty/service categories.
+5. Recommend relevant artists/services.
+
+Do not claim the AI identified something if it did not actually do so.
+
+If the AI integration is not yet available, implement the architecture cleanly with a clearly defined service interface rather than pretending it is working.
+
+⸻
+
+11. ARTIST PROFILES
+
+Artist profiles should feel premium.
+
+Include where applicable:
+
+* Profile image
+* Name
+* Location
+* Rating
+* Services
+* Prices
+* Portfolio
+* Bio
+* Availability
+* Distance
+* Reviews
+* Booking CTA
+
+Use South African formatting.
+
+Examples:
+
+Prices:
+
+R 450
+
+Not:
+
+$450
+
+Ratings should use South African-friendly decimal formatting where applicable.
+
+Distances should use:
+
+km
+
+Do not display miles.
+
+⸻
+
+12. BOOKING SYSTEM
+
+Preserve the existing booking functionality.
+
+The booking experience should allow a client to:
+
+1. Select artist.
+2. Select service.
+3. Select date.
+4. Select available time.
+5. Review booking.
+6. Review price.
+7. Complete payment.
+8. Receive confirmation.
+9. View booking status.
+
+The system must prevent double-booking.
+
+Availability must be based on real artist availability rather than fake static data once the backend is connected.
+
+⸻
+
+13. PAYMENT SYSTEM
+
+The user should see:
+
+“Payment processed securely.”
+
+Do NOT mention PayFast or any specific payment provider in the UI.
+
+The payment provider should be abstracted behind a backend/service layer so it can be changed later without redesigning the application.
+
+Payment architecture must support:
+
+* Payment initiation
+* Payment confirmation
+* Payment status
+* Failed payments
+* Cancelled payments
+* Refund handling where applicable
+* Booking/payment reconciliation
+
+⸻
+
+14. 82/18 PAYMENT SPLIT
+
+This is a critical business rule.
+
+Once BOTH:
+
+1. Client confirms the service was completed
+2. Artist confirms the service was completed
+
+the system must automatically release the payment split.
+
+Artist:
+
+82%
+
+Bonisa:
+
+18%
+
+Example:
+
+Service price:
+R 500
+
+Artist receives:
+R 410
+
+Bonisa receives:
+R 90
+
+Do NOT release the artist’s 82% merely because the booking was created.
+
+Do NOT release it merely because the client paid.
+
+The completion confirmation logic must be enforced server-side.
+
+The calculation must happen on the backend, not merely in the frontend.
+
+The artist dashboard should show:
+
+Net earnings
+
+not simply gross booking value.
+
+⸻
+
+15. SECURITY
+
+Never trust the frontend for:
+
+* Prices
+* User roles
+* Payment status
+* Commission calculations
+* Booking status
+* Artist earnings
+* Access permissions
+
+All sensitive business logic must be validated server-side.
+
+Prevent users from manipulating:
+
+* Price
+* Commission
+* Role
+* Booking status
+* Payment status
+* Earnings
+
+Never expose secret API keys in the client application.
+
+Use environment variables appropriately.
+
+⸻
+
+16. LOCATION + MAPS
+
+Bonisa is location-aware.
+
+The mobile application should properly request location permission when necessary.
+
+Use location to support:
+
+* Nearby artists
+* Distance
+* Search
+* Discovery
+* Maps
+* Service availability where applicable
+
+Do not request location immediately without context.
+
+Explain why location is needed before triggering the native permission prompt where appropriate.
+
+If the user denies location access, the app must still work.
+
+Allow manual location/search where possible.
+
+⸻
+
+17. CAMERA + PHOTO UPLOADS
+
+The mobile app should support native photo selection and camera access where required.
+
+Use this for:
+
+* GlamMatch
+* Profile pictures
+* Artist portfolio
+* Beauty references
+
+Handle:
+
+* Permissions
+* Loading states
+* Upload failures
+* Large images
+* Image compression
+* Upload progress
+* Retry
+
+Do not crash when permission is denied.
+
+⸻
+
+18. PUSH NOTIFICATIONS
+
+Prepare the application for push notifications.
+
+Notifications may eventually be used for:
+
+* Booking confirmation
+* Booking reminders
+* Booking changes
+* Artist acceptance
+* Payment confirmation
+* Service completion
+* Earnings
+* Campaign activity
+* Messages
+
+Do not spam users.
+
+Notification preferences should eventually be configurable.
+
+⸻
+
+19. AUTHENTICATION
+
+Preserve the existing authentication architecture.
+
+Support appropriate:
+
+* Sign up
+* Login
+* Logout
+* Password reset
+* Session persistence
+* Profile creation
+* Role selection
+* Role-based access
+
+Do not allow a user to access another user’s private information.
+
+⸻
+
+20. DATABASE
+
+Do not reset or destroy the current database.
+
+Inspect the existing schema first.
+
+Identify whether the following entities exist:
+
+* Users
+* Profiles
+* Artists
+* Brands
+* Services
+* Portfolio items
+* Bookings
+* Payments
+* Reviews
+* Availability
+* Notifications
+* Campaigns
+* Favourites
+* Messages
+
+If schema changes are necessary, make them through safe migrations.
+
+Do not delete existing production-like data.
+
+⸻
+
+21. RESPONSIVE + NATIVE UX
+
+The application must feel designed specifically for phones.
+
+Pay attention to:
+
+* Safe areas
+* Notches
+* Home indicators
+* Keyboard behavior
+* Bottom sheets
+* Native scrolling
+* Touch targets
+* Loading states
+* Gesture behavior
+* Modal behavior
+* Back navigation
+* Accessibility
+
+Minimum comfortable touch target:
+
+approximately 44x44 points.
+
+Do not simply shrink the desktop UI.
+
+⸻
+
+22. PERFORMANCE
+
+Optimize for real mobile devices.
+
+Focus on:
+
+* Fast startup
+* Image optimization
+* Lazy loading
+* Caching
+* Efficient API requests
+* Pagination
+* Avoiding unnecessary re-renders
+* Offline-friendly states where useful
+* Graceful network failure
+
+Avoid loading huge images unnecessarily.
+
+⸻
+
+23. OFFLINE / POOR NETWORK
+
+South African users may have inconsistent connectivity.
+
+The application should:
+
+* Show meaningful loading states
+* Handle network failures gracefully
+* Allow retry
+* Avoid blank screens
+* Avoid losing form data unnecessarily
+* Clearly communicate when an action failed
+
+Do not assume perfect Wi-Fi.
+
+⸻
+
+24. ERROR HANDLING
+
+Every important user flow needs:
+
+* Loading state
+* Success state
+* Empty state
+* Error state
+
+Do not leave users staring at blank screens.
+
+Examples:
+
+“No artists found near you yet.”
+
+instead of an empty page.
+
+⸻
+
+25. ACCESSIBILITY
+
+Support:
+
+* Screen readers
+* Accessible labels
+* Sufficient contrast
+* Dynamic text where practical
+* Keyboard accessibility where relevant
+* Proper focus behavior
+* Large touch targets
+
+Do not rely solely on color to communicate status.
+
+⸻
+
+26. APP ICON + SPLASH
+
+Prepare the project for:
+
+App name
+
+Bonisa
+
+Tagline
+
+Greet Your Reveal.
+
+Create/prepare:
+
+* App icon
+* Splash screen
+* App metadata
+* iOS configuration
+* Android configuration
+
+Use the existing Bonisa visual identity.
+
+Do not create a generic app icon.
+
+⸻
+
+27. ENVIRONMENT CONFIGURATION
+
+Separate:
+
+Development
+Staging
+Production
+
+Do not hardcode:
+
+* API keys
+* Secrets
+* Database credentials
+* Payment credentials
+* AI credentials
+
+Use environment variables.
+
+Document required environment variables.
+
+Create a clear configuration guide for future deployment.
+
+⸻
+
+28. APP STORE READINESS
+
+Prepare the project for Apple App Store submission.
+
+Include appropriate:
+
+* Bundle identifier configuration
+* App name
+* Version
+* Build number
+* Permissions
+* Privacy descriptions
+* Camera permission descriptions
+* Photo library permission descriptions
+* Location permission descriptions
+* Notification permission descriptions
+
+Do not request permissions that the app does not actually use.
+
+Prepare the required iOS configuration but do not falsely claim that the app has been submitted.
+
+⸻
+
+29. GOOGLE PLAY READINESS
+
+Prepare the project for Google Play.
+
+Include:
+
+* Application ID
+* Version code
+* Version name
+* Required permissions
+* Android configuration
+* App icon
+* Splash screen
+* Release configuration
+
+Prepare the project for an Android App Bundle where appropriate.
+
+Do not falsely claim that the app has been published.
+
+⸻
+
+30. LEGAL / PRIVACY
+
+Prepare the application for:
+
+* Privacy policy
+* Terms of service
+* User consent
+* Data deletion requests
+* Account deletion
+* Camera permissions
+* Location permissions
+* Notification permissions
+
+Do not invent legal claims.
+
+Create placeholders/configuration where legal text still needs to be supplied.
+
+⸻
+
+31. SOUTH AFRICAN LOCALIZATION
+
+Bonisa is initially focused on South Africa.
+
+Use:
+
+* ZAR
+* R pricing
+* km
+* South African date conventions where appropriate
+* South African phone number formatting where appropriate
+
+Avoid unnecessary American formatting.
+
+Do not use USD.
+
+Do not use miles.
+
+⸻
+
+32. UX PRINCIPLE
+
+The core principle is:
+
+Apple-like simplicity.
+
+The application should not feel complicated despite having many capabilities.
+
+A user should be able to understand:
+
+* What Bonisa does
+* What they can do next
+* Where they are
+* How to book
+* What something costs
+
+without needing instructions.
+
+Remove unnecessary steps wherever possible.
+
+⸻
+
+33. NO AI-LOOKING COPY
+
+Do not generate generic marketing copy such as:
+
+“Unlock the power of beauty with our revolutionary AI-powered ecosystem.”
+
+Avoid buzzwords.
+
+Copy should sound human, premium and confident.
+
+Use short, intentional language.
+
+⸻
+
+34. TESTING
+
+Before declaring the migration complete, test:
+
+Client
+
+* Sign up
+* Login
+* Logout
+* Home
+* Search
+* Artist discovery
+* Artist profile
+* GlamMatch
+* Booking
+* Payment
+* Booking confirmation
+* Booking history
+* Favourites
+* Profile
+
+Artist
+
+* Sign up
+* Artist onboarding
+* Profile
+* Portfolio
+* Services
+* Pricing
+* Availability
+* Booking management
+* Completion confirmation
+* Earnings
+* Net earnings
+
+Brand
+
+* Sign up
+* Profile
+* Artist discovery
+* Campaign creation
+* Campaign management
+
+General
+
+* Network failure
+* Empty states
+* Loading states
+* Permission denial
+* Image upload failure
+* Authentication failure
+* Payment failure
+* Invalid booking
+* Duplicate booking attempt
+
+⸻
+
+35. DO NOT BREAK EXISTING FUNCTIONALITY
+
+After every major change, test the existing flows.
+
+If a change breaks something:
+
+STOP.
+
+Fix the regression before continuing.
+
+Do not keep adding features on top of broken functionality.
+
+⸻
+
+36. CODE QUALITY
+
+Use:
+
+* Clear component architecture
+* Reusable components
+* Reusable hooks/services
+* Strong typing where supported
+* Centralized API handling
+* Centralized authentication
+* Centralized payment logic
+* Centralized design tokens
+* Clear error handling
+
+Avoid:
+
+* Giant components
+* Duplicate code
+* Hardcoded data
+* Hardcoded user information
+* Hardcoded prices
+* Fake APIs
+* Fake payment success
+* Fake AI results
+* Temporary hacks left in production
+
+⸻
+
+37. DEVELOPMENT PHASES
+
+Work in this order.
+
+PHASE 1 — AUDIT
+
+Inspect the entire current project.
+
+Do not modify anything yet.
+
+Identify the existing architecture and migration requirements.
+
+PHASE 2 — FOUNDATION
+
+Create/adjust the mobile architecture.
+
+Ensure navigation, authentication, backend communication and shared design foundations are stable.
+
+PHASE 3 — BONISA UI
+
+Port/adapt the existing Bonisa design system and screens.
+
+Preserve the approved design.
+
+PHASE 4 — CORE USER FLOWS
+
+Make these stable:
+
+Authentication
+Home
+Discovery
+Artist profiles
+Services
+Booking
+Payments
+Profiles
+
+PHASE 5 — ADVANCED FEATURES
+
+Integrate:
+
+GlamMatch
+AI discovery
+Maps
+Notifications
+Campaigns
+Favourites
+Reviews
+
+PHASE 6 — BUSINESS LOGIC
+
+Implement and verify:
+
+82/18 commission
+Service completion confirmation
+Artist net earnings
+Booking state management
+Payment state management
+
+PHASE 7 — QA
+
+Test the complete product.
+
+Fix regressions.
+
+PHASE 8 — APP STORE PREPARATION
+
+Prepare:
+
+iOS
+Android
+Icons
+Splash
+Permissions
+Metadata
+Build configuration
+
+⸻
+
+38. IMPORTANT AGENT BEHAVIOR
+
+Do NOT:
+
+* Start from scratch.
+* Delete the existing project.
+* Reset the database.
+* Replace working features with mockups.
+* Remove existing Bonisa functionality without explanation.
+* Change the Bonisa tagline.
+* Reintroduce GlamNet branding in the user-facing UI.
+* Hardcode payments.
+* Fake AI.
+* Fake availability.
+* Fake payment success.
+* Expose secrets.
+* Claim App Store approval.
+* Claim Google Play approval.
+* Claim production readiness without testing.
+
+If you discover an architectural limitation, explain it and implement the safest incremental solution.
+
+⸻
+
+39. BEFORE WRITING MAJOR CODE
+
+First produce an internal audit of:
+
+1. Current architecture
+2. Current frontend
+3. Current backend
+4. Current database
+5. Existing features
+6. Existing working flows
+7. Existing broken flows
+8. Mobile compatibility
+9. Required migration work
+10. Risks
+
+Then proceed incrementally.
+
+Do not ask me to recreate information that is already available in the existing project.
+
+Inspect the repository first.
+
+⸻
+
+40. FINAL ACCEPTANCE CRITERIA
+
+The project should ultimately be capable of becoming:
+
+Bonisa — iOS App
+
+and
+
+Bonisa — Android App
+
+with the existing Bonisa experience preserved and adapted properly for mobile.
+
+The final application should feel like a real consumer beauty product, not a converted website.
+
+The standard is:
+
+Premium beauty marketplace + AI discovery + booking + professional ecosystem.
+
+The user should feel that Bonisa is a finished product, not an engineering prototype.
+
+⸻
+
+FINAL INSTRUCTION
+
+Start by auditing the EXISTING Bonisa codebase.
+
+Do not rebuild the project.
+
+Do not delete existing work.
+
+Do not make major architectural changes until you understand what is already there.
+
+After the audit, identify the safest path to turn the current Bonisa application into a production-ready iOS and Android application.
+
+Then execute the migration incrementally, testing after each major stage.
+
+Preserve all existing functionality that is already working.
+
+The priority order is:
+
+Existing functionality → Bonisa design → Mobile architecture → Reliability → Security → Payments → AI → App Store readiness.
+
+Build carefully.
+Build incrementally.
+Do not take shortcuts that create technical debt merely to make the app appear finished.

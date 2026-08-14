@@ -15,4 +15,6 @@ export interface StylistProfileUpdate {
   website?: string;
   availability?: string[];
   tags?: string[];
+  houseCalls?: boolean;
+  accentColor?: string;
 }

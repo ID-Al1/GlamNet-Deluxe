@@ -1,0 +1,143 @@
+# Bonisa
+
+Bonisa is South Africa's verified professional network for beauty artists. Makeup artists, nail techs, braiders, hair stylists and barbers build a verified professional profile, take direct client bookings, and apply to paid brand campaigns. Clients book a verified artist. Brands staff campaigns from a verified pool.
+
+**Bonisa** is isiZulu for "to show, to reveal". Operated by Opus Intelligence (Pty) Ltd, South Africa.
+
+---
+
+## What this product actually is
+
+Read this section before writing any code. Most wrong turns on this project come from misreading what Bonisa is.
+
+**Bonisa is a professional identity network. It is not a beauty booking app.**
+
+The nearest comparison is LinkedIn, not Fresha, Booksy or Treatwell. Bookings are how the network proves itself and earns revenue, but the product is the verified professional identity: something most South African beauty artists have never had. An artist's profile, her verification status, her portfolio, her completed job history and her earned reputation are the asset. The booking calendar is a feature.
+
+The single filter for every decision: **does this build trust, or erode it?** If it erodes trust, do not build it regardless of short-term revenue.
+
+**Never position Bonisa against Gumtree, Bark or classifieds directories.** Always against LinkedIn and Uber.
+
+If you are ever choosing between a change that makes booking faster and a change that makes professional identity stronger, choose identity.
+
+---
+
+## Non-negotiables
+
+These are product rules, not preferences. Do not change any of them without an explicit instruction from Alwande in the current session. If a request seems to conflict with one, stop and ask.
+
+1. **Verification is a gate, not a badge.** An artist whose `verified` is false must not appear in browse results, must not be bookable, and must not be able to apply to a casting call. Verification is the moat. It is the only thing separating Bonisa from a classifieds listing.
+2. **Every booking records the money split.** Platform commission is **18%**. The artist receives **82%**, paid within 24 hours of service completion. These must be stored on the appointment record, never recalculated on the fly, never left implicit.
+3. **The word is "artist", never "stylist".** In all user-facing text, all new code, all new database fields. An artist is a professional with a body of work. A stylist is a service worker. Legacy `stylist*` identifiers exist and are being migrated; do not create new ones.
+4. **Client, Artist and Brand flows stay completely separate.** Three roles, three dashboards. Never merge the direct-booking flow with the brand casting-call flow.
+5. **Zero fake data. Ever.** No placeholder artists, no invented ratings, prices, reviews, salon names or locations. No stock photos substituted for missing images. If a data source is empty, render the empty state or hide the section. A fake rating in a demo becomes a false claim in an investor meeting.
+6. **Payments are Stripe.** This is settled. Keep the payment layer isolated in `stripeClient.ts`, the `/stripe` route and the success page so a future provider swap stays cheap, but do not add a second payment system.
+7. **Artists are individuals, not salons.** One profile per person. Never introduce a salon or venue as the primary entity. The artist is the brand.
+8. **POPIA compliance is required before the first real booking.** Consent capture, a privacy policy, and a documented data retention position. This is a hard gate on going live.
+
+---
+
+## Brand
+
+- **Name:** Bonisa. Never GlamNet in any user-facing text.
+- **Logo:** three petals radiating from a small centred circle. Plum `#6D1F36`, plum-light `#8E3C56`, plum-dark `#591A2C`, centre circle cream with a gold stroke. Never recolour the petals, never rotate it, never redraw it. On a plum background, swap the centre fill to cream.
+- **Colours:** plum `#6D1F36` primary, cream `#FDF8F0` background, ink `#231519` text, gold `#C1793A` for ratings and small highlights, line `#EFE3D3` for borders, white `#FFFFFF` for cards. All colours come from tokens in `index.css`. Never hardcode a colour in a component.
+- **Type:** Playfair Display for the logo wordmark, the greeting name, hero headlines and large numbers only. Inter for everything else. Never Playfair on buttons, labels, form fields or body copy.
+- **Greeting:** French, by device time. `Bonjour,` before 12:00, `Bon après-midi,` 12:00 to 17:59, `Bonsoir,` from 18:00. Then the signed-in user's first name on the next line in Playfair. This is a deliberate brand choice, confirmed by Alwande. Do not translate it, do not add a fourth variant, and keep the file UTF-8 so `après` renders.
+- **Icons:** Lucide line icons only. Stroke width 1.9, round caps and joins, colour always `currentColor`. No emoji anywhere in the interface, ever.
+- **Photography:** real beauty work on real people, warm natural light, skin tones reflecting the actual South African user base. Always `object-fit: cover`. Any photo carrying text gets the plum veil first. Never a stock photo standing in for missing data.
+
+The logo and palette above are current as of August 2026 and may be revisited. Until Alwande says otherwise, treat them as fixed.
+
+---
+
+## Run & Operate
+
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- Required env: `DATABASE_URL` (Postgres), plus Stripe credentials via the Replit connector
+
+**Always run `pnpm run typecheck` before declaring a task done.** Zero errors is the standard.
+
+---
+
+## Stack
+
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- Frontend: React 19 + Vite + Wouter, Tailwind v4
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval, generated from the OpenAPI spec
+- Build: esbuild (CJS bundle)
+- Auth: custom HMAC-SHA256 JWT, stored in localStorage
+
+---
+
+## Where things live
+
+> **Note:** a full rename from `glamnet` to `bonisa` is in progress. Paths below marked with an asterisk still read `glamnet` until that phase completes. Update this section when it does.
+
+| What | Where |
+|---|---|
+| Database schema (source of truth) | `lib/db/src/schema/` — `users`, `stylists`, `appointments`, `casting`, `messages`, `reviews`, `referrals`, `team-members` |
+| API contract (source of truth) | `lib/api-spec/openapi.yaml` — regenerate clients after any change |
+| Generated Zod types | `lib/api-zod/src/generated/` — never edit by hand |
+| Generated React query hooks | `lib/api-client-react/src/generated/` — never edit by hand |
+| API server | `artifacts/api-server/src/` — routes in `routes/`, payment in `stripeClient.ts` and `routes/stripe.ts` |
+| Web app * | `artifacts/glamnet/src/` — package `@workspace/glamnet` |
+| Pages * | `artifacts/glamnet/src/pages/` |
+| Design tokens * | `artifacts/glamnet/src/index.css` and `src/lib/theme.tsx` |
+| Verified badge component * | `artifacts/glamnet/src/components/ui/verified-badge.tsx` |
+| Agent memory notes | `.agents/memory/` |
+
+---
+
+## Architecture decisions
+
+- **`stylistId` is the profile ID (`stylist_profiles.id`), not the account ID (`users.id`).** These are different tables. Confusing them is the most common bug on this project. `services.stylistId` and `portfolio_items.stylistId` both reference the profile.
+- **Roles are fixed at signup**: `client`, `stylist` (artist), `brand`. Each gets its own dashboard. The nav is role-aware.
+- **Verification has two fields on purpose**: `verified` (boolean, the gate) and `verificationStatus` (`none` / `pending` / `verified`, the workflow state). Both must agree.
+- **Payment logic is deliberately quarantined** in `stripeClient.ts`, `routes/stripe.ts` and the booking success page, so the provider can be swapped without touching booking logic.
+- **The OpenAPI spec is the contract.** Change the spec, run codegen, then use the generated types. Do not hand-write API types.
+- **Team bookings split a job between multiple artists** via `payoutPercentage` on team members. This is separate from, and must not be confused with, the platform's 18% commission.
+
+---
+
+## User preferences
+
+- Alwande is a strong product thinker and not a career developer. Explain changes in plain language with concrete examples, not framework jargon. Say what changed and what it means for a user, not which hook you refactored.
+- Do not use em dashes in any user-facing copy or in explanations.
+- **Never rename and build features in the same pass.** Rename first, confirm the app runs clean, then build.
+- **Small, checkpointed changes.** Save progress after each phase so a single phase can be rolled back instead of losing everything.
+- **Always read the real codebase before changing anything.** Never guess from a file name or from memory of what a file used to contain.
+- If a request conflicts with a non-negotiable above, stop and ask rather than quietly picking one.
+
+---
+
+## Gotchas
+
+- `drizzle-kit push` hits an interactive TTY prompt when adding unique constraints to tables that already have rows. Use direct SQL via node and the `pg` module instead.
+- The Replit Stripe connector returns `secret`, not `secret_key`. Stripe schema tables must be created by running the migrations script before the first server start.
+- After editing `openapi.yaml`, run codegen or the generated types silently drift from the server.
+- The auth token localStorage key is `glamnet_auth`. Renaming it logs every existing user out. Handle deliberately during the rename, do not do it by accident.
+- `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440` as a supply-chain defence. Do not disable it.
+
+---
+
+## Known gaps, being worked through
+
+Tracked in the fix brief. Do not treat any of these as done:
+
+- [ ] Commission and payout fields missing from the appointments table
+- [ ] Verification does not gate browse, booking or casting applications
+- [ ] No artist tier or reputation score
+- [ ] No POPIA consent capture or privacy policy
+- [ ] `casting_calls.budget` is free text, so campaign spend cannot be totalled
+- [ ] `appointments.stylistId` has no foreign key constraint
+- [ ] No minimum service price validation (R600/hr floor for Phase 1 onboarding)
+- [ ] No artist subscription tiers (R99 Basic, R199 Pro)
+- [ ] Rename from GlamNet to Bonisa incomplete: 80 files still reference glamnet

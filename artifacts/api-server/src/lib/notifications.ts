@@ -1,8 +1,8 @@
 /**
- * GlamNet Notification Service — WhatsApp via Twilio
+ * Bonisa Notification Service — WhatsApp via Twilio
  *
  * CHANNEL GUARDRAIL: WhatsApp Business API is the primary notification channel
- * for GlamNet. Email is NOT wired here intentionally — the business operates
+ * for Bonisa. Email is NOT wired here intentionally — the business operates
  * day-to-day over WhatsApp and wants parity in-product.
  *
  * PAYFAST GUARDRAIL: No Stripe-specific logic here. This service is
@@ -13,7 +13,7 @@
  *   TWILIO_AUTH_TOKEN    — from console.twilio.com
  *   TWILIO_WHATSAPP_FROM — e.g. "whatsapp:+14155238886" (sandbox) or your
  *                          approved WhatsApp Business number
- *   ADMIN_WHATSAPP_PHONE — GlamNet founder/admin number. Used for (1) a copy
+ *   ADMIN_WHATSAPP_PHONE — Bonisa founder/admin number. Used for (1) a copy
  *                          of every casting application, and (2) failure
  *                          alerts when a customer-facing WhatsApp send fails.
  *
@@ -29,7 +29,8 @@ type NotificationEvent =
   | "booking.confirmed.stylist"// → stylist (their own confirmation copy)
   | "booking.declined"         // → client
   | "booking.completed"        // → client AND stylist (fire twice with different `to`)
-  | "casting.applied";         // → brand AND admin (fire twice with different `to`)
+  | "casting.applied"          // → brand AND admin (fire twice with different `to`)
+  | "message.received";        // → message recipient
 
 interface NotificationData {
   clientName?: string;
@@ -40,51 +41,59 @@ interface NotificationData {
   castingTitle?: string;
   applicantName?: string;
   brandName?: string;
+  senderName?: string;
+  preview?: string;
 }
 
 function formatMessage(event: NotificationEvent, data: NotificationData): string {
   switch (event) {
     case "booking.created":
       return (
-        `✨ *New booking on GlamNet!*\n\n` +
+        `✨ *New booking on Bonisa!*\n\n` +
         `${data.clientName} has booked *${data.serviceName}* with you.\n` +
         `📅 ${data.date} at ${data.time}\n\n` +
-        `Log in to GlamNet to confirm or manage the appointment.`
+        `Log in to Bonisa to confirm or manage the appointment.`
       );
     case "booking.confirmed":
       return (
         `✅ *Your booking is confirmed!*\n\n` +
         `${data.stylistName} has confirmed your *${data.serviceName}* appointment.\n` +
         `📅 ${data.date} at ${data.time}\n\n` +
-        `Open GlamNet to message your artist or view details.`
+        `Open Bonisa to message your artist or view details.`
       );
     case "booking.confirmed.stylist":
       return (
         `✅ *Booking confirmed*\n\n` +
         `You confirmed *${data.serviceName}* for ${data.clientName}.\n` +
         `📅 ${data.date} at ${data.time}\n\n` +
-        `It's on your GlamNet schedule.`
+        `It's on your Bonisa schedule.`
       );
     case "booking.declined":
       return (
-        `❌ *Booking update from GlamNet*\n\n` +
+        `❌ *Booking update from Bonisa*\n\n` +
         `Unfortunately, ${data.stylistName} is unable to take your *${data.serviceName}* appointment on ${data.date} at ${data.time}.\n\n` +
-        `Visit GlamNet to find another available artist.`
+        `Visit Bonisa to find another available artist.`
       );
     case "booking.completed":
       return (
         `🌟 *Appointment complete!*\n\n` +
         `Your *${data.serviceName}* session with ${data.stylistName} is marked as complete.\n\n` +
-        `Leave a review on GlamNet to help other clients discover great artists.`
+        `Leave a review on Bonisa to help other clients discover great artists.`
       );
     case "casting.applied":
       return (
-        `🎬 *New casting application on GlamNet!*\n\n` +
+        `🎬 *New casting application on Bonisa!*\n\n` +
         `*${data.applicantName}* has applied to your casting call: _${data.castingTitle}_\n\n` +
-        `Log in to GlamNet to review their profile and portfolio.`
+        `Log in to Bonisa to review their profile and portfolio.`
+      );
+    case "message.received":
+      return (
+        `💬 *New message on Bonisa*\n\n` +
+        `${data.senderName} sent you a message: "${data.preview}"\n\n` +
+        `Open Bonisa to reply.`
       );
     default:
-      return "You have a new notification on GlamNet.";
+      return "You have a new notification on Bonisa.";
   }
 }
 
@@ -159,7 +168,7 @@ export async function sendNotification(
 }
 
 /**
- * Best-effort alert to the GlamNet admin/founder number when a customer- or
+ * Best-effort alert to the Bonisa admin/founder number when a customer- or
  * artist-facing WhatsApp notification fails to send. This is a separate,
  * minimal path (does not call sendNotification recursively) so a broken
  * Twilio connection can't loop back on itself.
@@ -195,7 +204,7 @@ async function alertAdminOfFailure(
       from: fromFormatted,
       to: `whatsapp:${to}`,
       body:
-        `⚠️ *GlamNet notification failed*\n\n` +
+        `⚠️ *Bonisa notification failed*\n\n` +
         `Event: ${failedEvent}\n` +
         `Intended recipient: ${failedTo}\n` +
         `Reason: ${errMessage}\n\n` +

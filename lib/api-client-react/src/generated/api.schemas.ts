@@ -77,6 +77,14 @@ export const StylistProfileVerificationStatus = {
   verified: 'verified',
 } as const;
 
+export type StylistProfileReputationBreakdown = {
+  score?: number;
+  cancellationRate?: number;
+  repeatClientRate?: number;
+  completedBookings?: number;
+  totalBookings?: number;
+} | null;
+
 export interface Service {
   id: string;
   name: string;
@@ -92,6 +100,23 @@ export interface PortfolioItem {
   type: string;
   /** @nullable */
   imageUrl?: string | null;
+}
+
+export interface ProfileReadinessCriterion {
+  id: number;
+  label: string;
+  met: boolean;
+  hint: string;
+}
+
+export interface ProfileReadiness {
+  criteria: ProfileReadinessCriterion[];
+  completedCount: number;
+  totalCount: number;
+  /** True when the artist has at least one service listed — minimum for booking to work */
+  canBeBooked: boolean;
+  /** True when all 7 readiness criteria are met */
+  isFullyReady: boolean;
 }
 
 export interface StylistProfile {
@@ -117,6 +142,16 @@ export interface StylistProfile {
   website?: string | null;
   /** @nullable */
   accentColor?: string | null;
+  houseCalls?: boolean;
+  /** @nullable */
+  phone?: string | null;
+  /**
+     * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+     * @nullable
+     */
+  reputationScore?: number | null;
+  reputationBreakdown?: StylistProfileReputationBreakdown;
+  profileReadiness?: ProfileReadiness | null;
 }
 
 export interface StylistProfileUpdate {
@@ -128,6 +163,8 @@ export interface StylistProfileUpdate {
   website?: string;
   availability?: string[];
   tags?: string[];
+  houseCalls?: boolean;
+  accentColor?: string;
 }
 
 export interface ServiceInput {
@@ -221,20 +258,61 @@ export interface Conversation {
   lastMessage?: string | null;
   lastMessageAt: string;
   unreadCount: number;
+  isOtherTyping?: boolean;
+  /** @nullable */
+  clientLastReadAt?: string | null;
+  /** @nullable */
+  stylistLastReadAt?: string | null;
 }
+
+export type MessageMessageType = typeof MessageMessageType[keyof typeof MessageMessageType];
+
+
+export const MessageMessageType = {
+  text: 'text',
+  image: 'image',
+  voice: 'voice',
+  system: 'system',
+} as const;
 
 export interface Message {
   id: string;
   conversationId: string;
-  senderId: string;
+  /** @nullable */
+  senderId?: string | null;
   senderName: string;
   content: string;
+  messageType: MessageMessageType;
+  /** @nullable */
+  mediaUrl?: string | null;
   createdAt: string;
 }
+
+export type MessageInputMessageType = typeof MessageInputMessageType[keyof typeof MessageInputMessageType];
+
+
+export const MessageInputMessageType = {
+  text: 'text',
+  image: 'image',
+  voice: 'voice',
+} as const;
 
 export interface MessageInput {
   /** @minLength 1 */
   content: string;
+  messageType?: MessageInputMessageType;
+  mediaUrl?: string;
+}
+
+export interface MediaUploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface MediaUploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }
 
 export interface StartConversationInput {
@@ -334,6 +412,19 @@ specialty?: string;
 location?: string;
 verified?: boolean;
 search?: string;
+minRating?: number;
+maxPrice?: number;
+houseCalls?: boolean;
+availabilityDay?: string;
+language?: string;
+/**
+ * Filter by service name (partial match against stylist services)
+ */
+service?: string;
+/**
+ * Filter by area/neighbourhood (proximity proxy)
+ */
+area?: string;
 };
 
 export type ListAppointmentsParams = {

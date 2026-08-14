@@ -19,36 +19,38 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [profile, appts] = await Promise.all([
-    db
-      .select()
-      .from(stylistProfilesTable)
-      .where(eq(stylistProfilesTable.userId, user.id))
-      .limit(1),
-    db
-      .select()
-      .from(appointmentsTable)
-      .where(eq(appointmentsTable.stylistId, user.id))
-      .orderBy(desc(appointmentsTable.date)),
-  ]);
+  // Must fetch profile first — appointments are keyed by profile.id, not user.id
+  const profileRows = await db
+    .select()
+    .from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.userId, user.id))
+    .limit(1);
+  const profile = profileRows;
+
+  const appts = profileRows[0]
+    ? await db
+        .select()
+        .from(appointmentsTable)
+        .where(eq(appointmentsTable.stylistId, profileRows[0].id))
+        .orderBy(desc(appointmentsTable.date))
+    : [];
 
   const pending = appts.filter((a) => a.status === "pending");
   const confirmed = appts.filter((a) => a.status === "confirmed");
   const completed = appts.filter((a) => a.status === "completed");
 
-  const thisMonthEarnings = completed
+  // Net earnings: artists always see their 82% share, never gross booking values.
+  const released = appts.filter((a) => a.payoutStatus === "released");
+  const availableEarnings = released.reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);
+  const pendingEarnings = appts
+    .filter((a) => a.payoutStatus === "held" && (a.status === "confirmed" || a.status === "completed"))
+    .reduce((sum, a) => sum + (a.artistPayoutAmount || (a.price + a.tipAmount) * 0.82), 0);
+  const thisMonthEarnings = released
     .filter((a) => new Date(a.date) >= monthStart)
-    .reduce((sum, a) => sum + a.price, 0);
+    .reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);
 
-  const upcoming = appts
-    .filter(
-      (a) =>
-        (a.status === "confirmed" || a.status === "pending") &&
-        new Date(a.date) >= now,
-    )
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5)
-    .map((a) => ({
+  function fmtStylistAppt(a: typeof appts[0]) {
+    return {
       id: a.id,
       clientId: a.clientId,
       clientName: a.clientName,
@@ -63,7 +65,20 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
       duration: a.duration,
       notes: a.notes ?? null,
       createdAt: a.createdAt.toISOString(),
-    }));
+      paymentMode: a.paymentMode,
+      tipAmount: a.tipAmount,
+      workConfirmedByClient: a.workConfirmedByClient,
+      workConfirmedByClientAt: a.workConfirmedByClientAt?.toISOString() ?? null,
+      workConfirmedByArtist: a.workConfirmedByArtist,
+      workConfirmedByArtistAt: a.workConfirmedByArtistAt?.toISOString() ?? null,
+      payoutStatus: a.payoutStatus,
+      artistPayoutAmount: a.artistPayoutAmount,
+      platformFeeAmount: a.platformFeeAmount,
+    };
+  }
+
+  // Return all appointments (not just upcoming) so work-confirmation buttons can appear on past ones
+  const upcoming = appts.slice(0, 30).map(fmtStylistAppt);
 
   let profileStrength = 10;
   const p = profile[0];
@@ -90,8 +105,11 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
     pendingBookings: pending.length,
     confirmedBookings: confirmed.length,
     completedBookings: completed.length,
-    totalEarnings: completed.reduce((sum, a) => sum + a.price, 0),
+    totalEarnings: availableEarnings,
     thisMonthEarnings,
+    pendingEarnings: Math.round(pendingEarnings * 100) / 100,
+    availableEarnings: Math.round(availableEarnings * 100) / 100,
+    lifetimeEarnings: Math.round(availableEarnings * 100) / 100,
     profileStrength: Math.min(100, profileStrength),
     upcomingAppointments: upcoming,
     recentActivity: appts.slice(0, 5).map((a) => ({
@@ -113,15 +131,8 @@ router.get("/dashboard/client", requireAuth, async (req, res) => {
     .where(eq(appointmentsTable.clientId, user.id))
     .orderBy(desc(appointmentsTable.date));
 
-  const upcoming = appts
-    .filter(
-      (a) =>
-        (a.status === "confirmed" || a.status === "pending") &&
-        new Date(a.date) >= now,
-    )
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5)
-    .map((a) => ({
+  function fmtClientAppt(a: typeof appts[0]) {
+    return {
       id: a.id,
       clientId: a.clientId,
       clientName: a.clientName,
@@ -136,7 +147,20 @@ router.get("/dashboard/client", requireAuth, async (req, res) => {
       duration: a.duration,
       notes: a.notes ?? null,
       createdAt: a.createdAt.toISOString(),
-    }));
+      paymentMode: a.paymentMode,
+      tipAmount: a.tipAmount,
+      workConfirmedByClient: a.workConfirmedByClient,
+      workConfirmedByClientAt: a.workConfirmedByClientAt?.toISOString() ?? null,
+      workConfirmedByArtist: a.workConfirmedByArtist,
+      workConfirmedByArtistAt: a.workConfirmedByArtistAt?.toISOString() ?? null,
+      payoutStatus: a.payoutStatus,
+      artistPayoutAmount: a.artistPayoutAmount,
+      platformFeeAmount: a.platformFeeAmount,
+    };
+  }
+
+  // Show all appointments so clients can confirm work on past ones
+  const upcoming = appts.slice(0, 30).map(fmtClientAppt);
 
   const allStylists = await db
     .select()

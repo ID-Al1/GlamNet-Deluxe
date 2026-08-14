@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { BonisaLogo } from "@/components/bonisa-logo";
 import { CheckCircle2, MapPin, FileText, Clock, Instagram, ChevronRight, ChevronLeft, Scissors } from "lucide-react";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -106,9 +107,8 @@ export default function ProfileSetup() {
       <div className="w-full max-w-lg">
 
         {/* Logo */}
-        <div className="flex items-center gap-2 justify-center mb-10">
-          <Scissors className="h-5 w-5 text-primary rotate-45" />
-          <span className="font-serif font-bold text-xl">GlamNet</span>
+        <div className="flex items-center justify-center mb-10">
+          <BonisaLogo size={30} />
         </div>
 
         {/* Progress steps */}

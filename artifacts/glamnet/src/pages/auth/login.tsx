@@ -33,7 +33,7 @@ export default function Login() {
       <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-2xl border border-border">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-serif font-bold">Welcome back</h1>
-          <p className="text-muted-foreground">Log in to your GlamNet account</p>
+          <p className="text-muted-foreground">Log in to your Bonisa account</p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -1,7 +1,18 @@
 import Stripe from 'stripe';
 import { StripeSync } from 'stripe-replit-sync';
 
-async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecret?: string }> {
+interface StripeCredentials {
+  secretKey: string;
+  webhookSecret?: string;
+}
+
+let cached: { creds: StripeCredentials; expiresAt: number } | null = null;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+export async function getStripeCredentials(): Promise<StripeCredentials> {
+  const now = Date.now();
+  if (cached && now < cached.expiresAt) return cached.creds;
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -28,7 +39,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
     throw new Error(`Failed to fetch Stripe credentials: ${resp.status} ${resp.statusText}`);
   }
 
-  const data = await resp.json();
+  const data = await resp.json() as any;
   const settings = data.items?.[0]?.settings;
 
   const secretKey = settings?.secret_key ?? settings?.secret;
@@ -39,10 +50,12 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
     );
   }
 
-  return {
+  const creds: StripeCredentials = {
     secretKey,
     webhookSecret: settings?.webhook_secret,
   };
+  cached = { creds, expiresAt: now + CACHE_TTL_MS };
+  return creds;
 }
 
 export async function getUncachableStripeClient(): Promise<Stripe> {

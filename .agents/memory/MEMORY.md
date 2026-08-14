@@ -1,7 +1,13 @@
+- [Bonisa product spec and non-negotiables](bonisa-product-spec.md) — authoritative rules: "artist" not "stylist", verification gate, 82/18 split stored on record, zero fake data, Lucide 1.9 strokeWidth, no emoji, no hardcoded colours.
 - [GlamNet stack & auth](glamnet-stack.md) — Express 5 + Drizzle + Postgres, React + Vite + Wouter, Tailwind v4, custom HMAC-SHA256 JWT in localStorage key `glamnet_auth`.
 - [GlamNet drizzle-kit push workaround](glamnet-drizzle-push.md) — drizzle-kit push hits interactive TTY prompt for unique constraints on tables with existing rows; use direct SQL via node + pg module instead.
 - [GlamNet team/referral/review features](glamnet-team-referral-review.md) — team bookings, referrals, and reviews implemented as additive features; design decisions documented.
 - [GlamNet schema decisions](glamnet-schema.md) — houseCalls boolean added to stylist_profiles; servicesTable.stylistId references stylistProfilesTable.id (not userId).
-- [GlamNet design tokens](glamnet-design-tokens.md) — gold #B8893A (hsl 38 52% 47% light / 38 50% 58% dark) replaces rose as primary; cream background; rose demoted to secondary only. Token change is in index.css only.
+- [GlamNet design tokens](glamnet-design-tokens.md) — superseded, see glamnet-rebrand-2.md for the current palette.
+- [Bonisa brand palette](glamnet-rebrand-2.md) — current burgundy/cream palette (Aug 2026) and safe palette-swap procedure; prefer semantic tokens over fixed hexes.
+- [GlamNet openapi field additions](glamnet-openapi-fields.md) — DB/route fields aren't typed for frontend until declared in the spec + codegen re-run.
 - [video-js vertical export](video-js-vertical-export.md) — export is fixed 16:9; make Reels via a centered 9:16 stage with branded fill (no black bars), then crop.
 - [Stripe connector credential key](stripe-credential-key.md) — Replit connector API returns `secret` not `secret_key`; stripe schema tables must be created by running migrations script before first server startup.
+- [GlamNet appointment conflict prevention](glamnet-appointment-conflicts.md) — double-bookings blocked via partial unique DB index; Drizzle wraps pg error code in `err.cause.code`, not `err.code`.
+- [Bonisa escrow & payout model](bonisa-escrow.md) — app rebranded Bonisa; 82/18 escrow with atomic conditional state transitions; lib/db dist types go stale after schema changes.
+- [Bonisa mockup redesign lessons](bonisa-mockup-redesign.md) — restyle = re-skin only; delegated redesigns tend to swap live logic for static mockup data, so audit for fake data and dead buttons.

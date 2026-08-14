@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "postgresql-16"]
+modules = ["nodejs-24", "postgresql-16", "python-base-3.13"]
 
 [deployment]
 router = "application"
@@ -27,3 +27,19 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_WHATSAPP_PHONE = "0798629308"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 80
+
+[[ports]]
+localPort = 18275
+externalPort = 3001
+
+[[ports]]
+localPort = 25610
+externalPort = 3000

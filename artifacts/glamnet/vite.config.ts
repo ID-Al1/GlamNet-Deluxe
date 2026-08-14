@@ -57,6 +57,29 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React + routing runtime — always needed
+          "vendor-react": ["react", "react-dom"],
+          // UI component library (most-used Radix primitives)
+          "vendor-radix": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-slot",
+            "@radix-ui/react-label",
+            "@radix-ui/react-radio-group",
+          ],
+          // Data fetching
+          "vendor-query": ["@tanstack/react-query"],
+          // Animation (larger lib — isolated so it only loads on pages that use it)
+          "vendor-motion": ["framer-motion"],
+        },
+      },
+    },
   },
   server: {
     port,

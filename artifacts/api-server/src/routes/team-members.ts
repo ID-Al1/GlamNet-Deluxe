@@ -106,10 +106,22 @@ router.post("/appointments/:appointmentId/team-members", requireAuth, async (req
   if (!targetProfile) { res.status(404).json({ error: "Stylist not found" }); return; }
 
   // Check if already added
-  const existing = await db.select().from(bookingTeamMembersTable)
-    .where(and(eq(bookingTeamMembersTable.appointmentId, appointmentId), eq(bookingTeamMembersTable.stylistId, stylistId)));
-  if (existing.length > 0) {
+  const existingMembers = await db.select().from(bookingTeamMembersTable)
+    .where(eq(bookingTeamMembersTable.appointmentId, appointmentId));
+  if (existingMembers.some(m => m.stylistId === stylistId)) {
     res.status(409).json({ error: "This artist is already on the team" });
+    return;
+  }
+
+  // Guard against over-allocating payouts beyond 100%, even if a client
+  // bypasses the frontend check.
+  const currentTotal = existingMembers
+    .filter(m => m.status !== "declined")
+    .reduce((sum, m) => sum + m.payoutPercentage, 0);
+  if (currentTotal + payoutPercentage > 100) {
+    res.status(400).json({
+      error: `Total payout splits would exceed 100% (currently ${currentTotal}%, adding ${payoutPercentage}%)`,
+    });
     return;
   }
 

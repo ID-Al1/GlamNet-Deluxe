@@ -11,4 +11,17 @@ specialty?: string;
 location?: string;
 verified?: boolean;
 search?: string;
+minRating?: number;
+maxPrice?: number;
+houseCalls?: boolean;
+availabilityDay?: string;
+language?: string;
+/**
+ * Filter by service name (partial match against stylist services)
+ */
+service?: string;
+/**
+ * Filter by area/neighbourhood (proximity proxy)
+ */
+area?: string;
 };

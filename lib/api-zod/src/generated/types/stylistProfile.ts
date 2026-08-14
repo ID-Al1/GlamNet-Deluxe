@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PortfolioItem } from './portfolioItem';
+import type { ProfileReadiness } from './profileReadiness';
 import type { Service } from './service';
+import type { StylistProfileReputationBreakdown } from './stylistProfileReputationBreakdown';
 import type { StylistProfileVerificationStatus } from './stylistProfileVerificationStatus';
 
 export interface StylistProfile {
@@ -32,4 +34,14 @@ export interface StylistProfile {
   website?: string | null;
   /** @nullable */
   accentColor?: string | null;
+  houseCalls?: boolean;
+  /** @nullable */
+  phone?: string | null;
+  /**
+     * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+     * @nullable
+     */
+  reputationScore?: number | null;
+  reputationBreakdown?: StylistProfileReputationBreakdown;
+  profileReadiness?: ProfileReadiness | null;
 }
