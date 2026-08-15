@@ -11,3 +11,4 @@
 - [GlamNet appointment conflict prevention](glamnet-appointment-conflicts.md) — double-bookings blocked via partial unique DB index; Drizzle wraps pg error code in `err.cause.code`, not `err.code`.
 - [Bonisa escrow & payout model](bonisa-escrow.md) — app rebranded Bonisa; 82/18 escrow with atomic conditional state transitions; lib/db dist types go stale after schema changes.
 - [Bonisa mockup redesign lessons](bonisa-mockup-redesign.md) — restyle = re-skin only; delegated redesigns tend to swap live logic for static mockup data, so audit for fake data and dead buttons.
+- [stylistId naming trap](glamnet-stylistid-naming-trap.md) — conversations.stylistId holds a USER id; all other tables hold a PROFILE id. Rename to stylistUserId on next messaging touch.
