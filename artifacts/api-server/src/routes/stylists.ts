@@ -4,6 +4,7 @@ import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTabl
 import { eq, and, ilike, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
+import { notify } from "../lib/notifications";
 import {
   UpdateMyStylistProfileBody,
   AddStylistServiceBody,
@@ -274,6 +275,39 @@ router.patch("/stylists/me/profile", requireAuth, async (req, res) => {
   }).where(eq(stylistProfilesTable.id, profile.id));
   const result = await buildStylistResponse(profile.id);
   res.json(result);
+});
+
+// Artist submits her profile for verification.
+// "none" → "pending" (also allows resubmission after a rejection resets to "none").
+// Returns 409 if already pending or already verified.
+router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+  if (profile.verificationStatus === "pending") {
+    res.status(409).json({ error: "Your profile is already under review." }); return;
+  }
+  if (profile.verificationStatus === "verified") {
+    res.status(409).json({ error: "Your profile is already verified." }); return;
+  }
+
+  await db.update(stylistProfilesTable)
+    .set({ verificationStatus: "pending" })
+    .where(eq(stylistProfilesTable.id, profile.id));
+
+  // Notify the artist — non-fatal, runs after response is sent
+  setImmediate(async () => {
+    try {
+      const [userRow] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+      await notify(
+        { phone: userRow?.phone, email: userRow?.email, name: userRow?.name },
+        "verification.submitted",
+        { artistName: profile.name },
+      );
+    } catch { /* non-fatal */ }
+  });
+
+  res.json({ message: "Profile submitted for verification. We'll be in touch within 72 hours." });
 });
 
 router.post("/stylists/me/services", requireAuth, async (req, res) => {

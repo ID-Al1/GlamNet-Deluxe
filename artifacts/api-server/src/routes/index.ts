@@ -11,6 +11,7 @@ import teamMembersRouter from "./team-members";
 import referralsRouter from "./referrals";
 import reviewsRouter from "./reviews";
 import storageRouter from "./storage";
+import ownerRouter from "./owner";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(teamMembersRouter);
 router.use(referralsRouter);
 router.use(reviewsRouter);
 router.use(storageRouter);
+router.use(ownerRouter);
 
 export default router;

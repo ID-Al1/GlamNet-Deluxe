@@ -343,6 +343,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+  /stylists/me/verification-submit:
+    patch:
+      operationId: submitForVerification
+      tags: [stylists]
+      summary: Submit profile for verification
+      description: >
+        Transitions verificationStatus from "none" to "pending" and notifies
+        the artist by email (and WhatsApp if she has a number on file).
+        Returns 409 if already pending or verified.
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "409":
+          description: Already pending or verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /stylists/me/verification-checklist:
     get:
       operationId: getVerificationChecklist

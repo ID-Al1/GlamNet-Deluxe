@@ -4,7 +4,7 @@ import { eq, and, or, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod";
-import { sendNotification } from "../lib/notifications";
+import { sendNotification, notify } from "../lib/notifications";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
 import { recordPayoutEvent, splitAmount } from "../lib/escrow";
@@ -365,6 +365,24 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
         `Both parties confirmed the appointment. R${artistPayout.toFixed(2)} released to ${appt.stylistName} (Bonisa fee: R${platformFee.toFixed(2)}).`
       );
     } catch { /* non-fatal */ }
+    // Notify artist her money has cleared — email + WhatsApp, non-fatal
+    setImmediate(async () => {
+      try {
+        const [artistProfile] = await db.select().from(stylistProfilesTable)
+          .where(eq(stylistProfilesTable.id, appt.stylistId));
+        if (!artistProfile) return;
+        const [artistUser] = await db.select().from(usersTable)
+          .where(eq(usersTable.id, artistProfile.userId));
+        if (!artistUser) return;
+        const payoutDueAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+          .toLocaleDateString("en-ZA");
+        await notify(
+          { phone: artistUser.phone, email: artistUser.email, name: artistUser.name },
+          "payout.released",
+          { artistName: artistProfile.name, serviceName: appt.serviceName, amount: artistPayout, payoutDueAt },
+        );
+      } catch { /* non-fatal */ }
+    });
     res.json(formatAppt(releasedRows[0]));
     return;
   }

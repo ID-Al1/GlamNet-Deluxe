@@ -19,6 +19,21 @@ export function verifyToken(token: string): string | null {
   }
 }
 
+export async function requireOwner(req: Request, res: Response, next: NextFunction) {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) { res.status(401).json({ error: "Not authenticated" }); return; }
+  const userId = verifyToken(auth.slice(7));
+  if (!userId) { res.status(401).json({ error: "Invalid token" }); return; }
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!user) { res.status(401).json({ error: "User not found" }); return; }
+  const ownerEmail = process.env["OWNER_EMAIL"];
+  if (!ownerEmail || user.email !== ownerEmail) {
+    res.status(403).json({ error: "Access restricted to Bonisa owner" }); return;
+  }
+  (req as any).user = user;
+  next();
+}
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) {
