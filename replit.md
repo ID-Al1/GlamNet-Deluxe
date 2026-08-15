@@ -1,5 +1,7 @@
 # Bonisa
 
+Screen specs, acceptance criteria and the working agreement live in docs/BONISA_BUILD_SPEC.md. Read it before any product task.
+
 South Africa's verified professional network for beauty artists. Artists build a verified profile, take direct bookings, and apply to brand campaigns. Clients book a verified artist. Brands staff campaigns from a verified pool.
 
 **Bonisa is a professional identity network, not a beauty booking app.** The nearest comparison is LinkedIn, not Fresha or Booksy. The artist's verified identity is the product; the booking calendar is a feature.
