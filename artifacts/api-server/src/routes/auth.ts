@@ -48,13 +48,15 @@ function generateReferralCode(): string {
 function formatUser(u: typeof usersTable.$inferSelect) {
   // isOwner is computed server-side only. OWNER_EMAIL is never sent to the
   // browser. Guard with !! so an unset env var never accidentally matches "".
+  // Compare after trim+lowercase so leading/trailing whitespace or casing in
+  // the secret never silently breaks the match.
   const ownerEmail = process.env["OWNER_EMAIL"];
   return {
     id: u.id,
     name: u.name,
     email: u.email,
     role: u.role,
-    isOwner: !!(ownerEmail && u.email === ownerEmail),
+    isOwner: !!(ownerEmail && u.email.trim().toLowerCase() === ownerEmail.trim().toLowerCase()),
     businessName: u.businessName ?? null,
     avatarUrl: u.avatarUrl ?? null,
     phone: u.phone ?? null,
@@ -69,7 +71,9 @@ router.post("/auth/signup", async (req, res) => {
     res.status(400).json({ error: "Validation error" });
     return;
   }
-  const { name, email, password, role, businessName } = parsed.data;
+  const { name, password, role, businessName } = parsed.data;
+  // Normalise email at write time so stored values are always canonical.
+  const email = parsed.data.email.trim().toLowerCase();
   const referralCode = (req.body.referralCode as string | undefined)?.trim().toUpperCase() || null;
 
   const existing = await db.select().from(usersTable).where(eq(usersTable.email, email));
@@ -133,7 +137,9 @@ router.post("/auth/login", async (req, res) => {
     res.status(400).json({ error: "Validation error" });
     return;
   }
-  const { email, password } = parsed.data;
+  const { password } = parsed.data;
+  // Normalise at read time to match any pre-existing rows stored with original casing.
+  const email = parsed.data.email.trim().toLowerCase();
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
   if (!user || !verifyPassword(password, user.passwordHash)) {
     res.status(401).json({ error: "Invalid credentials" });
