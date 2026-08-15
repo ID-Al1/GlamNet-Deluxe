@@ -50,7 +50,18 @@ router.get("/appointments", requireAuth, async (req, res) => {
 
   let appts;
   if (role === "stylist" || user.role === "stylist") {
-    appts = await db.select().from(appointmentsTable).where(eq(appointmentsTable.stylistId, user.id));
+    // appointments.stylistId holds a stylist_profiles.id, NOT a users.id.
+    // Comparing it against user.id matches nothing, which is why artists were
+    // getting an empty list. dashboard.ts already does this correctly.
+    const [profile] = await db
+      .select()
+      .from(stylistProfilesTable)
+      .where(eq(stylistProfilesTable.userId, user.id))
+      .limit(1);
+
+    appts = profile
+      ? await db.select().from(appointmentsTable).where(eq(appointmentsTable.stylistId, profile.id))
+      : [];
   } else {
     appts = await db.select().from(appointmentsTable).where(eq(appointmentsTable.clientId, user.id));
   }
