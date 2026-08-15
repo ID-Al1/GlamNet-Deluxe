@@ -27,7 +27,7 @@ export async function requireOwner(req: Request, res: Response, next: NextFuncti
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
   if (!user) { res.status(401).json({ error: "User not found" }); return; }
   const ownerEmail = process.env["OWNER_EMAIL"];
-  if (!ownerEmail || user.email !== ownerEmail) {
+  if (!ownerEmail || user.email.trim().toLowerCase() !== ownerEmail.trim().toLowerCase()) {
     res.status(403).json({ error: "Access restricted to Bonisa owner" }); return;
   }
   (req as any).user = user;
