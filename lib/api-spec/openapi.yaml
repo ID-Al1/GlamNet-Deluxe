@@ -353,7 +353,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [pending, confirmed, completed, cancelled]
+            enum: [pending, confirmed, completed, cancelled, declined]
         - name: role
           in: query
           schema:
@@ -993,7 +993,7 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, confirmed, completed, cancelled]
+          enum: [pending, confirmed, completed, cancelled, declined]
         price:
           type: number
         duration:
@@ -1023,7 +1023,7 @@ components:
       properties:
         status:
           type: string
-          enum: [pending, confirmed, completed, cancelled]
+          enum: [pending, confirmed, completed, cancelled, declined]
         date:
           type: string
         time:

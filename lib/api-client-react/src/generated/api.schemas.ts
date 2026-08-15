@@ -198,6 +198,7 @@ export const AppointmentStatus = {
   confirmed: 'confirmed',
   completed: 'completed',
   cancelled: 'cancelled',
+  declined: 'declined',
 } as const;
 
 export interface Appointment {
@@ -234,6 +235,7 @@ export const AppointmentUpdateStatus = {
   confirmed: 'confirmed',
   completed: 'completed',
   cancelled: 'cancelled',
+  declined: 'declined',
 } as const;
 
 export interface AppointmentUpdate {
@@ -440,6 +442,7 @@ export const ListAppointmentsStatus = {
   confirmed: 'confirmed',
   completed: 'completed',
   cancelled: 'cancelled',
+  declined: 'declined',
 } as const;
 
 export type ListAppointmentsRole = typeof ListAppointmentsRole[keyof typeof ListAppointmentsRole];
