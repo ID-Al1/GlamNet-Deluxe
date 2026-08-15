@@ -222,6 +222,15 @@ router.post("/messages/start", requireAuth, async (req, res) => {
     return;
   }
 
+  // Gate: conversations.stylistId holds a users.id, NOT a stylist_profiles.id.
+  // Look up the profile via userId, or the verified check silently matches nothing.
+  const [artistProfile] = await db.select().from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.userId, stylistId));
+  if (!artistProfile?.verified) {
+    res.status(403).json({ error: "This artist is not yet verified on Bonisa." });
+    return;
+  }
+
   const [conv] = await db.insert(conversationsTable).values({
     id: randomUUID(),
     clientId: user.id,

@@ -79,6 +79,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 
 ## Gotchas
 
+- `stylistId` means the PROFILE id (stylist_profiles.id) in appointments, services, portfolio_items and casting_applications, but the USER id (users.id) in conversations. Rename conversations.stylistId to stylistUserId when messaging is next touched.
 - `drizzle-kit push` hits an interactive TTY prompt when adding unique constraints to tables with existing rows. Use direct SQL via node + `pg` module instead.
 - The Replit Stripe connector returns `secret`, not `secret_key`. Stripe schema tables must be created by running the migrations script before the first server start.
 - After editing `openapi.yaml`, run codegen or generated types silently drift from the server.
