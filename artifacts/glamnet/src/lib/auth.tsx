@@ -1,3 +1,9 @@
+// @refresh reset
+// auth.tsx defines a React context. If Vite hot-swaps this module it creates
+// a new AuthContext reference while the existing AuthProvider in the tree still
+// holds the old one, causing useAuth() to throw "must be used within
+// AuthProvider". The @refresh reset directive tells Vite to do a full page
+// reload instead of a partial hot swap whenever this file changes.
 import { createContext, useContext, useState, ReactNode } from "react";
 import { setAuthToken, useLogin, useSignup, useLogout } from "@workspace/api-client-react";
 import type { User, LoginInput, SignupInput } from "@workspace/api-client-react";
