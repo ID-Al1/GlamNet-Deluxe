@@ -101,32 +101,56 @@ export default function StylistsList() {
             <div className="space-y-3">
               {results.map((s) => (
                 <Link key={s.id} href={`/stylists/${s.id}`}>
-                  <div className="flex items-center justify-between p-3 rounded-[20px] bg-card border border-border/40 shadow-sm hover:bg-card/80 transition-colors cursor-pointer mb-3">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 relative">
-                        <ArtistInitials name={s.name} textClassName="text-base" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="font-bold text-sm text-foreground">{s.name}</h3>
-                          {s.verified && <VerifiedBadge variant="icon" size="sm" />}
-                        </div>
-                        <p className="text-[11px] text-primary font-semibold mt-0.5">{s.specialty}</p>
-                        <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
-                          {s.reviewCount ? (
-                            <>
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                              <span className="font-semibold text-foreground">{formatRating(s.rating ?? 0)}</span>
-                              <span>({s.reviewCount})</span>
-                            </>
-                          ) : (
-                            <span>New artist</span>
-                          )}
-                          {s.location ? <span>· {s.location}</span> : null}
-                        </div>
-                      </div>
+                  {/*
+                    Card order (spec § Browse / Find Artists):
+                    1. Name
+                    2. Verified badge + tier — tier hidden until schema exists
+                    3. Jobs completed on Bonisa — hidden until schema exists
+                    4. Specialty and area
+                    5. Rating (secondary, never headline)
+                    No price. Button says View.
+                  */}
+                  <div className="flex items-start gap-3 p-4 rounded-[20px] bg-card border border-border/40 shadow-sm hover:bg-card/80 transition-colors cursor-pointer">
+                    {/* Avatar */}
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                      <ArtistInitials name={s.name} textClassName="text-base" />
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* 1. Name */}
+                      <h3 className="font-semibold text-sm text-foreground leading-snug">{s.name}</h3>
+
+                      {/* 2. Verified badge + tier slot */}
+                      {s.verified && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <VerifiedBadge variant="pill" size="sm" />
+                          {/* tier slot — render when tier field exists */}
+                        </div>
+                      )}
+
+                      {/* 3. Jobs completed — render when completedJobs field exists */}
+
+                      {/* 4. Specialty · area */}
+                      <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
+                        {s.specialty}
+                        {(s.area || s.location) ? ` · ${s.area || s.location}` : ""}
+                      </p>
+
+                      {/* 5. Rating — secondary, never headline */}
+                      {s.reviewCount ? (
+                        <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={0} />
+                          <span>{formatRating(s.rating ?? 0)}</span>
+                          <span>({s.reviewCount})</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* View — not Book, not a price */}
+                    <div className="shrink-0 self-center text-[11px] font-semibold text-primary border border-primary/30 rounded-full px-3 py-1 bg-primary/5">
+                      View
+                    </div>
                   </div>
                 </Link>
               ))}
