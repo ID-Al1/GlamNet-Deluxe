@@ -1,7 +1,13 @@
 import { pgTable, text, real, integer, boolean, pgEnum, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
-export const appointmentStatusEnum = pgEnum("appointment_status", ["pending", "confirmed", "completed", "cancelled"]);
+export const appointmentStatusEnum = pgEnum("appointment_status", [
+  "pending",    // awaiting artist acceptance
+  "confirmed",  // artist accepted
+  "completed",  // work done
+  "cancelled",  // client cancelled a confirmed booking
+  "declined",   // artist declined a pending request — distinct from client cancellation
+]);
 
 // payoutStatus values: 'held' | 'released' | 'disputed'
 // 'held'     — payment collected, awaiting dual work confirmation

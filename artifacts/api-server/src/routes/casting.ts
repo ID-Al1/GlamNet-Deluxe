@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { param } from "../lib/params";
 import { db, castingCallsTable, castingApplicationsTable, stylistProfilesTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { sendNotification } from "../lib/notifications";
@@ -68,7 +69,7 @@ router.post("/casting", requireAuth, async (req, res) => {
 
 router.get("/casting/:castingId", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const [call] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, req.params.castingId));
+  const [call] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
   if (!call) { res.status(404).json({ error: "Not found" }); return; }
 
   let hasApplied = false;
@@ -86,13 +87,13 @@ router.get("/casting/:castingId", requireAuth, async (req, res) => {
 router.patch("/casting/:castingId", requireAuth, async (req, res) => {
   const parsed = UpdateCastingCallBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
-  const [call] = await db.update(castingCallsTable).set(parsed.data).where(eq(castingCallsTable.id, req.params.castingId)).returning();
+  const [call] = await db.update(castingCallsTable).set(parsed.data).where(eq(castingCallsTable.id, param(req.params.castingId))).returning();
   if (!call) { res.status(404).json({ error: "Not found" }); return; }
   res.json(formatCall(call));
 });
 
 router.delete("/casting/:castingId", requireAuth, async (req, res) => {
-  await db.delete(castingCallsTable).where(eq(castingCallsTable.id, req.params.castingId));
+  await db.delete(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
   res.json({ message: "Deleted" });
 });
 
@@ -101,7 +102,7 @@ router.post("/casting/:castingId/apply", requireAuth, async (req, res) => {
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
   if (!profile) { res.status(403).json({ error: "Only stylists can apply" }); return; }
 
-  const [call] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, req.params.castingId));
+  const [call] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
   if (!call) { res.status(404).json({ error: "Not found" }); return; }
 
   const existing = await db.select().from(castingApplicationsTable)

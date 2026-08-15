@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type Stripe from "stripe";
 import { db, usersTable, appointmentsTable, paymentsTable, stylistProfilesTable, servicesTable, conversationsTable } from "@workspace/db";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";

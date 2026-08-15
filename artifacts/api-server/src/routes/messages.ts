@@ -6,6 +6,7 @@ import { requireAuth } from "../lib/auth";
 import { SendMessageBody, StartConversationBody } from "@workspace/api-zod";
 import { sendNotification } from "../lib/notifications";
 import { wasUploadedBy } from "../lib/upload-registry";
+import { param } from "../lib/params";
 
 const router = Router();
 
@@ -98,11 +99,11 @@ router.get("/messages/conversations", requireAuth, async (req, res) => {
 });
 
 router.get("/messages/conversations/:conversationId", requireAuth, async (req, res) => {
-  const conv = await requireParticipant(req, res, req.params.conversationId);
+  const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
   const msgs = await db.select().from(messagesTable)
-    .where(eq(messagesTable.conversationId, req.params.conversationId))
+    .where(eq(messagesTable.conversationId, param(req.params.conversationId)))
     .orderBy(messagesTable.createdAt);
 
   res.json(msgs.map(serializeMessage));
@@ -113,7 +114,7 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
   const parsed = SendMessageBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
-  const conv = await requireParticipant(req, res, req.params.conversationId);
+  const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
   const messageType = (parsed.data as any).messageType ?? "text";
@@ -140,7 +141,7 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
   const [msg] = await db.insert(messagesTable).values({
     id: randomUUID(),
-    conversationId: req.params.conversationId,
+    conversationId: param(req.params.conversationId),
     senderId: user.id,
     senderName: user.name,
     content: parsed.data.content,
@@ -155,7 +156,7 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
     lastMessage: lastMessagePreview,
     lastMessageAt: new Date(),
     ...(isClient ? { stylistUnread: conv.stylistUnread + 1 } : { clientUnread: conv.clientUnread + 1 }),
-  }).where(eq(conversationsTable.id, req.params.conversationId));
+  }).where(eq(conversationsTable.id, param(req.params.conversationId)));
 
   res.status(201).json(serializeMessage(msg));
 
@@ -176,20 +177,20 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
 router.post("/messages/conversations/:conversationId/typing", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const conv = await requireParticipant(req, res, req.params.conversationId);
+  const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
   const typingUntil = new Date(Date.now() + 4000);
   const isClient = conv.clientId === user.id;
   const update = isClient ? { clientTypingUntil: typingUntil } : { stylistTypingUntil: typingUntil };
 
-  await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, req.params.conversationId));
+  await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, param(req.params.conversationId)));
   res.status(204).end();
 });
 
 router.post("/messages/conversations/:conversationId/read", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const conv = await requireParticipant(req, res, req.params.conversationId);
+  const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
   const now = new Date();
@@ -198,7 +199,7 @@ router.post("/messages/conversations/:conversationId/read", requireAuth, async (
     ? { clientUnread: 0, clientLastReadAt: now }
     : { stylistUnread: 0, stylistLastReadAt: now };
 
-  await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, req.params.conversationId));
+  await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, param(req.params.conversationId)));
   res.status(204).end();
 });
 

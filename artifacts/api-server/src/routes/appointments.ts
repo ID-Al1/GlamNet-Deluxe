@@ -8,6 +8,7 @@ import { sendNotification } from "../lib/notifications";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
 import { recordPayoutEvent, splitAmount } from "../lib/escrow";
+import { param } from "../lib/params";
 
 const router = Router();
 
@@ -131,7 +132,7 @@ router.post("/appointments", requireAuth, async (req, res) => {
 });
 
 router.get("/appointments/:appointmentId", requireAuth, async (req, res) => {
-  const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, req.params.appointmentId));
+  const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, param(req.params.appointmentId)));
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
   res.json(formatAppt(appt));
 });
@@ -142,15 +143,31 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
   const data = parsed.data;
 
   // Fetch the appointment before updating so we have context for notifications
-  const [before] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, req.params.appointmentId));
+  const [before] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, param(req.params.appointmentId)));
   if (!before) { res.status(404).json({ error: "Not found" }); return; }
+
+  // Decline gate: only the artist on this booking can decline, and only while
+  // the booking is still pending. A client cancelling a confirmed booking uses
+  // "cancelled". Declined bookings never enter escrow — the confirm-work flow
+  // already requires status === "confirmed" before it will touch funds.
+  if (data.status === "declined") {
+    const user = (req as any).user;
+    const [callerProfile] = await db.select().from(stylistProfilesTable)
+      .where(and(eq(stylistProfilesTable.id, before.stylistId), eq(stylistProfilesTable.userId, user.id)));
+    if (!callerProfile) {
+      res.status(403).json({ error: "Only the artist can decline a booking request" }); return;
+    }
+    if (before.status !== "pending") {
+      res.status(409).json({ error: "Only pending bookings can be declined" }); return;
+    }
+  }
 
   const [appt] = await db.update(appointmentsTable).set({
     ...(data.status && { status: data.status as any }),
     ...(data.date && { date: data.date }),
     ...(data.time && { time: data.time }),
     ...(data.notes !== undefined && { notes: data.notes }),
-  }).where(eq(appointmentsTable.id, req.params.appointmentId)).returning();
+  }).where(eq(appointmentsTable.id, param(req.params.appointmentId))).returning();
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
 
   res.json(formatAppt(appt));

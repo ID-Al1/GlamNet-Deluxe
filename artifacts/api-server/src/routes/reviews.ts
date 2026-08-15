@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { maybeCompleteReferral } from "./referrals";
 import { wasUploadedBy } from "../lib/upload-registry";
+import { param } from "../lib/params";
 
 /**
  * Returns true if `objectPath` is referenced in any review's media_items.
@@ -126,7 +127,7 @@ router.post("/reviews", requireAuth, async (req, res) => {
 // Stylist replies to a review
 router.patch("/reviews/:id/reply", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { id } = req.params;
+  const id = param(req.params.id);
   const { replyText } = req.body;
 
   if (!replyText?.trim()) {
@@ -156,7 +157,7 @@ router.patch("/reviews/:id/reply", requireAuth, async (req, res) => {
 // Toggle helpful vote on a review
 router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { id } = req.params;
+  const id = param(req.params.id);
 
   const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
   if (!review) { res.status(404).json({ error: "Review not found" }); return; }
@@ -194,7 +195,7 @@ router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
 // Mark an appointment as completed (client confirms service received)
 router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { appointmentId } = req.params;
+  const appointmentId = param(req.params.appointmentId);
 
   const [appt] = await db.select().from(appointmentsTable)
     .where(and(eq(appointmentsTable.id, appointmentId), eq(appointmentsTable.clientId, user.id)));

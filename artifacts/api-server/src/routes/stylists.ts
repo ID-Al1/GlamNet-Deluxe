@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { param } from "../lib/params";
 import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable } from "@workspace/db";
 import { eq, and, ilike, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -299,13 +300,13 @@ router.post("/stylists/me/services", requireAuth, async (req, res) => {
 router.patch("/stylists/me/services/:serviceId", requireAuth, async (req, res) => {
   const parsed = UpdateStylistServiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
-  const [service] = await db.update(servicesTable).set(parsed.data).where(eq(servicesTable.id, req.params.serviceId)).returning();
+  const [service] = await db.update(servicesTable).set(parsed.data).where(eq(servicesTable.id, param(req.params.serviceId))).returning();
   if (!service) { res.status(404).json({ error: "Service not found" }); return; }
   res.json({ id: service.id, name: service.name, price: service.price, duration: service.duration });
 });
 
 router.delete("/stylists/me/services/:serviceId", requireAuth, async (req, res) => {
-  await db.delete(servicesTable).where(eq(servicesTable.id, req.params.serviceId));
+  await db.delete(servicesTable).where(eq(servicesTable.id, param(req.params.serviceId)));
   res.json({ message: "Deleted" });
 });
 
@@ -327,7 +328,7 @@ router.post("/stylists/me/portfolio", requireAuth, async (req, res) => {
 });
 
 router.delete("/stylists/me/portfolio/:itemId", requireAuth, async (req, res) => {
-  await db.delete(portfolioItemsTable).where(eq(portfolioItemsTable.id, req.params.itemId));
+  await db.delete(portfolioItemsTable).where(eq(portfolioItemsTable.id, param(req.params.itemId)));
   res.json({ message: "Deleted" });
 });
 

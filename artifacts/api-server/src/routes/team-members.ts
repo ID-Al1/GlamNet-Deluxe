@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { param } from "../lib/params";
 import {
   db, appointmentsTable, bookingTeamMembersTable, stylistProfilesTable, usersTable,
 } from "@workspace/db";
@@ -52,7 +53,7 @@ router.get("/team-invitations", requireAuth, async (req, res) => {
 // Get all team members for an appointment — only participants may view
 router.get("/appointments/:appointmentId/team-members", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { appointmentId } = req.params;
+  const appointmentId = param(req.params.appointmentId);
 
   const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, appointmentId));
   if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
@@ -78,7 +79,7 @@ router.get("/appointments/:appointmentId/team-members", requireAuth, async (req,
 // Lead artist adds team members to a booking
 router.post("/appointments/:appointmentId/team-members", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { appointmentId } = req.params;
+  const appointmentId = param(req.params.appointmentId);
   const { stylistId, role, payoutPercentage, isLead } = req.body;
 
   if (!stylistId || !role || payoutPercentage == null) {
@@ -145,7 +146,8 @@ router.post("/appointments/:appointmentId/team-members", requireAuth, async (req
 // Artist accepts or declines a team invitation
 router.patch("/appointments/:appointmentId/team-members/:memberId", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { appointmentId, memberId } = req.params;
+  const appointmentId = param(req.params.appointmentId);
+  const memberId = param(req.params.memberId);
   const { status } = req.body;
 
   if (!["confirmed", "declined"].includes(status)) {

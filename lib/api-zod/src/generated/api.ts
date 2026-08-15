@@ -449,7 +449,7 @@ export const DeletePortfolioItemResponse = zod.object({
  * @summary List appointments for current user
  */
 export const ListAppointmentsQueryParams = zod.object({
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']).optional(),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']).optional(),
   "role": zod.enum(['client', 'stylist']).optional()
 })
 
@@ -463,7 +463,7 @@ export const ListAppointmentsResponseItem = zod.object({
   "serviceName": zod.string(),
   "date": zod.string(),
   "time": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
@@ -493,7 +493,7 @@ export const CreateAppointmentResponse = zod.object({
   "serviceName": zod.string(),
   "date": zod.string(),
   "time": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
@@ -518,7 +518,7 @@ export const GetAppointmentResponse = zod.object({
   "serviceName": zod.string(),
   "date": zod.string(),
   "time": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
@@ -534,7 +534,7 @@ export const UpdateAppointmentParams = zod.object({
 })
 
 export const UpdateAppointmentBody = zod.object({
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']).optional(),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']).optional(),
   "date": zod.string().optional(),
   "time": zod.string().optional(),
   "notes": zod.string().optional()
@@ -550,7 +550,7 @@ export const UpdateAppointmentResponse = zod.object({
   "serviceName": zod.string(),
   "date": zod.string(),
   "time": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
@@ -839,7 +839,7 @@ export const GetStylistDashboardResponse = zod.object({
   "serviceName": zod.string(),
   "date": zod.string(),
   "time": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
@@ -872,7 +872,7 @@ export const GetClientDashboardResponse = zod.object({
   "serviceName": zod.string(),
   "date": zod.string(),
   "time": zod.string(),
-  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled']),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
