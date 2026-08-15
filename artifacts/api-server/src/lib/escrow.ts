@@ -3,15 +3,8 @@ import { db, appointmentsTable, payoutEventsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 
-export const ARTIST_SHARE = 0.82;
-export const PLATFORM_SHARE = 0.18;
-
-export function splitAmount(total: number) {
-  return {
-    artistShare: Math.round(total * ARTIST_SHARE * 100) / 100,
-    platformShare: Math.round(total * PLATFORM_SHARE * 100) / 100,
-  };
-}
+import { ARTIST_SHARE, PLATFORM_SHARE, splitAmount } from "./money";
+export { ARTIST_SHARE, PLATFORM_SHARE, splitAmount };
 
 /** Append a row to the payout audit trail. Never throws — audit failures are logged, not fatal. */
 export async function recordPayoutEvent(event: {

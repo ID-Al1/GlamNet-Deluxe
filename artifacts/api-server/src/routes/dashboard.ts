@@ -10,6 +10,7 @@ import {
 } from "@workspace/db";
 import { eq, and, gte, or, sql, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { splitAmount } from "../lib/money";
 import buildStylistResponse from "./stylistHelper";
 
 const router = Router();
@@ -44,7 +45,7 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
   const availableEarnings = released.reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);
   const pendingEarnings = appts
     .filter((a) => a.payoutStatus === "held" && (a.status === "confirmed" || a.status === "completed"))
-    .reduce((sum, a) => sum + (a.artistPayoutAmount || (a.price + a.tipAmount) * 0.82), 0);
+    .reduce((sum, a) => sum + (a.artistPayoutAmount || splitAmount(a.price + a.tipAmount).artistShare), 0);
   const thisMonthEarnings = released
     .filter((a) => new Date(a.date) >= monthStart)
     .reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);

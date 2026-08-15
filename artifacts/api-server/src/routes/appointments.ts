@@ -11,8 +11,7 @@ import { recordPayoutEvent, splitAmount } from "../lib/escrow";
 
 const router = Router();
 
-const ARTIST_PAYOUT_PCT = 0.82;
-const PLATFORM_FEE_PCT = 0.18;
+import { ARTIST_SHARE as ARTIST_PAYOUT_PCT, PLATFORM_SHARE as PLATFORM_FEE_PCT } from "../lib/money";
 
 function formatAppt(a: typeof appointmentsTable.$inferSelect) {
   return {
