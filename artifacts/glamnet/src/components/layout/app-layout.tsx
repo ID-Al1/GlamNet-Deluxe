@@ -5,7 +5,7 @@ import { BonisaLogo } from "@/components/bonisa-logo";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User } from "lucide-react";
+import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, ShieldCheck } from "lucide-react";
 
 const NAV_PUBLIC = [
   { href: "/stylists", label: "Find Artists", icon: Users },
@@ -118,6 +118,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         </div>
                       </Link>
                     ))}
+                    {user?.isOwner && (
+                      <Link href="/owner" onClick={() => setOpen(false)} aria-current={location === "/owner" ? "page" : undefined}>
+                        <div className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
+                          location === "/owner"
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }`}>
+                          <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={1.9} aria-hidden="true" />
+                          Owner
+                        </div>
+                      </Link>
+                    )}
                   </nav>
                   <div className="px-4 pb-2">
                     <button
@@ -170,6 +182,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </span>
                 </Link>
               ))}
+              {user?.isOwner && (
+                <Link href="/owner" aria-current={location === "/owner" ? "page" : undefined}>
+                  <span className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                    isHome
+                      ? "text-white/80 hover:text-white"
+                      : location === "/owner"
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                  }`}>
+                    Owner
+                  </span>
+                </Link>
+              )}
             </nav>
 
             {/* Right side */}
@@ -240,6 +265,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                           </div>
                         </Link>
                       ))}
+                      {user?.isOwner && (
+                        <Link href="/owner" onClick={() => setOpen(false)} aria-current={location === "/owner" ? "page" : undefined}>
+                          <div className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                            location === "/owner"
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}>
+                            <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={1.9} aria-hidden="true" />
+                            Owner
+                          </div>
+                        </Link>
+                      )}
                     </nav>
 
                     <div className="px-4 pb-2">

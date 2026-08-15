@@ -12,6 +12,8 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  /** True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser. */
+  isOwner: boolean;
   /** @nullable */
   businessName?: string | null;
   /** @nullable */

@@ -1,9 +1,9 @@
-import { Suspense, lazy } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Suspense, lazy, useEffect } from "react";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { AppLayout } from "@/components/layout/app-layout";
 import { BonisaSplash } from "@/components/bonisa-splash";
@@ -25,6 +25,7 @@ const ProfileSetup = lazy(() => import("@/pages/profile/setup"));
 const LeaveReview = lazy(() => import("@/pages/reviews/[appointmentId]"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const OwnerPortal = lazy(() => import("@/pages/owner"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,17 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/** Redirects anyone who is not the owner to /dashboard before the page renders. */
+function RequireOwner({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    if (!user?.isOwner) navigate("/dashboard");
+  }, [user, navigate]);
+  if (!user?.isOwner) return null;
+  return <>{children}</>;
+}
 
 function PageLoader() {
   return (
@@ -67,6 +79,13 @@ function Router() {
                 <Route path="/casting" component={CastingCalls} />
                 <Route path="/reviews/:appointmentId" component={LeaveReview} />
                 <Route path="/payments" component={PaymentHistory} />
+                <Route path="/owner">
+                  <RequireOwner>
+                    <Suspense fallback={<PageLoader />}>
+                      <OwnerPortal />
+                    </Suspense>
+                  </RequireOwner>
+                </Route>
                 <Route component={NotFound} />
               </Switch>
             </Suspense>

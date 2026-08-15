@@ -46,11 +46,15 @@ function generateReferralCode(): string {
 }
 
 function formatUser(u: typeof usersTable.$inferSelect) {
+  // isOwner is computed server-side only. OWNER_EMAIL is never sent to the
+  // browser. Guard with !! so an unset env var never accidentally matches "".
+  const ownerEmail = process.env["OWNER_EMAIL"];
   return {
     id: u.id,
     name: u.name,
     email: u.email,
     role: u.role,
+    isOwner: !!(ownerEmail && u.email === ownerEmail),
     businessName: u.businessName ?? null,
     avatarUrl: u.avatarUrl ?? null,
     phone: u.phone ?? null,

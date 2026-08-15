@@ -39,6 +39,7 @@ export const SignupResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['client', 'stylist', 'brand']),
+  "isOwner": zod.boolean().describe('True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser.\n'),
   "businessName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "createdAt": zod.string()
@@ -61,6 +62,7 @@ export const LoginResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['client', 'stylist', 'brand']),
+  "isOwner": zod.boolean().describe('True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser.\n'),
   "businessName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "createdAt": zod.string()
@@ -85,6 +87,7 @@ export const GetMeResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['client', 'stylist', 'brand']),
+  "isOwner": zod.boolean().describe('True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser.\n'),
   "businessName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "createdAt": zod.string()

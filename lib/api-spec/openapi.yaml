@@ -823,7 +823,7 @@ components:
 
     User:
       type: object
-      required: [id, name, email, role, createdAt]
+      required: [id, name, email, role, isOwner, createdAt]
       properties:
         id:
           type: string
@@ -834,6 +834,12 @@ components:
         role:
           type: string
           enum: [client, stylist, brand]
+        isOwner:
+          type: boolean
+          description: >
+            True only for the account whose email matches the server-side
+            OWNER_EMAIL secret. Computed server-side and never derived from
+            the frontend — OWNER_EMAIL is never sent to the browser.
         businessName:
           type: ["string", "null"]
         avatarUrl:
