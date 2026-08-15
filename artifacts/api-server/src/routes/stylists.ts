@@ -3,7 +3,7 @@ import { param } from "../lib/params";
 import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable } from "@workspace/db";
 import { eq, and, ilike, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, verifyToken } from "../lib/auth";
 import {
   UpdateMyStylistProfileBody,
   AddStylistServiceBody,
@@ -149,8 +149,9 @@ async function buildStylistResponse(profileId: string) {
 }
 
 router.get("/stylists", async (req, res) => {
-  const { specialty, location, verified, search, minRating, maxPrice, houseCalls, availabilityDay, language, service, area } = req.query as Record<string, string>;
-  let profiles = await db.select().from(stylistProfilesTable);
+  const { specialty, location, search, minRating, maxPrice, houseCalls, availabilityDay, language, service, area } = req.query as Record<string, string>;
+  // Part a: only verified artists appear in browse results — enforced at DB level.
+  let profiles = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.verified, true));
 
   if (specialty && specialty !== "All") {
     profiles = profiles.filter(p => p.specialty.toLowerCase() === specialty.toLowerCase());
@@ -163,9 +164,6 @@ router.get("/stylists", async (req, res) => {
     profiles = profiles.filter(p =>
       p.area.toLowerCase().includes(a) || p.location.toLowerCase().includes(a)
     );
-  }
-  if (verified === "true") {
-    profiles = profiles.filter(p => p.verified);
   }
   if (search) {
     const s = search.toLowerCase();
@@ -332,9 +330,46 @@ router.delete("/stylists/me/portfolio/:itemId", requireAuth, async (req, res) =>
   res.json({ message: "Deleted" });
 });
 
+// Part e: verification checklist — what the artist needs to complete before going live.
+// Must be declared before /:stylistId to avoid being swallowed by that wildcard.
+router.get("/stylists/me/verification-checklist", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+
+  const [services, portfolio, userRow] = await Promise.all([
+    db.select().from(servicesTable).where(eq(servicesTable.stylistId, profile.id)),
+    db.select().from(portfolioItemsTable).where(eq(portfolioItemsTable.stylistId, profile.id)),
+    db.select().from(usersTable).where(eq(usersTable.id, user.id)).then(r => r[0] ?? null),
+  ]);
+  const phone = userRow?.phone ?? null;
+  const readiness = computeProfileReadiness(profile, services, portfolio, phone);
+
+  res.json({
+    verified: profile.verified,
+    verificationStatus: profile.verificationStatus,
+    ...readiness,
+  });
+});
+
 router.get("/stylists/:stylistId", async (req, res) => {
   const result = await buildStylistResponse(req.params.stylistId);
   if (!result) { res.status(404).json({ error: "Stylist not found" }); return; }
+
+  // Part b: unverified artists are invisible to everyone except the artist herself
+  // (so she can preview her own profile while she completes the checklist).
+  if (!result.verified) {
+    const auth = req.headers.authorization;
+    let requestingUserId: string | null = null;
+    if (auth?.startsWith("Bearer ")) {
+      requestingUserId = verifyToken(auth.slice(7));
+    }
+    if (requestingUserId !== result.userId) {
+      res.status(404).json({ error: "Stylist not found" });
+      return;
+    }
+  }
+
   res.json(result);
 });
 

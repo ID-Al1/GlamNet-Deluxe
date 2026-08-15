@@ -51,7 +51,8 @@ import type {
   StylistDashboard,
   StylistProfile,
   StylistProfileUpdate,
-  User
+  User,
+  VerificationChecklist
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1103,6 +1104,84 @@ export const useDeletePortfolioItem = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeletePortfolioItemMutationOptions(options));
     }
+
+export const getGetVerificationChecklistUrl = () => {
+
+
+
+
+  return `/api/stylists/me/verification-checklist`
+}
+
+/**
+ * Returns each readiness criterion and whether it is met, plus the current verification status. Artists use this to see exactly what they must complete before they appear in search results and can accept bookings.
+ * @summary Get my verification checklist
+ */
+export const getVerificationChecklist = async ( options?: RequestInit): Promise<VerificationChecklist> => {
+
+  return customFetch<VerificationChecklist>(getGetVerificationChecklistUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVerificationChecklistQueryKey = () => {
+    return [
+    `/api/stylists/me/verification-checklist`
+    ] as const;
+    }
+
+
+export const getGetVerificationChecklistQueryOptions = <TData = Awaited<ReturnType<typeof getVerificationChecklist>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVerificationChecklist>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVerificationChecklistQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVerificationChecklist>>> = ({ signal }) => getVerificationChecklist({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVerificationChecklist>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVerificationChecklistQueryResult = NonNullable<Awaited<ReturnType<typeof getVerificationChecklist>>>
+export type GetVerificationChecklistQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get my verification checklist
+ */
+
+export function useGetVerificationChecklist<TData = Awaited<ReturnType<typeof getVerificationChecklist>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVerificationChecklist>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVerificationChecklistQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListAppointmentsUrl = (params?: ListAppointmentsParams,) => {
   const normalizedParams = new URLSearchParams();

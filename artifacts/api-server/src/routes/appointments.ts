@@ -87,6 +87,8 @@ router.post("/appointments", requireAuth, async (req, res) => {
   const [service] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
 
   if (!profile || !service) { res.status(404).json({ error: "Stylist or service not found" }); return; }
+  // Part c: block bookings with unverified artists server-side.
+  if (!profile.verified) { res.status(403).json({ error: "This artist is not yet verified on Bonisa and cannot accept bookings." }); return; }
 
   let appt;
   try {

@@ -409,6 +409,28 @@ export interface BrandDashboard {
   topCastingCalls: CastingCall[];
 }
 
+export type VerificationChecklistVerificationStatus = typeof VerificationChecklistVerificationStatus[keyof typeof VerificationChecklistVerificationStatus];
+
+
+export const VerificationChecklistVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+export interface VerificationChecklist {
+  /** True when an admin has manually verified this artist */
+  verified: boolean;
+  verificationStatus: VerificationChecklistVerificationStatus;
+  criteria: ProfileReadinessCriterion[];
+  completedCount: number;
+  totalCount: number;
+  /** True when the artist has at least one service listed */
+  canBeBooked: boolean;
+  /** True when all readiness criteria are met */
+  isFullyReady: boolean;
+}
+
 export type ListStylistsParams = {
 specialty?: string;
 location?: string;

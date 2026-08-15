@@ -101,6 +101,8 @@ router.post("/casting/:castingId/apply", requireAuth, async (req, res) => {
   const user = (req as any).user;
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
   if (!profile) { res.status(403).json({ error: "Only stylists can apply" }); return; }
+  // Part d: block unverified artists from applying to casting calls server-side.
+  if (!profile.verified) { res.status(403).json({ error: "Only verified artists can apply to casting calls." }); return; }
 
   const [call] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
   if (!call) { res.status(404).json({ error: "Not found" }); return; }

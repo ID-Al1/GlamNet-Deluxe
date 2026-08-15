@@ -54,3 +54,5 @@ export * from './stylistProfileUpdate';
 export * from './stylistProfileVerificationStatus';
 export * from './user';
 export * from './userRole';
+export * from './verificationChecklist';
+export * from './verificationChecklistVerificationStatus';

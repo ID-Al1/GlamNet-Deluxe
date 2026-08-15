@@ -343,6 +343,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+  /stylists/me/verification-checklist:
+    get:
+      operationId: getVerificationChecklist
+      tags: [stylists]
+      summary: Get my verification checklist
+      description: >
+        Returns each readiness criterion and whether it is met, plus the current
+        verification status. Artists use this to see exactly what they must
+        complete before they appear in search results and can accept bookings.
+      responses:
+        "200":
+          description: Verification checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationChecklist"
+
   /appointments:
     get:
       operationId: listAppointments
@@ -1300,6 +1317,31 @@ components:
         isFullyReady:
           type: boolean
           description: True when all 7 readiness criteria are met
+
+    VerificationChecklist:
+      type: object
+      required: [verified, verificationStatus, criteria, completedCount, totalCount, canBeBooked, isFullyReady]
+      properties:
+        verified:
+          type: boolean
+          description: True when an admin has manually verified this artist
+        verificationStatus:
+          type: string
+          enum: [none, pending, verified]
+        criteria:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileReadinessCriterion"
+        completedCount:
+          type: integer
+        totalCount:
+          type: integer
+        canBeBooked:
+          type: boolean
+          description: True when the artist has at least one service listed
+        isFullyReady:
+          type: boolean
+          description: True when all readiness criteria are met
 
     CastingApplication:
       type: object

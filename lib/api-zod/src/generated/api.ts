@@ -446,6 +446,26 @@ export const DeletePortfolioItemResponse = zod.object({
 
 
 /**
+ * Returns each readiness criterion and whether it is met, plus the current verification status. Artists use this to see exactly what they must complete before they appear in search results and can accept bookings.
+ * @summary Get my verification checklist
+ */
+export const GetVerificationChecklistResponse = zod.object({
+  "verified": zod.boolean().describe('True when an admin has manually verified this artist'),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "criteria": zod.array(zod.object({
+  "id": zod.number(),
+  "label": zod.string(),
+  "met": zod.boolean(),
+  "hint": zod.string()
+})),
+  "completedCount": zod.number(),
+  "totalCount": zod.number(),
+  "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed'),
+  "isFullyReady": zod.boolean().describe('True when all readiness criteria are met')
+})
+
+
+/**
  * @summary List appointments for current user
  */
 export const ListAppointmentsQueryParams = zod.object({
