@@ -166,6 +166,7 @@ router.get("/dashboard/client", requireAuth, async (req, res) => {
   const allStylists = await db
     .select()
     .from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.verified, true))
     .limit(4);
 
   const recommended = await Promise.all(

@@ -105,6 +105,7 @@ router.post("/appointments/:appointmentId/team-members", requireAuth, async (req
 
   const [targetProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
   if (!targetProfile) { res.status(404).json({ error: "Stylist not found" }); return; }
+  if (!targetProfile.verified) { res.status(403).json({ error: "Only verified artists can be added to a team booking." }); return; }
 
   // Check if already added
   const existingMembers = await db.select().from(bookingTeamMembersTable)
