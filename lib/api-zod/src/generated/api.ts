@@ -23,12 +23,16 @@ export const signupBodyNameMin = 2;
 
 export const signupBodyPasswordMin = 8;
 
+export const signupBodyPhoneMin = 7;
+export const signupBodyPhoneMax = 32;
+
 
 
 export const SignupBody = zod.object({
   "name": zod.string().min(signupBodyNameMin),
   "email": zod.string().email(),
   "password": zod.string().min(signupBodyPasswordMin),
+  "phone": zod.string().min(signupBodyPhoneMin).max(signupBodyPhoneMax),
   "role": zod.enum(['client', 'stylist', 'brand']),
   "businessName": zod.string().nullish()
 })

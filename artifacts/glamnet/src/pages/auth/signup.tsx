@@ -21,6 +21,7 @@ const ROLES = [
 export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<SignupInputRole>(SignupInputRole.client);
   const [businessName, setBusinessName] = useState("");
@@ -45,6 +46,7 @@ export default function Signup() {
         data: {
           name,
           email,
+          phone,
           password,
           role,
           businessName: role === SignupInputRole.brand ? businessName : undefined,
@@ -129,6 +131,22 @@ export default function Signup() {
             <div className="space-y-2">
               <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
               <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="bg-background" />
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone number <span className="text-destructive">*</span></Label>
+              <Input
+                id="phone"
+                type="tel"
+                required
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="+27 82 123 4567"
+                autoComplete="tel"
+                className="bg-background"
+              />
+              <p className="text-xs text-muted-foreground">One phone number can be used for one Bonisa account.</p>
             </div>
 
             {/* Password */}

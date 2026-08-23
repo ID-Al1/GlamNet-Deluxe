@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, usersTable, referralsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { randomUUID, randomBytes } from "crypto";
 import { createHmac, timingSafeEqual } from "crypto";
 import { SignupBody, LoginBody } from "@workspace/api-zod";
@@ -45,6 +45,10 @@ function generateReferralCode(): string {
   return randomBytes(5).toString("hex").toUpperCase();
 }
 
+function normalizePhone(phone: string): string {
+  return phone.trim().replace(/[\s()-]/g, "");
+}
+
 function formatUser(u: typeof usersTable.$inferSelect) {
   // isOwner is computed server-side only. OWNER_EMAIL is never sent to the
   // browser. Guard with !! so an unset env var never accidentally matches "".
@@ -74,11 +78,21 @@ router.post("/auth/signup", async (req, res) => {
   const { name, password, role, businessName } = parsed.data;
   // Normalise email at write time so stored values are always canonical.
   const email = parsed.data.email.trim().toLowerCase();
+  const phone = normalizePhone(parsed.data.phone);
+  if (phone.length < 7) {
+    res.status(400).json({ error: "Enter a valid phone number" });
+    return;
+  }
   const referralCode = (req.body.referralCode as string | undefined)?.trim().toUpperCase() || null;
 
   const existing = await db.select().from(usersTable).where(eq(usersTable.email, email));
   if (existing.length > 0) {
     res.status(409).json({ error: "Email already in use" });
+    return;
+  }
+  const existingPhone = await db.select().from(usersTable).where(eq(usersTable.phone, phone));
+  if (existingPhone.length > 0) {
+    res.status(409).json({ error: "Phone number already in use" });
     return;
   }
 
@@ -99,6 +113,7 @@ router.post("/auth/signup", async (req, res) => {
     email,
     passwordHash,
     role: role as "client" | "stylist" | "brand",
+    phone,
     businessName: businessName ?? null,
     referralCode: newReferralCode,
   }).returning();
@@ -159,9 +174,24 @@ router.patch("/auth/me", async (req, res) => {
   const userId = verifyToken(auth.slice(7));
   if (!userId) { res.status(401).json({ error: "Invalid token" }); return; }
   const { name, phone, businessName, avatarUrl } = req.body as Record<string, string | undefined>;
+  const normalizedPhone = phone === undefined || phone === "" ? null : normalizePhone(phone);
+  if (normalizedPhone !== null && normalizedPhone.length < 7) {
+    res.status(400).json({ error: "Enter a valid phone number" });
+    return;
+  }
+  if (normalizedPhone !== null) {
+    const [existingPhone] = await db.select().from(usersTable).where(and(
+      eq(usersTable.phone, normalizedPhone),
+      ne(usersTable.id, userId),
+    ));
+    if (existingPhone) {
+      res.status(409).json({ error: "Phone number already in use" });
+      return;
+    }
+  }
   const [user] = await db.update(usersTable).set({
     ...(name && { name }),
-    ...(phone !== undefined && { phone: phone || null }),
+    ...(phone !== undefined && { phone: normalizedPhone }),
     ...(businessName !== undefined && { businessName: businessName || null }),
     ...(avatarUrl !== undefined && { avatarUrl: avatarUrl || null }),
   }).where(eq(usersTable.id, userId)).returning();

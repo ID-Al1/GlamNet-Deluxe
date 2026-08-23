@@ -903,7 +903,7 @@ components:
 
     SignupInput:
       type: object
-      required: [name, email, password, role]
+      required: [name, email, password, role, phone]
       properties:
         name:
           type: string
@@ -914,6 +914,10 @@ components:
         password:
           type: string
           minLength: 8
+        phone:
+          type: string
+          minLength: 7
+          maxLength: 32
         role:
           type: string
           enum: [client, stylist, brand]

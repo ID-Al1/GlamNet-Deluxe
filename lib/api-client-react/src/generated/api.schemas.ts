@@ -53,6 +53,11 @@ export interface SignupInput {
   email: string;
   /** @minLength 8 */
   password: string;
+  /**
+     * @minLength 7
+     * @maxLength 32
+     */
+  phone: string;
   role: SignupInputRole;
   /** @nullable */
   businessName?: string | null;
