@@ -4,6 +4,7 @@ import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTabl
 import { eq, and, ilike, or } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
+import { meetsRateFloor, rateFloorMessage } from "../lib/money";
 import { notify } from "../lib/notifications";
 import {
   UpdateMyStylistProfileBody,
@@ -319,6 +320,9 @@ router.post("/stylists/me/services", requireAuth, async (req, res) => {
   }
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
   if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  if (!meetsRateFloor(parsed.data.price, parsed.data.duration)) {
+    res.status(400).json({ error: rateFloorMessage() }); return;
+  }
   const [service] = await db.insert(servicesTable).values({
     id: randomUUID(),
     stylistId: profile.id,
@@ -332,8 +336,17 @@ router.post("/stylists/me/services", requireAuth, async (req, res) => {
 router.patch("/stylists/me/services/:serviceId", requireAuth, async (req, res) => {
   const parsed = UpdateStylistServiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
-  const [service] = await db.update(servicesTable).set(parsed.data).where(eq(servicesTable.id, param(req.params.serviceId))).returning();
-  if (!service) { res.status(404).json({ error: "Service not found" }); return; }
+  const serviceId = param(req.params.serviceId);
+  const [existingService] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
+  if (!existingService) { res.status(404).json({ error: "Service not found" }); return; }
+
+  const price = parsed.data.price ?? existingService.price;
+  const duration = parsed.data.duration ?? existingService.duration;
+  if (!meetsRateFloor(price, duration)) {
+    res.status(400).json({ error: rateFloorMessage() }); return;
+  }
+
+  const [service] = await db.update(servicesTable).set(parsed.data).where(eq(servicesTable.id, serviceId)).returning();
   res.json({ id: service.id, name: service.name, price: service.price, duration: service.duration });
 });
 
