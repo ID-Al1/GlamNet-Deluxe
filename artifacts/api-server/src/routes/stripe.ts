@@ -57,8 +57,10 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
     return;
   }
 
-  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
-  const [service] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
+  const [profile] = await db.select().from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.id, appt.stylistId));
+  const [service] = await db.select().from(servicesTable)
+    .where(eq(servicesTable.id, appt.serviceId));
   if (!profile || !service) {
     res.status(404).json({ error: "Stylist or service not found" });
     return;
@@ -84,13 +86,9 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
 
   // Find or create Stripe customer
   let [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
-  let customerId = dbUser?.stripeCustomerId;
+  let customerId: string | undefined;
   if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: user.name,
-      metadata: { userId: user.id },
-    });
+      const customer = await stripe.customers.create({ email: stripeUserRow.email, name: stripeUserRow.name });
     customerId = customer.id;
     await db.update(usersTable).set({ stripeCustomerId: customerId }).where(eq(usersTable.id, user.id));
   }
@@ -111,13 +109,13 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
     {
       price_data: {
         currency: "zar",
-        unit_amount: Math.round(chargeAmount * 100),
         product_data: {
-          name: paymentMode === "deposit"
-            ? `${service.name} with ${profile.name} — ${actualDepositPct}% Deposit`
-            : `${service.name} with ${profile.name}`,
-          description: `${service.duration} min appointment on ${date} at ${time}`,
+          name: appt.serviceName,
+          description: `with ${appt.stylistName} on ${appt.date} at ${appt.time}${
+            appt.paymentMode === "deposit" && appt.balanceDue > 0 ? " (balance due)" : ""
+          }`,
         },
+        unit_amount: Math.round(retryServiceAmount * 100),
       },
       quantity: 1,
     },
@@ -209,7 +207,25 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
       ...(pendingAppt ? { pendingAppointmentId: pendingAppt.id } : {}),
     },
   };
-  const session = await stripe.checkout.sessions.create(sessionParams);
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    line_items: lineItems,
+    mode: "payment",
+    success_url: `${origin}${basePath}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}${basePath}/payments`,
+    allow_promotion_codes: true,
+    metadata: {
+      userId: user.id,
+      stylistId: appt.stylistId,
+      serviceId: appt.serviceId,
+      date: appt.date,
+      time: appt.time,
+      paymentMode: appt.paymentMode,
+      tipAmount: String(appt.tipAmount),
+      depositPct: "0",
+      retryForAppointmentId: appointmentId,
+    },
+  });
 
   // Link the pending appointment to this session so it can be found on failure
   if (pendingAppt) {
@@ -241,48 +257,57 @@ router.post("/stripe/confirm-booking", requireAuth, async (req, res) => {
   const stripe = await getUncachableStripeClient();
 
   try {
-    const result = await fulfillCheckoutSession(stripe, sessionId, user.id);
-    res.status(result.alreadyExisted ? 200 : 201).json({
-      ...result.appointment,
-      conversationId: result.conversationId,
-      payment: result.payment,
-    });
-  } catch (err: any) {
-    if (err.code === "payment_not_completed") {
-      res.status(402).json({ error: "Payment not completed" });
-    } else if (err.code === "bad_metadata") {
-      res.status(400).json({ error: "Missing booking metadata in session" });
-    } else if (err.code === "forbidden") {
-      res.status(403).json({ error: "This checkout session does not belong to you" });
-    } else if (err.code === "not_found") {
-      res.status(404).json({ error: "Stylist or service not found" });
-    } else if (err.code === "invalid_slot") {
-      res.status(400).json({ error: err.message });
-    } else if (err.code === "conflict") {
-      res.status(409).json({
-        error: "This time slot was booked by someone else while your payment was processing. Please contact support for a refund.",
-      });
-    } else {
-      logger.error({ err, sessionId }, "Error confirming booking");
-      throw err;
-    }
-  }
+  const result = appointments.map((appt) => ({
+    id: appt.id,
+    clientId: appt.clientId,
+    clientName: appt.clientName,
+    stylistId: appt.stylistId,
+    stylistName: appt.stylistName,
+    serviceId: appt.serviceId,
+    serviceName: appt.serviceName,
+    date: appt.date,
+    time: appt.time,
+    status: appt.status,
+    price: appt.price,
+    paymentMode: appt.paymentMode,
+    depositAmount: appt.depositAmount,
+    tipAmount: appt.tipAmount,
+    balanceDue: appt.balanceDue,
+    payoutStatus: appt.payoutStatus,
+    artistPayoutAmount: appt.artistPayoutAmount,
+    stripeSessionId: appt.stripeSessionId,
+    createdAt: appt.createdAt.toISOString(),
+    payment: paymentMap.get(appt.id) ?? null,
+  }));
+
+  res.json(result);
 });
 
-// ─── Payment History ─────────────────────────────────────────────────────────
+// ─── Retry Checkout ──────────────────────────────────────────────────────────
 
 /**
- * GET /stripe/payments
+ * POST /stripe/retry-checkout
  *
- * Returns a combined list of appointments + associated payment records for
- * the current user, ordered by most-recent-first.
+ * Re-creates a Stripe Checkout session for an appointment whose payment failed.
+ * The original appointment record is reused; a new session is created so the
+ * customer can complete payment without re-booking.
+ *
+ * Body: { appointmentId }
+ * Returns: { url } — Stripe Checkout redirect URL
  */
-router.get("/stripe/payments", requireAuth, async (req, res) => {
+router.post("/stripe/retry-checkout", requireAuth, async (req, res) => {
   const user = (req as any).user;
 
-  const appointments = await db.select().from(appointmentsTable)
-    .where(eq(appointmentsTable.clientId, user.id))
+  const appointments = await db
+    .select()
+    .from(appointmentsTable)
+    .where(eq(appointmentsTable.stylistId, profile.id))
     .orderBy(desc(appointmentsTable.createdAt));
+
+  if (appointments.length === 0) {
+    res.json([]);
+    return;
+  }
 
   const appointmentIds = appointments.map((a) => a.id);
   if (appointmentIds.length === 0) {
@@ -290,35 +315,59 @@ router.get("/stripe/payments", requireAuth, async (req, res) => {
     return;
   }
 
-  const allPayments = await db.select().from(paymentsTable)
+  const allPayments = await db
+    .select()
+    .from(paymentsTable)
     .orderBy(desc(paymentsTable.createdAt));
 
   const paymentMap = new Map<string, typeof paymentsTable.$inferSelect>();
   for (const p of allPayments) {
-    if (p.appointmentId && !paymentMap.has(p.appointmentId)) {
+    if (p.appointmentId && appointmentIds.includes(p.appointmentId) && !paymentMap.has(p.appointmentId)) {
       paymentMap.set(p.appointmentId, p);
     }
   }
 
   const result = appointments.map((appt) => ({
-    ...appt,
+    id: appt.id,
+    clientId: appt.clientId,
+    clientName: appt.clientName,
+    stylistId: appt.stylistId,
+    stylistName: appt.stylistName,
+    serviceId: appt.serviceId,
+    serviceName: appt.serviceName,
+    date: appt.date,
+    time: appt.time,
+    status: appt.status,
+    price: appt.price,
+    paymentMode: appt.paymentMode,
+    depositAmount: appt.depositAmount,
+    tipAmount: appt.tipAmount,
+    balanceDue: appt.balanceDue,
+    payoutStatus: appt.payoutStatus,
+    artistPayoutAmount: appt.artistPayoutAmount,
+    stripeSessionId: appt.stripeSessionId,
+    createdAt: appt.createdAt.toISOString(),
     payment: paymentMap.get(appt.id) ?? null,
   }));
 
   res.json(result);
 });
 
-// ─── Receipt ─────────────────────────────────────────────────────────────────
+// ─── Retry Checkout ──────────────────────────────────────────────────────────
 
 /**
- * GET /stripe/payments/:appointmentId/receipt
+ * POST /stripe/retry-checkout
  *
- * Returns detailed receipt info for an appointment, including Stripe
- * hosted receipt URL if available.
+ * Re-creates a Stripe Checkout session for an appointment whose payment failed.
+ * The original appointment record is reused; a new session is created so the
+ * customer can complete payment without re-booking.
+ *
+ * Body: { appointmentId }
+ * Returns: { url } — Stripe Checkout redirect URL
  */
-router.get("/stripe/payments/:appointmentId/receipt", requireAuth, async (req, res) => {
+router.post("/stripe/retry-checkout", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const { appointmentId } = req.params;
+  const { appointmentId } = req.body;
 
   const appts = await db.select().from(appointmentsTable)
     .where(and(eq(appointmentsTable.id, appointmentId as string), eq(appointmentsTable.clientId, String(user.id))));
@@ -330,13 +379,16 @@ router.get("/stripe/payments/:appointmentId/receipt", requireAuth, async (req, r
 
   const payments = await db.select().from(paymentsTable)
     .where(eq(paymentsTable.appointmentId, appointmentId as string));
-  const payment = payments[0];
+  const payment = paymentRows[0] ?? null;
 
   let hostedReceiptUrl: string | null = null;
   if (payment?.stripePaymentIntentId && appt.paymentMode !== "pay_at_appointment") {
     try {
-      const stripe = await getUncachableStripeClient();
-      const charges = await stripe.charges.list({ payment_intent: payment.stripePaymentIntentId, limit: 1 });
+  const stripe = await getUncachableStripeClient();
+    const charges = await stripe.charges.list({
+      payment_intent: payment.stripePaymentIntentId,
+      limit: 1,
+    });
       hostedReceiptUrl = charges.data[0]?.receipt_url ?? null;
     } catch { /* non-fatal */ }
   }
@@ -371,7 +423,7 @@ router.post("/stripe/refund", requireAuth, async (req, res) => {
   }
 
   const [appt] = await db.select().from(appointmentsTable)
-    .where(eq(appointmentsTable.id, appointmentId));
+    .where(and(eq(appointmentsTable.id, appointmentId), eq(appointmentsTable.clientId, user.id)));
   if (!appt) {
     res.status(404).json({ error: "Appointment not found" });
     return;

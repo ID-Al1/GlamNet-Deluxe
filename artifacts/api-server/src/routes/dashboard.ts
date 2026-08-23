@@ -28,13 +28,11 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
     .limit(1);
   const profile = profileRows;
 
-  const appts = profileRows[0]
-    ? await db
-        .select()
-        .from(appointmentsTable)
-        .where(eq(appointmentsTable.stylistId, profileRows[0].id))
-        .orderBy(desc(appointmentsTable.date))
-    : [];
+  const appts = await db
+    .select()
+    .from(appointmentsTable)
+    .where(eq(appointmentsTable.clientId, user.id))
+    .orderBy(desc(appointmentsTable.date));
 
   const pending = appts.filter((a) => a.status === "pending");
   const confirmed = appts.filter((a) => a.status === "confirmed");
@@ -79,7 +77,7 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
   }
 
   // Return all appointments (not just upcoming) so work-confirmation buttons can appear on past ones
-  const upcoming = appts.slice(0, 30).map(fmtStylistAppt);
+  const upcoming = appts.slice(0, 30).map(fmtClientAppt);
 
   let profileStrength = 10;
   const p = profile[0];

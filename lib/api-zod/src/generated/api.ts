@@ -27,7 +27,6 @@ export const signupBodyPhoneMin = 7;
 export const signupBodyPhoneMax = 32;
 
 
-
 export const SignupBody = zod.object({
   "name": zod.string().min(signupBodyNameMin),
   "email": zod.string().email(),
@@ -369,8 +368,6 @@ export const UpdateMyStylistProfileResponse = zod.object({
 export const addStylistServiceBodyPriceMin = 0;
 
 
-
-
 export const AddStylistServiceBody = zod.object({
   "name": zod.string().min(1),
   "price": zod.number().min(addStylistServiceBodyPriceMin),
@@ -421,7 +418,6 @@ export const DeleteStylistServiceResponse = zod.object({
 /**
  * @summary Add portfolio item
  */
-
 
 
 export const AddPortfolioItemBody = zod.object({
@@ -689,8 +685,6 @@ export const SendMessageParams = zod.object({
 })
 
 
-
-
 export const SendMessageBody = zod.object({
   "content": zod.string().min(1),
   "messageType": zod.enum(['text', 'image', 'voice']).optional(),
@@ -821,7 +815,6 @@ export const ListCastingCallsResponse = zod.array(ListCastingCallsResponseItem)
 export const createCastingCallBodyTitleMin = 3;
 
 export const createCastingCallBodyBriefMin = 10;
-
 
 
 export const CreateCastingCallBody = zod.object({
@@ -1070,5 +1063,3 @@ export const GetBrandDashboardResponse = zod.object({
   "createdAt": zod.string()
 }))
 })
-
-

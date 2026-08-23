@@ -28,6 +28,10 @@ const router = Router();
 // Client submits a review after a completed appointment
 router.post("/reviews", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const { id } = req.params;
+
+  const { id } = req.params;
   const { appointmentId, stylistId, rating, text, mediaItems } = req.body;
 
   if (!appointmentId || !stylistId || !rating) {
@@ -74,7 +78,8 @@ router.post("/reviews", requireAuth, async (req, res) => {
   }
 
   // Verify the stylist profile exists
-  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
+  const [profile] = await db.select().from(stylistProfilesTable)
+    .where(and(eq(stylistProfilesTable.id, review.revieweeId), eq(stylistProfilesTable.userId, user.id)));
   if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
 
   // Verify the stylist is actually tied to this appointment
@@ -102,15 +107,7 @@ router.post("/reviews", requireAuth, async (req, res) => {
     return;
   }
 
-  const [review] = await db.insert(reviewsTable).values({
-    id: randomUUID(),
-    appointmentId,
-    reviewerId: user.id,
-    revieweeId: stylistId,
-    rating,
-    text: text?.trim() || null,
-    mediaItems: sanitizedItems,
-  }).returning();
+  const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
 
   // Recompute stylist's average rating and review count from actual data
   const allReviews = await db.select().from(reviewsTable).where(eq(reviewsTable.revieweeId, stylistId));
@@ -127,6 +124,10 @@ router.post("/reviews", requireAuth, async (req, res) => {
 // Stylist replies to a review
 router.patch("/reviews/:id/reply", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const { id } = req.params;
+
+  const { id } = req.params;
   const id = param(req.params.id);
   const { replyText } = req.body;
 
@@ -146,17 +147,20 @@ router.patch("/reviews/:id/reply", requireAuth, async (req, res) => {
     return;
   }
 
-  const [updated] = await db.update(reviewsTable)
-    .set({ replyText: replyText.trim(), replyCreatedAt: new Date() })
-    .where(eq(reviewsTable.id, id))
+  const [updated] = await db.update(appointmentsTable)
+    .set({ status: "completed" })
+    .where(eq(appointmentsTable.id, appointmentId))
     .returning();
-
-  res.json({ ...updated, createdAt: updated.createdAt.toISOString(), replyCreatedAt: updated.replyCreatedAt?.toISOString() ?? null });
+  res.json({ helpfulCount: updated.helpfulCount, voted });
 });
 
-// Toggle helpful vote on a review
-router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
+// Mark an appointment as completed (client confirms service received)
+router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const { id } = req.params;
+
+  const { id } = req.params;
   const id = param(req.params.id);
 
   const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
@@ -188,13 +192,20 @@ router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
     voted = true;
   }
 
-  const [updated] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
+  const [updated] = await db.update(appointmentsTable)
+    .set({ status: "completed" })
+    .where(eq(appointmentsTable.id, appointmentId))
+    .returning();
   res.json({ helpfulCount: updated.helpfulCount, voted });
 });
 
 // Mark an appointment as completed (client confirms service received)
 router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const { id } = req.params;
+
+  const { id } = req.params;
   const appointmentId = param(req.params.appointmentId);
 
   const [appt] = await db.select().from(appointmentsTable)

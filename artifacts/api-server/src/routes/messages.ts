@@ -2,11 +2,12 @@ import { Router } from "express";
 import { db, conversationsTable, messagesTable, usersTable, stylistProfilesTable } from "@workspace/db";
 import { eq, and, like } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, verifyToken } from "../lib/auth";
 import { SendMessageBody, StartConversationBody } from "@workspace/api-zod";
 import { sendNotification } from "../lib/notifications";
 import { wasUploadedBy } from "../lib/upload-registry";
 import { param } from "../lib/params";
+import { addClient, removeClient, broadcastToUsers, mintSseTicket, consumeSseTicket, type ChatEvent } from "../lib/chatBroadcaster";
 
 const router = Router();
 
@@ -78,9 +79,46 @@ function serializeMessage(m: typeof messagesTable.$inferSelect) {
     createdAt: m.createdAt.toISOString(),
   };
 }
+  const userId = consumeSseTicket(ticket);
+  if (!userId) {
+    res.status(401).json({ error: "Invalid or expired ticket" });
+    return;
+  }
+
+  // SSE headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no"); // disable nginx buffering
+  res.flushHeaders();
+
+  // Register this connection
+  const client = addClient(userId, res);
+
+  // Send an immediate ping so the client knows the connection is live
+  res.write(`event: chat\ndata: ${JSON.stringify({ type: "ping" })}\n\n`);
+
+  // Heartbeat every 25 s to prevent proxy timeouts
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`event: chat\ndata: ${JSON.stringify({ type: "ping" })}\n\n`);
+    } catch {
+      clearInterval(heartbeat);
+    }
+  }, 25_000);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    removeClient(userId, client);
+  });
+});
 
 router.get("/messages/conversations", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   let convs;
   if (user.role === "stylist") {
     convs = await db.select().from(conversationsTable).where(eq(conversationsTable.stylistId, user.id));
@@ -111,7 +149,11 @@ router.get("/messages/conversations/:conversationId", requireAuth, async (req, r
 
 router.post("/messages/conversations/:conversationId/send", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const parsed = SendMessageBody.safeParse(req.body);
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+  const parsed = StartConversationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
   const conv = await requireParticipant(req, res, param(req.params.conversationId));
@@ -158,10 +200,27 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
     ...(isClient ? { stylistUnread: conv.stylistUnread + 1 } : { clientUnread: conv.clientUnread + 1 }),
   }).where(eq(conversationsTable.id, param(req.params.conversationId)));
 
-  res.status(201).json(serializeMessage(msg));
+  const serialized = serializeMessage(msg);
+  res.status(201).json(serialized);
 
-  // Send WhatsApp notification to recipient (non-fatal)
+  // Broadcast real-time event to both participants
+  const msgEvent: ChatEvent = { type: "message", conversationId: req.params.conversationId, message: serialized as Record<string, unknown> };
+  broadcastToUsers([conv.clientId, conv.stylistId], msgEvent);
+
+  // Also push updated conversation state so unread counts refresh instantly
   setImmediate(async () => {
+    try {
+      const [updatedConv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, req.params.conversationId));
+      if (updatedConv) {
+    const [client] = await db.select().from(usersTable).where(eq(usersTable.id, c.clientId));
+    const [stylistProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, c.stylistId));
+    const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, c.stylistId));
+        // Send each participant a personalised conversation snapshot
+        broadcastToUsers([conv.clientId], { type: "conversation", conversation: formatConv(updatedConv, client, client, stylistProfile, stylistUser) as Record<string, unknown> });
+        broadcastToUsers([conv.stylistId], { type: "conversation", conversation: formatConv(updatedConv, stylistUser, client, stylistProfile, stylistUser) as Record<string, unknown> });
+      }
+    } catch { /* non-fatal */ }
+
     try {
       const recipientId = isClient ? conv.stylistId : conv.clientId;
       const [recipientUser] = await db.select().from(usersTable).where(eq(usersTable.id, recipientId));
@@ -177,19 +236,40 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
 router.post("/messages/conversations/:conversationId/typing", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
   const typingUntil = new Date(Date.now() + 4000);
   const isClient = conv.clientId === user.id;
-  const update = isClient ? { clientTypingUntil: typingUntil } : { stylistTypingUntil: typingUntil };
+  const update = isClient
+    ? { clientUnread: 0, clientLastReadAt: now }
+    : { stylistUnread: 0, stylistLastReadAt: now };
 
   await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, param(req.params.conversationId)));
   res.status(204).end();
+
+  // Notify the OTHER participant so read receipts (double-ticks) update instantly
+  const otherId = isClient ? conv.stylistId : conv.clientId;
+  broadcastToUsers([otherId], {
+    type: "conversation",
+    conversation: {
+      id: conv.id,
+      isOtherTyping: true,
+      typingUntil: typingUntil.toISOString(),
+    } as Record<string, unknown>,
+  });
 });
 
-router.post("/messages/conversations/:conversationId/read", requireAuth, async (req, res) => {
+router.post("/messages/start", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
@@ -201,10 +281,24 @@ router.post("/messages/conversations/:conversationId/read", requireAuth, async (
 
   await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, param(req.params.conversationId)));
   res.status(204).end();
+
+  // Notify the OTHER participant so read receipts (double-ticks) update instantly
+  const otherId = isClient ? conv.stylistId : conv.clientId;
+  const readUpdate = isClient
+    ? { id: conv.id, clientLastReadAt: now.toISOString(), clientUnread: 0 }
+    : { id: conv.id, stylistLastReadAt: now.toISOString(), stylistUnread: 0 };
+  broadcastToUsers([otherId], {
+    type: "conversation",
+    conversation: readUpdate as Record<string, unknown>,
+  });
 });
 
 router.post("/messages/start", requireAuth, async (req, res) => {
   const user = (req as any).user;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   const parsed = StartConversationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
@@ -293,7 +387,7 @@ export async function postSystemMessage(clientId: string, stylistId: string, con
 
     const conv = convs[0];
 
-    await db.insert(messagesTable).values({
+    const [msg] = await db.insert(messagesTable).values({
       id: randomUUID(),
       conversationId: conv.id,
       senderId: null,
@@ -301,7 +395,7 @@ export async function postSystemMessage(clientId: string, stylistId: string, con
       content,
       messageType: "system",
       mediaUrl: null,
-    });
+    }).returning();
 
     await db.update(conversationsTable).set({
       lastMessage: content,
@@ -309,7 +403,28 @@ export async function postSystemMessage(clientId: string, stylistId: string, con
       clientUnread: conv.clientUnread + 1,
       stylistUnread: conv.stylistUnread + 1,
     }).where(eq(conversationsTable.id, conv.id));
+
+    // Broadcast real-time SSE events so open chat windows show the system
+    // message immediately without waiting for a poll.
+    const serialized = serializeMessage(msg);
+    broadcastToUsers([clientId, stylistId], {
+      type: "message",
+      conversationId: conv.id,
+      message: serialized as Record<string, unknown>,
+    });
+
+    // Push refreshed conversation snapshots to both participants
+    const [updatedConv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, conv.id));
+    if (updatedConv) {
+      const [clientUser] = await db.select().from(usersTable).where(eq(usersTable.id, clientId));
+      const [stylistProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, stylistId));
+      const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, stylistId));
+      broadcastToUsers([clientId], { type: "conversation", conversation: formatConv(updatedConv, clientUser, clientUser, stylistProfile, stylistUser) as Record<string, unknown> });
+      broadcastToUsers([stylistId], { type: "conversation", conversation: formatConv(updatedConv, stylistUser, clientUser, stylistProfile, stylistUser) as Record<string, unknown> });
+    }
   } catch { /* non-fatal — booking notifications must not break the booking flow */ }
 }
 
 export default router;
+
+  const rawTicket = req.query.ticket;

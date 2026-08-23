@@ -53,11 +53,7 @@ router.get("/appointments", requireAuth, async (req, res) => {
     // appointments.stylistId holds a stylist_profiles.id, NOT a users.id.
     // Comparing it against user.id matches nothing, which is why artists were
     // getting an empty list. dashboard.ts already does this correctly.
-    const [profile] = await db
-      .select()
-      .from(stylistProfilesTable)
-      .where(eq(stylistProfilesTable.userId, user.id))
-      .limit(1);
+          const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, appt.stylistId));
 
     appts = profile
       ? await db.select().from(appointmentsTable).where(eq(appointmentsTable.stylistId, profile.id))
@@ -75,7 +71,7 @@ router.get("/appointments", requireAuth, async (req, res) => {
 
 router.post("/appointments", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const parsed = CreateAppointmentBody.safeParse(req.body);
+  const parsed = UpdateAppointmentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
   const { stylistId, serviceId, date, time, notes } = parsed.data;
@@ -83,7 +79,7 @@ router.post("/appointments", requireAuth, async (req, res) => {
   const slotCheck = isValidSlot(date, time);
   if (!slotCheck.ok) { res.status(400).json({ error: slotCheck.error }); return; }
 
-  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
+          const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, appt.stylistId));
   const [service] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
 
   if (!profile || !service) { res.status(404).json({ error: "Stylist or service not found" }); return; }
@@ -121,7 +117,7 @@ router.post("/appointments", requireAuth, async (req, res) => {
 
   // Notify stylist of new booking (non-fatal)
   try {
-    const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
+            const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
     await sendNotification(stylistUser?.phone, "booking.created", {
       clientName: user.name,
       serviceName: service.name,
@@ -134,7 +130,8 @@ router.post("/appointments", requireAuth, async (req, res) => {
 });
 
 router.get("/appointments/:appointmentId", requireAuth, async (req, res) => {
-  const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, param(req.params.appointmentId)));
+  const [appt] = await db.select().from(appointmentsTable)
+    .where(eq(appointmentsTable.id, appointmentId));
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
   res.json(formatAppt(appt));
 });
@@ -153,7 +150,7 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
   // "cancelled". Declined bookings never enter escrow — the confirm-work flow
   // already requires status === "confirmed" before it will touch funds.
   if (data.status === "declined") {
-    const user = (req as any).user;
+  const user = (req as any).user;
     const [callerProfile] = await db.select().from(stylistProfilesTable)
       .where(and(eq(stylistProfilesTable.id, before.stylistId), eq(stylistProfilesTable.userId, user.id)));
     if (!callerProfile) {
@@ -164,12 +161,8 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
     }
   }
 
-  const [appt] = await db.update(appointmentsTable).set({
-    ...(data.status && { status: data.status as any }),
-    ...(data.date && { date: data.date }),
-    ...(data.time && { time: data.time }),
-    ...(data.notes !== undefined && { notes: data.notes }),
-  }).where(eq(appointmentsTable.id, param(req.params.appointmentId))).returning();
+  const [appt] = await db.select().from(appointmentsTable)
+    .where(eq(appointmentsTable.id, appointmentId));
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
 
   res.json(formatAppt(appt));

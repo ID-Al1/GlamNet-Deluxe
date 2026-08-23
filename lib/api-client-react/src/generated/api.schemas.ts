@@ -149,36 +149,58 @@ export interface ProfileReadiness {
 
 export interface StylistProfile {
   id: string;
+
   userId: string;
+
   name: string;
+
   specialty: string;
+
   location: string;
+
   area?: string;
   /** @nullable */
+
   bio?: string | null;
+
   rating: number;
+
   reviewCount: number;
+
   verified: boolean;
+
   verificationStatus: StylistProfileVerificationStatus;
+
   services: Service[];
+
   portfolio: PortfolioItem[];
+
   availability: string[];
+
   tags?: string[];
   /** @nullable */
+
   instagram?: string | null;
   /** @nullable */
+
   website?: string | null;
   /** @nullable */
+
   accentColor?: string | null;
+
   houseCalls?: boolean;
   /** @nullable */
+
   phone?: string | null;
   /**
      * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
      * @nullable
      */
+
   reputationScore?: number | null;
+
   reputationBreakdown?: StylistProfileReputationBreakdown;
+
   profileReadiness?: ProfileReadiness | null;
 }
 
@@ -507,4 +529,3 @@ export type ListCastingCallsParams = {
 specialty?: string;
 brandId?: string;
 };
-

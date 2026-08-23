@@ -29,48 +29,61 @@ type ConversationType = {
 
 const BASE = import.meta.env.BASE_URL;
 
+/**
+ * Authenticated fetch wrapper — reads the stored bearer token from localStorage
+ * (same key used by AuthProvider) and attaches Authorization: Bearer <token>.
+ * This is necessary because all API routes require a bearer token; there is no
+ * cookie-based session on this backend.
+ */
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  try {
+    const stored = localStorage.getItem("glamnet_auth");
+    const token: string | null = stored ? (JSON.parse(stored) as { token?: string }).token ?? null : null;
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers ?? {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  } catch {
+    return fetch(url, options);
+  }
+}
 async function fetchConversations(): Promise<ConversationType[]> {
-  const res = await fetch(`${BASE}api/messages/conversations`, { credentials: "include" });
+  const res = await authFetch(`${BASE}api/messages/conversations`);
   if (!res.ok) throw new Error("Failed to load conversations");
   return res.json();
 }
 
 async function fetchMessages(conversationId: string): Promise<Message[]> {
-  const res = await fetch(`${BASE}api/messages/conversations/${conversationId}`, { credentials: "include" });
+  const res = await authFetch(`${BASE}api/messages/conversations/${conversationId}`);
   if (!res.ok) throw new Error("Failed to load messages");
   return res.json();
 }
 
-async function sendMessage(conversationId: string, payload: { content: string; messageType?: string; mediaUrl?: string }) {
-  const res = await fetch(`${BASE}api/messages/conversations/${conversationId}/send`, {
+async function sendMessage(conversationId: string, payload: { content: string; messageType?: string; mediaUrl?: string }): Promise<Message> {
+  const res = await authFetch(`${BASE}api/messages/conversations/${conversationId}/send`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Failed to send");
   return res.json();
 }
 
-async function signalTyping(conversationId: string) {
-  await fetch(`${BASE}api/messages/conversations/${conversationId}/typing`, {
-    method: "POST",
-    credentials: "include",
-  });
+async function signalTyping(conversationId: string): Promise<void> {
+  await authFetch(`${BASE}api/messages/conversations/${conversationId}/typing`, { method: "POST" });
 }
 
-async function markRead(conversationId: string) {
-  await fetch(`${BASE}api/messages/conversations/${conversationId}/read`, {
-    method: "POST",
-    credentials: "include",
-  });
+async function markRead(conversationId: string): Promise<void> {
+  await authFetch(`${BASE}api/messages/conversations/${conversationId}/read`, { method: "POST" });
 }
 
 async function requestUploadUrl(file: File): Promise<{ uploadURL: string; objectPath: string }> {
-  const res = await fetch(`${BASE}api/storage/uploads/request-url`, {
+  const res = await authFetch(`${BASE}api/storage/uploads/request-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
   });
   if (!res.ok) throw new Error("Upload URL request failed");
@@ -78,6 +91,7 @@ async function requestUploadUrl(file: File): Promise<{ uploadURL: string; object
 }
 
 async function uploadToGcs(uploadURL: string, file: File): Promise<void> {
+  // Direct GCS upload — no auth header (signed URL is self-authorizing)
   const res = await fetch(uploadURL, {
     method: "PUT",
     headers: { "Content-Type": file.type },
@@ -117,8 +131,141 @@ function VoicePlayer({ src }: { src: string }) {
   );
 }
 
+/**
+ * SSE hook — connects to /api/messages/sse using a short-lived ticket so
+ * the long-lived bearer token never appears in a URL or access log.
+ *
+ * Handshake:
+ *  1. POST /api/messages/sse-ticket  (with Authorization: Bearer)  → { ticket }
+ *  2. EventSource /api/messages/sse?ticket=<ticket>
+ *     Ticket is single-use and expires in 30 s on the server.
+ */
+function useChatSSE(token: string | null) {
+  const qc = useQueryClient();
+  // Track per-conversation typing timers so we can clear isOtherTyping
+  const typingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    if (!token) return;
+
+    let cancelled = false;
+    let es: EventSource | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    // Bounded exponential backoff: 1s → 2s → 4s … capped at 30s
+    let retryDelayMs = 1_000;
+    const MAX_RETRY_DELAY_MS = 30_000;
+
+    const handleEvent = (e: MessageEvent) => {
+      try {
+        const event = JSON.parse(e.data) as
+          | { type: "ping" }
+          | { type: "message"; conversationId: string; message: Message }
+          | { type: "conversation"; conversation: Partial<ConversationType> & { id: string; typingUntil?: string } };
+
+        if (event.type === "ping") return;
+
+        if (event.type === "message") {
+          const { conversationId } = event;
+          // Invalidate rather than setQueryData — avoids a race where an
+          // in-flight initial fetch resolves after the SSE event and overwrites it.
+          qc.invalidateQueries({ queryKey: ["messages", conversationId] });
+          qc.invalidateQueries({ queryKey: ["conversations"] });
+        }
+
+        if (event.type === "conversation") {
+          const patch = event.conversation;
+
+          if (patch.isOtherTyping && patch.typingUntil) {
+            // Apply typing indicator then auto-clear after server-set expiry
+            qc.setQueryData<ConversationType[]>(["conversations"], (old) =>
+              old?.map(c => c.id === patch.id ? { ...c, isOtherTyping: true } : c) ?? old,
+            );
+            const existing = typingTimersRef.current.get(patch.id);
+            if (existing) clearTimeout(existing);
+            const delay = Math.max(0, new Date(patch.typingUntil).getTime() - Date.now());
+            const timer = setTimeout(() => {
+              qc.setQueryData<ConversationType[]>(["conversations"], (old) =>
+                old?.map(c => c.id === patch.id ? { ...c, isOtherTyping: false } : c) ?? old,
+              );
+              typingTimersRef.current.delete(patch.id);
+            }, delay);
+            typingTimersRef.current.set(patch.id, timer);
+          } else {
+            // Merge other patches (read receipts, unread counts, etc.)
+            qc.setQueryData<ConversationType[]>(["conversations"], (old) =>
+              old?.map(c => c.id === patch.id ? { ...c, ...patch } : c) ?? old,
+            );
+          }
+        }
+      } catch {
+        // Malformed event — ignore
+      }
+    };
+
+    /**
+     * Full connection lifecycle:
+     *  1. POST /sse-ticket with Authorization header → short-lived, single-use ticket
+     *  2. Open EventSource with ?ticket= (bearer token never in URL/logs)
+     *  3. On any error/close, intercept BEFORE EventSource can auto-reconnect
+     *     (auto-reconnect would reuse the now-consumed ticket URL and always get 401).
+     *     Instead, close immediately and schedule a fresh connect() with backoff.
+     */
+    const connect = async () => {
+      if (cancelled) return;
+      try {
+        const r = await fetch(`${BASE}api/messages/sse-ticket`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        });
+        if (!r.ok) throw new Error("Ticket request failed");
+        const { ticket } = await r.json() as { ticket: string };
+        if (cancelled) return;
+
+        const url = `${BASE}api/messages/sse?ticket=${encodeURIComponent(ticket)}`;
+        const newEs = new EventSource(url);
+        es = newEs;
+
+        newEs.addEventListener("chat", handleEvent);
+
+        // Reset backoff on a successful open
+        newEs.addEventListener("open", () => { retryDelayMs = 1_000; });
+
+        // Intercept EventSource's built-in reconnect: we must close it ourselves
+        // and restart the entire handshake (new ticket) rather than reuse the URL.
+        newEs.onerror = () => {
+          newEs.close(); // prevents EventSource from auto-reconnecting with stale ticket URL
+          es = null;
+          if (!cancelled) {
+            retryTimer = setTimeout(connect, retryDelayMs);
+            retryDelayMs = Math.min(retryDelayMs * 2, MAX_RETRY_DELAY_MS);
+          }
+        };
+      } catch {
+        // Network or ticket error — back off and retry
+        if (!cancelled) {
+          retryTimer = setTimeout(connect, retryDelayMs);
+          retryDelayMs = Math.min(retryDelayMs * 2, MAX_RETRY_DELAY_MS);
+        }
+      }
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      es?.removeEventListener("chat", handleEvent);
+      es?.close();
+      es = null;
+      // Clear all typing timers
+      for (const timer of typingTimersRef.current.values()) clearTimeout(timer);
+      typingTimersRef.current.clear();
+    };
+  }, [token, qc]);
+}
 export default function Messages() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -131,11 +278,14 @@ export default function Messages() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<BlobPart[]>([]);
 
-  // Conversations — poll every 2s while a chat is open for typing/read-receipt updates
+  // Connect to SSE — replaces per-conversation and list polling
+  useChatSSE(token);
+
+  // Conversations — slow fallback poll (60s) for resilience; SSE handles instant updates
   const { data: rawConversations, isLoading } = useQuery<ConversationType[]>({
     queryKey: ["conversations"],
     queryFn: fetchConversations,
-    refetchInterval: selectedId ? 2000 : 30000,
+    refetchInterval: 60_000,
   });
   const conversations = rawConversations ?? [];
 
@@ -166,13 +316,14 @@ export default function Messages() {
 
   const selectedConv = conversations.find(c => c.id === selectedId);
 
-  // Messages — poll every 3s; also triggers markRead when new messages arrive
+  // Messages — SSE keeps this fresh; 30s staleTime means window-focus
+  // refetches catch any edge cases (reconnects, missed events, etc.)
   const prevMessageCountRef = useRef(0);
   const { data: messagesData } = useQuery<Message[]>({
     queryKey: ["messages", selectedId],
     queryFn: () => fetchMessages(selectedId!),
     enabled: !!selectedId,
-    refetchInterval: 3000,
+    staleTime: 30_000,
   });
   const messages = messagesData ?? [];
 
@@ -206,6 +357,8 @@ export default function Messages() {
       sendMessage(selectedId!, payload),
     onSuccess: () => {
       setDraft("");
+      // Invalidate rather than setQueryData so the authoritative server list
+      // is always what's shown — SSE also triggers an invalidation on both sides.
       qc.invalidateQueries({ queryKey: ["messages", selectedId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
       inputRef.current?.focus();
