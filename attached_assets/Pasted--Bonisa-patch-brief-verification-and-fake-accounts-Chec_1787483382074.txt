@@ -1,0 +1,94 @@
+# Bonisa patch brief, verification and fake accounts
+
+Checked against the live repo, `ID-Al1/GlamNet-Deluxe`, `main` branch. This follows on from the owner section review, verification currently checks profile completeness, not identity. These three patches close that gap.
+
+One patch at a time, same as before.
+
+---
+
+## Patch 1: Require an ID number and ID photo before submitting for review
+
+**The problem:** the verification checklist in `routes/stylists.ts` (`computeProfileReadiness`) has seven items, none of which are identity. `stylist_profiles` has no field to hold an ID number or a document.
+
+**The fix:**
+
+1. Add two columns to `stylist_profiles` in `lib/db/src/schema/stylists.ts`:
+   ```ts
+   idNumber: text("id_number"),
+   idDocumentUrl: text("id_document_url"),
+   ```
+   With a migration script in `lib/db/scripts/`.
+
+2. Add an eighth item to the `criteria` array in `computeProfileReadiness`:
+   ```ts
+   {
+     id: 8,
+     label: "ID verification",
+     met: !!(profile.idNumber && profile.idDocumentUrl),
+     hint: "Add your ID number and upload a photo of your ID so we can confirm you are who you say you are.",
+   },
+   ```
+
+3. Add a route to save `idNumber` and `idDocumentUrl` on the artist's own profile, same pattern as the existing profile update route. The document itself uploads through the existing presigned upload flow in `routes/storage.ts`, the same one portfolio photos already use, this is not a new upload mechanism, just a new field storing where it landed.
+
+4. In `verification-submit`, reject with a clear message if `idNumber` or `idDocumentUrl` is missing, don't let her submit for review without it.
+
+**Do not store the raw ID number anywhere else or log it.** Treat it the same care level as a password, write once, read only by the owner review screen.
+
+---
+
+## Patch 2: Require a phone number at signup, and block duplicate phone numbers
+
+**The problem:** `routes/auth.ts` only checks for duplicate email. Phone isn't even collected at signup, and even where it exists later on the profile, nothing stops two accounts sharing one number. Right now, five free email addresses is all it takes to make five accounts.
+
+**The fix:**
+
+1. Make `phone` required in the signup body schema (`SignupBody`), not just email and password.
+2. Add a uniqueness constraint on `usersTable.phone` in `lib/db/src/schema/users.ts`, migration required. Check for existing duplicate phone numbers first, same orphan-check discipline as the last patch round, report what's found before the migration runs.
+3. In `/auth/signup`, check for an existing user with the same phone the same way it already checks email, and return the same style 409 error if found.
+
+This doesn't stop someone using two real phone numbers, nothing fully does, but it removes the free, instant version of the problem.
+
+---
+
+## Patch 3: Make the approve action actually check the checklist
+
+**The problem:** `routes/owner.ts`, the `/owner/artists/:profileId/verify` route sets `verified: true` unconditionally. It never checks `isFullyReady` from `computeProfileReadiness`. An owner can approve a profile with no portfolio and no services, the system won't stop it, it just trusts the human to have looked carefully.
+
+**The fix:** before setting `verified: true`, call `computeProfileReadiness` for that profile (same function already used in `stylists.ts`, import it rather than duplicating it) and if `isFullyReady` is false, return a 400 with the list of what's still missing instead of approving. The owner should never be able to approve a profile the system itself knows is incomplete.
+
+---
+
+## Handoff prompt
+
+```
+Three patches closing the gap between "profile is complete" and "this
+artist's identity is confirmed" on Bonisa. Do not rebuild or refactor
+anything not listed here. One patch at a time, typecheck clean before
+moving to the next.
+
+Patch 1: add idNumber and idDocumentUrl to stylist_profiles, add an
+eighth verification checklist item requiring both, add a route to save
+them (document upload reuses the existing presigned upload flow in
+storage.ts, don't build a new upload mechanism), and block
+verification-submit if either is missing. Treat idNumber like a
+password, never logged.
+
+Patch 2: make phone required at signup, add a uniqueness constraint on
+users.phone with a migration, check for existing duplicate phone numbers
+first and report what's found before the migration runs, and reject
+signup with a 409 if the phone is already in use, same pattern as the
+existing email check.
+
+Patch 3: routes/owner.ts verify endpoint currently approves any pending
+profile unconditionally. Import computeProfileReadiness from stylists.ts
+and require isFullyReady to be true before setting verified: true,
+otherwise return 400 with what's still missing.
+
+Run pnpm run typecheck after each patch and confirm zero errors before
+moving to the next one.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · checked against live repo, 23 August 2026*
