@@ -1,0 +1,83 @@
+# Bonisa patch brief, three fixes
+
+Checked against the live repo just now, `ID-Al1/GlamNet-Deluxe`, current `main` branch. These are the three highest value fixes from that check, kept small on purpose so each one is a single, low risk task.
+
+Do not combine these into one pass. One patch, confirm it works, then the next.
+
+---
+
+## Patch 1: Foreign key on appointments.stylistId
+
+**The problem:** `lib/db/src/schema/appointments.ts` line 21 has:
+
+```ts
+stylistId: text("stylist_id").notNull(),
+```
+
+No link to the stylist_profiles table. Every other relationship in your schema has one, this one doesn't, and it's the exact class of bug that already broke the artist dashboard once, a value that looks right but points at nothing real.
+
+The same gap exists in `casting.ts`, `messages.ts`, and `team-members.ts`. Fix all four together since it's the same one line change repeated.
+
+**Before touching the schema:** check for orphaned rows first. If any existing appointment, casting entry, message, or team member row has a `stylistId` that doesn't match a real `stylist_profiles.id`, adding the foreign key will fail to apply until those rows are cleaned up. Run the check, report what's found, before writing the migration.
+
+**The fix**, once the check is clean:
+
+```ts
+stylistId: text("stylist_id").notNull().references(() => stylistProfilesTable.id, { onDelete: "cascade" }),
+```
+
+Same pattern already used correctly in `stylists.ts`. Needs the `stylistProfilesTable` import added to each file, and a migration script in `lib/db/scripts/`, per the standing rule that schema changes always ship with one.
+
+---
+
+## Patch 2: Make the reputation score visible
+
+**The problem:** `computeReputationScore()` already runs in `routes/stylists.ts` and the API response already includes `reputationScore` and `reputationBreakdown` on every stylist profile request, line 146 to 147. Nothing in `artifacts/glamnet/src/pages` reads either field. The number exists and reaches the browser in the API response, it's just never drawn on screen.
+
+**The fix:** this is a frontend only task, no schema or API change needed.
+
+1. On the artist profile page, add the reputation score and tier near the existing rating, per the build spec's "Standing block" section, jobs completed, REP score, tier.
+2. On the artist dashboard, add it near the earnings figures, again per the build spec.
+
+Pull the field from the response that's already there. Don't add a new endpoint, don't add a new schema column yet, just render what's already being sent.
+
+---
+
+## Patch 3: Enforce the R600 rate floor
+
+**The problem:** `artifacts/api-server/src/lib/money.ts` already has a working function that checks whether a price meets the R600 per hour floor, around line 72. It's defined and correct. It is never called anywhere. Find where a service's price actually gets set or updated on an artist's profile, and check.
+
+**The fix:** call the existing rate check at that point, and reject the save with a clear error message if it's below the floor, something like "Services must be priced at R600 per hour or above." Don't build a new rate check, the one in `money.ts` already works, it just needs to be wired into the save path.
+
+---
+
+## Handoff prompt
+
+```
+Three small patches to the Bonisa API and app, based on the current live
+code. Do not rebuild or refactor anything not listed here.
+
+Patch 1: appointments.stylistId, casting.stylistId, messages.stylistId,
+and team-members.stylistId all lack a foreign key to stylist_profiles.id.
+First check for orphaned rows in each table where stylistId doesn't match
+a real profile, and report what you find. If clean, add the reference,
+matching the pattern already used correctly in stylists.ts, and write a
+migration script.
+
+Patch 2: computeReputationScore already runs in routes/stylists.ts and
+reputationScore and reputationBreakdown are already in the API response.
+Nothing in artifacts/glamnet/src/pages displays them. Add the score and
+tier to the artist profile page and the artist dashboard, pulling from
+the existing API field. No schema or API change needed for this one.
+
+Patch 3: money.ts already has a working minimum rate check that is never
+called. Find where a service price is set or updated and call it there,
+rejecting the save with a clear message if the price is below R600/hr.
+
+Run pnpm run typecheck after each patch and confirm zero errors before
+moving to the next one.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · checked against live repo, 23 August 2026*
