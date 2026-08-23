@@ -4,7 +4,8 @@ import { useGetStylist } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { formatRating, formatRands } from "@/lib/utils";
-import { ChevronLeft, MessageCircle, MapPin, Star, MoreHorizontal, Heart } from "lucide-react";
+import { getReputationTier } from "@/lib/reputation";
+import { Award, BriefcaseBusiness, ChevronLeft, MapPin, Star, TrendingUp } from "lucide-react";
 
 import studioBgImg from "@assets/generated_images/studio-bg.jpg";
 import lemonadeImg from "@assets/generated_images/look-lemonade.jpg";
@@ -28,6 +29,11 @@ export default function StylistProfile() {
   if (error || !stylist) {
     return <div className="p-12 text-center text-destructive">Failed to load profile</div>;
   }
+
+  const reputationScore = stylist.reputationScore ?? 0;
+  const reputation = stylist.reputationBreakdown;
+  const reputationTier = getReputationTier(reputationScore);
+  const completedJobs = reputation?.completedBookings ?? 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative pb-[100px] overflow-x-hidden">
@@ -69,6 +75,48 @@ export default function StylistProfile() {
             {stylist.location}
           </span>
         </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <div className="rounded-2xl border border-border/50 bg-card px-3 py-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <BriefcaseBusiness className="h-3 w-3" /> Jobs
+            </div>
+            <p className="mt-1 font-serif text-lg font-bold">{completedJobs}</p>
+            <p className="text-[10px] text-muted-foreground">on Bonisa</p>
+          </div>
+          <div className="rounded-2xl border border-border/50 bg-card px-3 py-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <TrendingUp className="h-3 w-3" /> REP score
+            </div>
+            <p className="mt-1 font-serif text-lg font-bold">{reputationScore}</p>
+            <p className="text-[10px] text-muted-foreground">out of 100</p>
+          </div>
+          <div className="rounded-2xl border border-border/50 bg-card px-3 py-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Award className="h-3 w-3" /> Tier
+            </div>
+            <p className="mt-1 font-serif text-lg font-bold leading-none">{reputationTier.label}</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">REP standing</p>
+          </div>
+        </div>
+
+        <section className="mb-6 rounded-2xl border border-border/50 bg-muted/30 p-4">
+          <h2 className="text-[11px] font-bold tracking-widest uppercase text-foreground/70">Standing</h2>
+          <p className="mt-1 text-sm font-semibold">{reputationTier.label} tier · REP {reputationScore}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Earned through completed work, client returns, cancellations and reviews.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border/50 pt-3 text-xs">
+            <div>
+              <p className="text-muted-foreground">Repeat clients</p>
+              <p className="mt-0.5 font-semibold">{Math.round((reputation?.repeatClientRate ?? 0) * 100)}%</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Cancellation rate</p>
+              <p className="mt-0.5 font-semibold">{Math.round((reputation?.cancellationRate ?? 0) * 100)}%</p>
+            </div>
+          </div>
+        </section>
 
         <div className="flex gap-2 mb-6 overflow-x-auto hide-scrollbar">
           {["Professional", "Clean", "Friendly"].map((tag, i) => (

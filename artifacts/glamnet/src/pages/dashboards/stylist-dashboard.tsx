@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useGetStylistDashboard, useUpdateMyStylistProfile } from "@workspace/api-client-react";
+import { useGetStylist, useGetStylistDashboard, useUpdateMyStylistProfile } from "@workspace/api-client-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import {
   ShieldAlert, Banknote, Receipt, RefreshCw, Loader2, AlertCircle, RotateCcw, TrendingUp,
 } from "lucide-react";
 import { frenchGreeting } from "@/components/bonisa-logo";
+import { getReputationTier } from "@/lib/reputation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -211,6 +212,17 @@ export default function StylistDashboard() {
     },
     enabled: !!token,
   });
+
+  const { data: reputationProfile } = useGetStylist(myProfile?.id ?? "", {
+    query: {
+      enabled: !!myProfile?.id,
+      queryKey: ["stylist-reputation", myProfile?.id],
+    },
+  });
+
+  const reputationScore = reputationProfile?.reputationScore ?? 0;
+  const reputationTier = getReputationTier(reputationScore);
+  const completedJobs = reputationProfile?.reputationBreakdown?.completedBookings ?? 0;
 
   useEffect(() => {
     if (myProfile?.availability) setAvail(myProfile.availability);
@@ -503,9 +515,9 @@ export default function StylistDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
         {isLoading ? (
-          <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
+          <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
         ) : (
           <>
             <Card className="bg-card border-border/50 hover:border-border transition-colors">
@@ -561,6 +573,28 @@ export default function StylistDashboard() {
                     style={{ width: `${stats!.strength}%`, background: 'hsl(var(--plum))' }}
                   />
                 </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-primary/25 hover:border-primary/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">REP standing</CardTitle>
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-5">
+                <div className="text-2xl font-serif font-bold">{reputationTier.label}</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  REP {reputationScore} · {completedJobs} completed jobs
+                </p>
+                {reputationTier.nextLabel && reputationTier.nextScore && (
+                  <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-border">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-700"
+                      style={{ width: `${Math.min(100, (reputationScore / reputationTier.nextScore) * 100)}%` }}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>
