@@ -128,12 +128,17 @@ export default function OwnerPortal() {
         method: "POST",
         headers: authHeaders(),
       });
-      if (!res.ok) throw new Error(await res.text());
       const body = await res.json();
+      if (!res.ok) {
+        const missing = Array.isArray(body.missingItems)
+          ? body.missingItems.map((item: { label?: string }) => item.label).filter(Boolean).join(", ")
+          : "";
+        throw new Error(missing || body.error || "Could not verify this artist.");
+      }
       toast.success(body.message ?? `${a.name} is now verified`);
       setArtists((prev) => (prev ?? []).filter((p) => p.profileId !== a.profileId));
-    } catch {
-      toast.error(`Could not verify ${a.name}. Nothing was changed.`);
+    } catch (error: any) {
+      toast.error(`Could not verify ${a.name}: ${error.message}`);
     } finally {
       setBusyId(null);
     }

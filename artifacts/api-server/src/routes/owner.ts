@@ -11,11 +11,12 @@
 import { Router } from "express";
 import { Readable } from "stream";
 import { param } from "../lib/params";
-import { db, stylistProfilesTable, usersTable } from "@workspace/db";
+import { db, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireOwner } from "../lib/auth";
 import { notify } from "../lib/notifications";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { computeProfileReadiness } from "./stylists";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -95,15 +96,27 @@ router.post("/owner/artists/:profileId/verify", requireOwner, async (req, res) =
     .where(eq(stylistProfilesTable.id, profileId));
   if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
 
+  const [[artistUser], services, portfolio] = await Promise.all([
+    db.select().from(usersTable).where(eq(usersTable.id, profile.userId)),
+    db.select().from(servicesTable).where(eq(servicesTable.stylistId, profileId)),
+    db.select().from(portfolioItemsTable).where(eq(portfolioItemsTable.stylistId, profileId)),
+  ]);
+  const readiness = computeProfileReadiness(profile, services, portfolio, artistUser?.phone ?? null);
+  const missingItems = readiness.criteria
+    .filter((criterion) => !criterion.met)
+    .map(({ id, label, hint }) => ({ id, label, hint }));
+  if (missingItems.length > 0) {
+    res.status(400).json({
+      error: "This artist cannot be verified until all profile requirements are complete.",
+      missingItems,
+    });
+    return;
+  }
+
   await db
     .update(stylistProfilesTable)
     .set({ verified: true, verificationStatus: "verified" })
     .where(eq(stylistProfilesTable.id, profileId));
-
-  const [artistUser] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, profile.userId));
 
   if (artistUser) {
     setImmediate(async () => {
