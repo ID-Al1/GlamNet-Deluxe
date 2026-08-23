@@ -1,12 +1,13 @@
 import { pgTable, text, real, boolean, pgEnum, timestamp } from "drizzle-orm/pg-core";
 import { appointmentsTable } from "./appointments";
+import { stylistProfilesTable } from "./stylists";
 
 export const teamMemberStatusEnum = pgEnum("team_member_status", ["invited", "confirmed", "declined"]);
 
 export const bookingTeamMembersTable = pgTable("booking_team_members", {
   id: text("id").primaryKey(),
   appointmentId: text("appointment_id").notNull().references(() => appointmentsTable.id, { onDelete: "cascade" }),
-  stylistId: text("stylist_id").notNull(),
+  stylistId: text("stylist_id").notNull().references(() => stylistProfilesTable.id, { onDelete: "cascade" }),
   stylistName: text("stylist_name").notNull(),
   role: text("role").notNull(),
   payoutPercentage: real("payout_percentage").notNull(),

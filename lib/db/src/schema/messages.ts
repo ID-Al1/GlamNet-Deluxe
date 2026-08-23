@@ -4,7 +4,7 @@ import { usersTable } from "./users";
 export const conversationsTable = pgTable("conversations", {
   id: text("id").primaryKey(),
   clientId: text("client_id").notNull().references(() => usersTable.id),
-  stylistId: text("stylist_id").notNull(),
+  stylistId: text("stylist_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   lastMessage: text("last_message"),
   lastMessageAt: timestamp("last_message_at").notNull().defaultNow(),
   clientUnread: integer("client_unread").notNull().default(0),

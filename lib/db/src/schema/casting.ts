@@ -1,5 +1,6 @@
 import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
+import { stylistProfilesTable } from "./stylists";
 
 export const castingCallsTable = pgTable("casting_calls", {
   id: text("id").primaryKey(),
@@ -18,7 +19,7 @@ export const castingApplicationsTable = pgTable("casting_applications", {
   id: text("id").primaryKey(),
   castingId: text("casting_id").notNull().references(() => castingCallsTable.id, { onDelete: "cascade" }),
   castingTitle: text("casting_title").notNull(),
-  stylistId: text("stylist_id").notNull(),
+  stylistId: text("stylist_id").notNull().references(() => stylistProfilesTable.id, { onDelete: "cascade" }),
   stylistName: text("stylist_name").notNull(),
   status: text("status").notNull().default("pending"),
   appliedAt: timestamp("applied_at").notNull().defaultNow(),

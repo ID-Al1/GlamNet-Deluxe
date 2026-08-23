@@ -1,5 +1,6 @@
 import { pgTable, text, real, integer, boolean, pgEnum, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
+import { stylistProfilesTable } from "./stylists";
 
 export const appointmentStatusEnum = pgEnum("appointment_status", [
   "pending",    // awaiting artist acceptance
@@ -18,7 +19,7 @@ export const appointmentsTable = pgTable("appointments", {
   id: text("id").primaryKey(),
   clientId: text("client_id").notNull().references(() => usersTable.id),
   clientName: text("client_name").notNull(),
-  stylistId: text("stylist_id").notNull(),
+  stylistId: text("stylist_id").notNull().references(() => stylistProfilesTable.id, { onDelete: "cascade" }),
   stylistName: text("stylist_name").notNull(),
   serviceId: text("service_id").notNull(),
   serviceName: text("service_name").notNull(),
