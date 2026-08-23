@@ -9,13 +9,16 @@
  *   POST /owner/artists/:profileId/reject — reject with reason and notify
  */
 import { Router } from "express";
+import { Readable } from "stream";
 import { param } from "../lib/params";
 import { db, stylistProfilesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireOwner } from "../lib/auth";
 import { notify } from "../lib/notifications";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
+const objectStorageService = new ObjectStorageService();
 
 // ---------------------------------------------------------------------------
 // List pending artists
@@ -40,12 +43,45 @@ router.get("/owner/artists/pending", requireOwner, async (req, res) => {
         bio: p.bio ?? null,
         email: user?.email ?? null,
         phone: user?.phone ?? null,
+        identityDocumentAvailable: !!p.idDocumentUrl,
         joinedAt: p.createdAt.toISOString(),
       };
     }),
   );
 
   res.json(result);
+});
+
+router.get("/owner/artists/:profileId/identity", requireOwner, async (req, res) => {
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, param(req.params.profileId)));
+  if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  if (!profile.idNumber) { res.status(404).json({ error: "Identity details have not been submitted" }); return; }
+
+  res.json({ idNumber: profile.idNumber, documentAvailable: !!profile.idDocumentUrl });
+});
+
+router.get("/owner/artists/:profileId/identity-document", requireOwner, async (req, res) => {
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, param(req.params.profileId)));
+  if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  if (!profile.idDocumentUrl) { res.status(404).json({ error: "Identity document has not been submitted" }); return; }
+
+  try {
+    const file = await objectStorageService.getObjectEntityFile(profile.idDocumentUrl);
+    const response = await objectStorageService.downloadObject(file, 0);
+    res.status(response.status);
+    response.headers.forEach((value, key) => res.setHeader(key, value));
+    res.setHeader("Cache-Control", "no-store, private");
+    if (response.body) {
+      Readable.fromWeb(response.body as ReadableStream<Uint8Array>).pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) {
+      res.status(404).json({ error: "Identity document not found" }); return;
+    }
+    res.status(500).json({ error: "Could not load the identity document" });
+  }
 });
 
 // ---------------------------------------------------------------------------

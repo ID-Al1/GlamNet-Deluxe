@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { frenchGreeting } from "@/components/bonisa-logo";
 import { getReputationTier } from "@/lib/reputation";
+import { FileText, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -199,6 +200,11 @@ export default function StylistDashboard() {
   const [editSvc, setEditSvc] = useState({ name: "", price: "", duration: "" });
   const [avail, setAvail] = useState<string[]>([]);
   const [savingAvail, setSavingAvail] = useState(false);
+  const [idNumber, setIdNumber] = useState("");
+  const [identityDocument, setIdentityDocument] = useState<File | null>(null);
+  const [savingIdentity, setSavingIdentity] = useState(false);
+  const [submittingVerification, setSubmittingVerification] = useState(false);
+  const [identityStatus, setIdentityStatus] = useState<{ idNumberProvided: boolean; idDocumentProvided: boolean } | null>(null);
   const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const { data: myProfile } = useQuery({
@@ -227,6 +233,84 @@ export default function StylistDashboard() {
   useEffect(() => {
     if (myProfile?.availability) setAvail(myProfile.availability);
   }, [myProfile?.availability]);
+
+  useEffect(() => {
+    if (!token) return;
+    void fetch(`${import.meta.env.BASE_URL}api/stylists/me/identity-verification`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(async (res) => {
+      if (res.ok) setIdentityStatus(await res.json());
+    });
+  }, [token]);
+
+  const submitIdentityVerification = async () => {
+    if (!idNumber.trim() || !identityDocument) {
+      toast.error("Enter your ID number and choose an identity document first.");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(identityDocument.type) || identityDocument.size > 10 * 1024 * 1024) {
+      toast.error("Use a JPG, PNG, WEBP, or PDF identity document under 10 MB.");
+      return;
+    }
+
+    setSavingIdentity(true);
+    try {
+      const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      const uploadRequest = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/identity-document/upload-url`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: identityDocument.name, size: identityDocument.size, contentType: identityDocument.type }),
+      });
+      if (!uploadRequest.ok) {
+        const body = await uploadRequest.json().catch(() => ({}));
+        throw new Error(body.error || "Could not start the identity-document upload.");
+      }
+      const { uploadURL, objectPath } = await uploadRequest.json();
+      const upload = await fetch(uploadURL, {
+        method: "PUT",
+        headers: { "Content-Type": identityDocument.type },
+        body: identityDocument,
+      });
+      if (!upload.ok) throw new Error("Your identity document could not be uploaded.");
+
+      const save = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/identity-verification`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ idNumber: idNumber.trim(), idDocumentUrl: objectPath }),
+      });
+      if (!save.ok) {
+        const body = await save.json().catch(() => ({}));
+        throw new Error(body.error || "Could not save your identity details.");
+      }
+      setIdentityStatus(await save.json());
+      setIdNumber("");
+      setIdentityDocument(null);
+      qc.invalidateQueries({ queryKey: ["my-stylist-profile"] });
+      toast.success("Identity details saved privately. You can now submit your profile for review.");
+    } catch (error: any) {
+      toast.error(error.message || "Could not save your identity details.");
+    } finally {
+      setSavingIdentity(false);
+    }
+  };
+
+  const submitForVerification = async () => {
+    setSubmittingVerification(true);
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/verification-submit`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Could not submit your profile for verification.");
+      qc.invalidateQueries({ queryKey: ["my-stylist-profile"] });
+      toast.success(body.message || "Profile submitted for verification.");
+    } catch (error: any) {
+      toast.error(error.message || "Could not submit your profile for verification.");
+    } finally {
+      setSubmittingVerification(false);
+    }
+  };
 
   // Auto-navigate to Services tab when artist has no services yet
   useEffect(() => {
@@ -685,7 +769,7 @@ export default function StylistDashboard() {
               </div>
               {myProfile.profileReadiness.isFullyReady ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> All 7 criteria met
+                  <CheckCircle2 className="w-3.5 h-3.5" /> All {myProfile.profileReadiness.totalCount} criteria met
                 </span>
               ) : myProfile.profileReadiness.canBeBooked ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/12 text-primary border border-primary/25">
@@ -725,6 +809,65 @@ export default function StylistDashboard() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="border-border/50">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Identity verification</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your ID details are private and only reviewed by Bonisa before your profile goes live.
+              </p>
+            </div>
+          </div>
+          {identityStatus?.idNumberProvided && identityStatus?.idDocumentProvided ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700">
+                Your private identity details are on file.
+              </div>
+              {myProfile?.verificationStatus === "pending" ? (
+                <p className="text-sm text-muted-foreground">Your profile is under review. We will let you know once verification is complete.</p>
+              ) : myProfile?.verificationStatus === "verified" ? (
+                <p className="text-sm text-emerald-700">Your profile is verified and live on Bonisa.</p>
+              ) : (
+                <Button className="gap-2" onClick={submitForVerification} disabled={submittingVerification}>
+                  <FileText className="w-4 h-4" />{submittingVerification ? "Submitting for review…" : "Submit profile for verification"}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <div className="space-y-2">
+                <Label htmlFor="id-number">ID number</Label>
+                <Input
+                  id="id-number"
+                  value={idNumber}
+                  onChange={(event) => setIdNumber(event.target.value)}
+                  placeholder="Your government-issued ID number"
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground">This is never displayed on your profile.</p>
+              </div>
+              <div className="space-y-2 sm:min-w-56">
+                <Label htmlFor="identity-document">ID photo or PDF</Label>
+                <Input
+                  id="identity-document"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={(event) => setIdentityDocument(event.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">{identityDocument?.name ?? "JPG, PNG, WEBP, or PDF · up to 10 MB"}</p>
+              </div>
+              <Button className="sm:col-span-2 justify-self-start gap-2" onClick={submitIdentityVerification} disabled={savingIdentity}>
+                <Upload className="w-4 h-4" />{savingIdentity ? "Saving identity details…" : "Save identity details"}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs

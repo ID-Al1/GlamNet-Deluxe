@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ShieldCheck, ShieldX, Mail, Phone, MapPin, Clock, Inbox } from "lucide-react";
+import { ShieldCheck, ShieldX, Mail, Phone, MapPin, Clock, Inbox, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -35,6 +35,7 @@ interface PendingArtist {
   bio: string | null;
   email: string | null;
   phone: string | null;
+  identityDocumentAvailable: boolean;
   joinedAt: string;
 }
 
@@ -80,6 +81,24 @@ export default function OwnerPortal() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<PendingArtist | null>(null);
   const [reason, setReason] = useState("");
+
+  async function reviewIdentity(a: PendingArtist) {
+    try {
+      const [summaryResponse, documentResponse] = await Promise.all([
+        fetch(`/api/owner/artists/${a.profileId}/identity`, { headers: authHeaders() }),
+        fetch(`/api/owner/artists/${a.profileId}/identity-document`, { headers: authHeaders() }),
+      ]);
+      if (!summaryResponse.ok || !documentResponse.ok) throw new Error();
+      const identity = await summaryResponse.json();
+      const documentUrl = URL.createObjectURL(await documentResponse.blob());
+      const preview = window.open(documentUrl, "_blank", "noopener,noreferrer");
+      if (!preview) throw new Error();
+      preview.addEventListener("load", () => URL.revokeObjectURL(documentUrl), { once: true });
+      toast.success(`ID number: ${identity.idNumber}`);
+    } catch {
+      toast.error(`Could not open ${a.name}'s private identity document.`);
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -239,6 +258,17 @@ export default function OwnerPortal() {
                   </div>
 
                   <div className="flex gap-2 pt-1">
+                    {a.identityDocumentAvailable && (
+                      <Button
+                        variant="outline"
+                        onClick={() => reviewIdentity(a)}
+                        disabled={busyId === a.profileId}
+                        className="gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Review ID
+                      </Button>
+                    )}
                     <Button
                       onClick={() => approve(a)}
                       disabled={busyId === a.profileId}

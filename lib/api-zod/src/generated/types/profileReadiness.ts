@@ -13,6 +13,6 @@ export interface ProfileReadiness {
   totalCount: number;
   /** True when the artist has at least one service listed — minimum for booking to work */
   canBeBooked: boolean;
-  /** True when all 7 readiness criteria are met */
+  /** True when all 8 readiness criteria are met */
   isFullyReady: boolean;
 }

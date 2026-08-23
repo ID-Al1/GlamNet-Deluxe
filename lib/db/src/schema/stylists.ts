@@ -21,6 +21,9 @@ export const stylistProfilesTable = pgTable("stylist_profiles", {
   website: text("website"),
   accentColor: text("accent_color"),
   houseCalls: boolean("house_calls").notNull().default(false),
+  // Private identity-verification fields. Never expose these in public profile DTOs.
+  idNumber: text("id_number"),
+  idDocumentUrl: text("id_document_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

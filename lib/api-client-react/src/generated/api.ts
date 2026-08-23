@@ -32,6 +32,8 @@ import type {
   ClientDashboard,
   Conversation,
   HealthStatus,
+  IdentityVerificationInput,
+  IdentityVerificationStatus,
   ListAppointmentsParams,
   ListCastingCallsParams,
   ListStylistsParams,
@@ -41,6 +43,7 @@ import type {
   Message,
   MessageInput,
   MessageResponse,
+  OwnerIdentitySummary,
   PortfolioItem,
   PortfolioItemInput,
   Service,
@@ -1176,6 +1179,223 @@ export const useSubmitForVerification = <TError = ErrorType<MessageResponse>,
       return useMutation(getSubmitForVerificationMutationOptions(options));
     }
 
+export const getGetMyIdentityVerificationUrl = () => {
+
+
+
+
+  return `/api/stylists/me/identity-verification`
+}
+
+/**
+ * @summary Get my private identity-verification status
+ */
+export const getMyIdentityVerification = async ( options?: RequestInit): Promise<IdentityVerificationStatus> => {
+
+  return customFetch<IdentityVerificationStatus>(getGetMyIdentityVerificationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyIdentityVerificationQueryKey = () => {
+    return [
+    `/api/stylists/me/identity-verification`
+    ] as const;
+    }
+
+
+export const getGetMyIdentityVerificationQueryOptions = <TData = Awaited<ReturnType<typeof getMyIdentityVerification>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyIdentityVerification>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyIdentityVerificationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyIdentityVerification>>> = ({ signal }) => getMyIdentityVerification({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyIdentityVerification>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyIdentityVerificationQueryResult = NonNullable<Awaited<ReturnType<typeof getMyIdentityVerification>>>
+export type GetMyIdentityVerificationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get my private identity-verification status
+ */
+
+export function useGetMyIdentityVerification<TData = Awaited<ReturnType<typeof getMyIdentityVerification>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyIdentityVerification>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyIdentityVerificationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveMyIdentityVerificationUrl = () => {
+
+
+
+
+  return `/api/stylists/me/identity-verification`
+}
+
+/**
+ * @summary Save my private ID number and identity document reference
+ */
+export const saveMyIdentityVerification = async (identityVerificationInput: IdentityVerificationInput, options?: RequestInit): Promise<IdentityVerificationStatus> => {
+
+  return customFetch<IdentityVerificationStatus>(getSaveMyIdentityVerificationUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(identityVerificationInput)
+  }
+);}
+
+
+
+
+export const getSaveMyIdentityVerificationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMyIdentityVerification>>, TError,{data: BodyType<IdentityVerificationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveMyIdentityVerification>>, TError,{data: BodyType<IdentityVerificationInput>}, TContext> => {
+
+const mutationKey = ['saveMyIdentityVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveMyIdentityVerification>>, {data: BodyType<IdentityVerificationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveMyIdentityVerification(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveMyIdentityVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof saveMyIdentityVerification>>>
+    export type SaveMyIdentityVerificationMutationBody = BodyType<IdentityVerificationInput>
+    export type SaveMyIdentityVerificationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save my private ID number and identity document reference
+ */
+export const useSaveMyIdentityVerification = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMyIdentityVerification>>, TError,{data: BodyType<IdentityVerificationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveMyIdentityVerification>>,
+        TError,
+        {data: BodyType<IdentityVerificationInput>},
+        TContext
+      > => {
+      return useMutation(getSaveMyIdentityVerificationMutationOptions(options));
+    }
+
+export const getRequestIdentityDocumentUploadUrlUrl = () => {
+
+
+
+
+  return `/api/stylists/me/identity-document/upload-url`
+}
+
+/**
+ * @summary Request a private upload URL for an identity document
+ */
+export const requestIdentityDocumentUploadUrl = async (mediaUploadUrlRequest: MediaUploadUrlRequest, options?: RequestInit): Promise<MediaUploadUrlResponse> => {
+
+  return customFetch<MediaUploadUrlResponse>(getRequestIdentityDocumentUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaUploadUrlRequest)
+  }
+);}
+
+
+
+
+export const getRequestIdentityDocumentUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestIdentityDocumentUploadUrl>>, TError,{data: BodyType<MediaUploadUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestIdentityDocumentUploadUrl>>, TError,{data: BodyType<MediaUploadUrlRequest>}, TContext> => {
+
+const mutationKey = ['requestIdentityDocumentUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestIdentityDocumentUploadUrl>>, {data: BodyType<MediaUploadUrlRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestIdentityDocumentUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestIdentityDocumentUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestIdentityDocumentUploadUrl>>>
+    export type RequestIdentityDocumentUploadUrlMutationBody = BodyType<MediaUploadUrlRequest>
+    export type RequestIdentityDocumentUploadUrlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Request a private upload URL for an identity document
+ */
+export const useRequestIdentityDocumentUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestIdentityDocumentUploadUrl>>, TError,{data: BodyType<MediaUploadUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestIdentityDocumentUploadUrl>>,
+        TError,
+        {data: BodyType<MediaUploadUrlRequest>},
+        TContext
+      > => {
+      return useMutation(getRequestIdentityDocumentUploadUrlMutationOptions(options));
+    }
+
 export const getGetVerificationChecklistUrl = () => {
 
 
@@ -2060,6 +2280,160 @@ export const useRequestUploadUrl = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getRequestUploadUrlMutationOptions(options));
     }
+
+export const getGetArtistIdentityForOwnerUrl = (profileId: string,) => {
+
+
+
+
+  return `/api/owner/artists/${profileId}/identity`
+}
+
+/**
+ * @summary Get a pending artist's private identity-verification summary
+ */
+export const getArtistIdentityForOwner = async (profileId: string, options?: RequestInit): Promise<OwnerIdentitySummary> => {
+
+  return customFetch<OwnerIdentitySummary>(getGetArtistIdentityForOwnerUrl(profileId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArtistIdentityForOwnerQueryKey = (profileId: string,) => {
+    return [
+    `/api/owner/artists/${profileId}/identity`
+    ] as const;
+    }
+
+
+export const getGetArtistIdentityForOwnerQueryOptions = <TData = Awaited<ReturnType<typeof getArtistIdentityForOwner>>, TError = ErrorType<unknown>>(profileId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistIdentityForOwner>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArtistIdentityForOwnerQueryKey(profileId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArtistIdentityForOwner>>> = ({ signal }) => getArtistIdentityForOwner(profileId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: profileId !== null && profileId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArtistIdentityForOwner>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArtistIdentityForOwnerQueryResult = NonNullable<Awaited<ReturnType<typeof getArtistIdentityForOwner>>>
+export type GetArtistIdentityForOwnerQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a pending artist's private identity-verification summary
+ */
+
+export function useGetArtistIdentityForOwner<TData = Awaited<ReturnType<typeof getArtistIdentityForOwner>>, TError = ErrorType<unknown>>(
+ profileId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistIdentityForOwner>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArtistIdentityForOwnerQueryOptions(profileId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetArtistIdentityDocumentForOwnerUrl = (profileId: string,) => {
+
+
+
+
+  return `/api/owner/artists/${profileId}/identity-document`
+}
+
+/**
+ * @summary Stream a pending artist's private identity document
+ */
+export const getArtistIdentityDocumentForOwner = async (profileId: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetArtistIdentityDocumentForOwnerUrl(profileId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArtistIdentityDocumentForOwnerQueryKey = (profileId: string,) => {
+    return [
+    `/api/owner/artists/${profileId}/identity-document`
+    ] as const;
+    }
+
+
+export const getGetArtistIdentityDocumentForOwnerQueryOptions = <TData = Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>, TError = ErrorType<unknown>>(profileId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArtistIdentityDocumentForOwnerQueryKey(profileId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>> = ({ signal }) => getArtistIdentityDocumentForOwner(profileId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: profileId !== null && profileId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArtistIdentityDocumentForOwnerQueryResult = NonNullable<Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>>
+export type GetArtistIdentityDocumentForOwnerQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Stream a pending artist's private identity document
+ */
+
+export function useGetArtistIdentityDocumentForOwner<TData = Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>, TError = ErrorType<unknown>>(
+ profileId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistIdentityDocumentForOwner>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArtistIdentityDocumentForOwnerQueryOptions(profileId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListCastingCallsUrl = (params?: ListCastingCallsParams,) => {
   const normalizedParams = new URLSearchParams();

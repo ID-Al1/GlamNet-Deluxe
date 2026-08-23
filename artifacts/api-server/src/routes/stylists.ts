@@ -6,14 +6,22 @@ import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
 import { meetsRateFloor, rateFloorMessage } from "../lib/money";
 import { notify } from "../lib/notifications";
+import { ObjectStorageService } from "../lib/objectStorage";
+import { registerUpload, wasUploadedBy } from "../lib/upload-registry";
 import {
   UpdateMyStylistProfileBody,
   AddStylistServiceBody,
   UpdateStylistServiceBody,
   AddPortfolioItemBody,
+  RequestUploadUrlBody,
+  RequestUploadUrlResponse,
+  SaveMyIdentityVerificationBody,
 } from "@workspace/api-zod";
 
 const router = Router();
+const objectStorageService = new ObjectStorageService();
+const MAX_ID_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const ID_DOCUMENT_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 
 async function computeReputationScore(profileId: string, currentRating: number, reviewCount: number) {
   const appointments = await db.select({
@@ -53,7 +61,7 @@ async function computeReputationScore(profileId: string, currentRating: number, 
   };
 }
 
-function computeProfileReadiness(
+export function computeProfileReadiness(
   profile: typeof stylistProfilesTable.$inferSelect,
   services: typeof servicesTable.$inferSelect[],
   portfolio: typeof portfolioItemsTable.$inferSelect[],
@@ -101,6 +109,12 @@ function computeProfileReadiness(
       label: "Contact available",
       met: !!(phone || profile.instagram || profile.website),
       hint: "Add a phone number, Instagram handle, or website so clients can reach you if needed.",
+    },
+    {
+      id: 8,
+      label: "ID verification",
+      met: !!(profile.idNumber && profile.idDocumentUrl),
+      hint: "Add your ID number and upload a photo of your ID so we can confirm you are who you say you are.",
     },
   ];
 
@@ -291,6 +305,9 @@ router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) =
   if (profile.verificationStatus === "verified") {
     res.status(409).json({ error: "Your profile is already verified." }); return;
   }
+  if (!profile.idNumber || !profile.idDocumentUrl) {
+    res.status(400).json({ error: "Add your ID number and identity document before submitting for verification." }); return;
+  }
 
   await db.update(stylistProfilesTable)
     .set({ verificationStatus: "pending" })
@@ -309,6 +326,73 @@ router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) =
   });
 
   res.json({ message: "Profile submitted for verification. We'll be in touch within 72 hours." });
+});
+
+router.get("/stylists/me/identity-verification", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+
+  res.json({
+    idNumberProvided: !!profile.idNumber,
+    idDocumentProvided: !!profile.idDocumentUrl,
+  });
+});
+
+router.post("/stylists/me/identity-document/upload-url", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const parsed = RequestUploadUrlBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Missing or invalid document metadata" }); return;
+  }
+
+  const { name, size, contentType } = parsed.data;
+  if (!ID_DOCUMENT_CONTENT_TYPES.has(contentType) || size > MAX_ID_DOCUMENT_BYTES) {
+    res.status(400).json({ error: "Upload a JPG, PNG, WEBP, or PDF identity document under 10 MB." }); return;
+  }
+
+  try {
+    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+    const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+    registerUpload(objectPath, user.id);
+    res.json(RequestUploadUrlResponse.parse({
+      uploadURL,
+      objectPath,
+      metadata: { name, size, contentType },
+    }));
+  } catch {
+    res.status(500).json({ error: "Could not prepare the private identity-document upload." });
+  }
+});
+
+router.patch("/stylists/me/identity-verification", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const parsed = SaveMyIdentityVerificationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Enter a valid ID number and upload your identity document first." }); return;
+  }
+
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+  if (!wasUploadedBy(parsed.data.idDocumentUrl, user.id)) {
+    res.status(403).json({ error: "Upload your identity document from this account before saving it." }); return;
+  }
+
+  try {
+    await objectStorageService.trySetObjectEntityAclPolicy(parsed.data.idDocumentUrl, {
+      owner: user.id,
+      visibility: "private",
+    });
+  } catch {
+    res.status(400).json({ error: "Your identity document could not be verified. Please upload it again." }); return;
+  }
+
+  await db.update(stylistProfilesTable).set({
+    idNumber: parsed.data.idNumber.trim(),
+    idDocumentUrl: parsed.data.idDocumentUrl,
+  }).where(eq(stylistProfilesTable.id, profile.id));
+
+  res.json({ idNumberProvided: true, idDocumentProvided: true });
 });
 
 router.post("/stylists/me/services", requireAuth, async (req, res) => {

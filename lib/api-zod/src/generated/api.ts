@@ -161,7 +161,7 @@ export const ListStylistsResponseItem = zod.object({
   "completedCount": zod.number(),
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 7 readiness criteria are met')
+  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
 }).nullish()
 })
 export const ListStylistsResponse = zod.array(ListStylistsResponseItem)
@@ -224,7 +224,7 @@ export const GetStylistResponse = zod.object({
   "completedCount": zod.number(),
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 7 readiness criteria are met')
+  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
 }).nullish()
 })
 
@@ -282,7 +282,7 @@ export const GetMyStylistProfileResponse = zod.object({
   "completedCount": zod.number(),
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 7 readiness criteria are met')
+  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
 }).nullish()
 })
 
@@ -353,7 +353,7 @@ export const UpdateMyStylistProfileResponse = zod.object({
   "completedCount": zod.number(),
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 7 readiness criteria are met')
+  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
 }).nullish()
 })
 
@@ -454,6 +454,52 @@ export const DeletePortfolioItemResponse = zod.object({
  */
 export const SubmitForVerificationResponse = zod.object({
   "message": zod.string()
+})
+
+
+/**
+ * @summary Get my private identity-verification status
+ */
+export const GetMyIdentityVerificationResponse = zod.object({
+  "idNumberProvided": zod.boolean(),
+  "idDocumentProvided": zod.boolean()
+})
+
+
+/**
+ * @summary Save my private ID number and identity document reference
+ */
+export const saveMyIdentityVerificationBodyIdNumberMin = 6;
+export const saveMyIdentityVerificationBodyIdNumberMax = 32;
+
+
+export const saveMyIdentityVerificationBodyIdNumberRegExp = new RegExp('^[A-Za-z0-9 -]+$');
+export const saveMyIdentityVerificationBodyIdDocumentUrlRegExp = new RegExp('^/objects/uploads/[A-Za-z0-9-]+$');
+
+
+export const SaveMyIdentityVerificationBody = zod.object({
+  "idNumber": zod.string().min(saveMyIdentityVerificationBodyIdNumberMin).max(saveMyIdentityVerificationBodyIdNumberMax).regex(saveMyIdentityVerificationBodyIdNumberRegExp),
+  "idDocumentUrl": zod.string().regex(saveMyIdentityVerificationBodyIdDocumentUrlRegExp)
+})
+
+export const SaveMyIdentityVerificationResponse = zod.object({
+  "idNumberProvided": zod.boolean(),
+  "idDocumentProvided": zod.boolean()
+})
+
+
+/**
+ * @summary Request a private upload URL for an identity document
+ */
+export const RequestIdentityDocumentUploadUrlBody = zod.object({
+  "name": zod.string(),
+  "size": zod.number(),
+  "contentType": zod.string()
+})
+
+export const RequestIdentityDocumentUploadUrlResponse = zod.object({
+  "uploadURL": zod.string(),
+  "objectPath": zod.string()
 })
 
 
@@ -719,6 +765,29 @@ export const RequestUploadUrlResponse = zod.object({
 
 
 /**
+ * @summary Get a pending artist's private identity-verification summary
+ */
+export const GetArtistIdentityForOwnerParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const GetArtistIdentityForOwnerResponse = zod.object({
+  "idNumber": zod.string(),
+  "documentAvailable": zod.boolean()
+})
+
+
+/**
+ * @summary Stream a pending artist's private identity document
+ */
+export const GetArtistIdentityDocumentForOwnerParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const GetArtistIdentityDocumentForOwnerResponse = zod.unknown()
+
+
+/**
  * @summary List active casting calls
  */
 export const ListCastingCallsQueryParams = zod.object({
@@ -960,7 +1029,7 @@ export const GetClientDashboardResponse = zod.object({
   "completedCount": zod.number(),
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 7 readiness criteria are met')
+  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
 }).nullish()
 })).optional()
 })
