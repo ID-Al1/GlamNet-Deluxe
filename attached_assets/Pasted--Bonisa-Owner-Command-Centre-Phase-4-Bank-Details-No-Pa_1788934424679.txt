@@ -1,0 +1,97 @@
+# Bonisa Owner Command Centre, Phase 4: Bank Details
+
+No PayFast or Paystack integration in this phase, that's still paused. This phase just gets bank details collected, verified by the owner by eye, same informal process already used for identity, and gates the "who needs to be paid" list from Phase 2 on it.
+
+---
+
+## Non-negotiables for this phase
+
+- The account number is never shown in full by default anywhere. Masked to the last 4 digits everywhere in the UI.
+- A "reveal full number" action exists only on the owner side, for the moment she's actually about to send a manual EFT, and every time it's used, it's logged, who viewed it and when. This is the same care level as the ID document from the earlier verification patch.
+- Nothing in this phase talks to a real banking or payout API. The owner still sends the money herself outside the app, this phase just makes sure she has the right, verified account to send it to.
+
+---
+
+## Part A: Schema
+
+**`bank_accounts`**, one per artist:
+```ts
+id
+stylistProfileId       -> stylist_profiles.id
+bankName               text
+accountHolderName      text
+accountNumber          text     // full number, never returned in a normal read
+accountType            text     // cheque | savings | other
+verificationStatus     text     // pending | verified | failed
+verifiedAt             timestamp
+verifiedBy             -> users.id, nullable
+createdAt
+updatedAt
+```
+
+**`bank_account_access_log`**:
+```ts
+id
+bankAccountId          -> bank_accounts.id
+viewedByUserId         -> users.id
+createdAt
+```
+Written every time the full account number is revealed, no exceptions.
+
+---
+
+## Part B: Artist side
+
+Add bank details as a step on the artist's verification checklist, same page as the ID number and document from the earlier patch. She enters bank name, account holder name, account number, account type. Status starts `pending`.
+
+Every normal read of her own bank details, on her own dashboard, shows the masked version too, last 4 digits only. She doesn't need to see her own full number reflected back at her, she already knows it.
+
+---
+
+## Part C: Owner side
+
+On the artist's internal profile view (from Phase 1), add a Bank section:
+- Bank name, account holder, masked number, account type, verification status
+- Verify / Fail buttons, manual for now, sets `verifiedAt` and `verifiedBy`
+- A "Reveal" action that shows the full number for this session only, and writes a row to `bank_account_access_log` every time
+
+---
+
+## Part D: Wire into Phase 2's payout list
+
+Once this lands, update the "who needs to be paid" screen from Phase 2:
+- An artist with unpaid ledger lines but no verified bank account shows as "Needs bank verification" instead of ready to pay
+- Only artists with `verificationStatus = 'verified'` show the reveal-and-pay flow
+
+---
+
+## Handoff prompt
+
+```
+Building Phase 4 of the Bonisa Owner Command Centre: bank details. No
+payment provider integration, this is collection and manual
+verification only, same pattern as the existing ID verification.
+
+Add bank_accounts and bank_account_access_log tables as specified, with
+a migration script.
+
+Add bank details as a checklist step on the artist verification flow,
+reusing the existing checklist pattern from stylists.ts. Full account
+numbers are never returned in a normal read, only the masked last 4
+digits, anywhere in the app, including the artist's own view of her own
+details.
+
+Add a Bank section to the owner's internal profile view from Phase 1,
+with manual verify/fail actions and a reveal action that logs every use
+to bank_account_access_log.
+
+Update the Phase 2 "who needs to be paid" screen so an artist without a
+verified bank account shows as needing bank verification instead of
+ready to pay.
+
+Run pnpm run typecheck and confirm zero errors when done.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · Owner Command Centre, Phase 4 of 5*
