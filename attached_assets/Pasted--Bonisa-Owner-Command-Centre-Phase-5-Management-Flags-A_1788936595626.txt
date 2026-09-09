@@ -1,0 +1,118 @@
+# Bonisa Owner Command Centre, Phase 5: Management, Flags, Audit Log, 2FA
+
+This is the breadth phase, once Phases 1 through 4 are solid. It's split into five lettered parts on purpose, hand these over one at a time, same as every phase before, this is not smaller in total than the other phases just because it's numbered last.
+
+No live selfie or liveness verification anywhere in this phase, that stays parked until it's a deliberate decision on its own.
+
+---
+
+## Part 5A: Artist Management
+
+Mostly a view stitched together from what already exists by Phase 4, plus a few real additions:
+- Approve / reject / suspend / reactivate, the first two already exist in `owner.ts`, suspend and reactivate are new, using the `accountStatus` field added in Phase 3
+- Performance stats per artist: bookings completed (count from appointments), cancellation rate (cancelled / total), average rating (already on `stylist_profiles.rating`), total earnings (sum from the Phase 2 ledger), complaints and disputes (from Phase 3), payout history (from Phase 2's `payout_batches`)
+
+Nothing here needs new raw data, it's assembling what Phases 2, 3, and 4 already created.
+
+---
+
+## Part 5B: Client Management
+
+New, since there's been no owner-side client view before this:
+- Search and view: name, contact info, booking history, payment history (from `payments`), complaints submitted (from Phase 3), refunds received, `accountStatus`
+- No new schema, this is read access across tables that already exist
+
+---
+
+## Part 5C: Brand Management
+
+**One prerequisite worth doing first, flagged here rather than buried:** `casting_calls.budget` is still a free text field, "R5000", "5k", and "negotiable" all sit in the same column today and can't be totalled. Fix this before building brand spend totals, change it to a real number column, migrate existing values as best effort, default to null where a value truly can't be parsed rather than guessing.
+
+Then:
+- Add a `verified boolean default false` to brand accounts, same pattern as artist verification but far simpler, no ID document needed for a brand, this is closer to confirming a real registered business, own judgement call for what "verified" means for a brand for now
+- Owner can verify / suspend / reactivate a brand
+- View a brand's campaigns (`casting_calls` where `brandId` matches), total spend once the budget field is numeric, complaints, and which artists have worked with them
+
+---
+
+## Part 5D: Flags
+
+Keep this genuinely simple to start, resist building the full automated fraud detection suite in one go, most of it needs real usage data to be worth anything yet.
+
+**`flags` table**:
+```ts
+id
+subjectType      text   // 'user' | 'booking' | 'payment'
+subjectId        text
+reason           text
+status           text   // requires_review | dismissed | actioned
+detectedAt       timestamp
+note             text
+```
+
+Two ways a flag gets created for this phase, not the full list from the original wishlist:
+1. **Manual**: a "Flag for review" button on any user's internal profile view, owner writes a reason
+2. **One simple automatic check**: more than two rejected verification attempts on the same artist profile, using the reject reason history already logged by the existing reject route
+
+That's enough to prove the mechanism works. Add more automatic triggers later once there's real behaviour to detect against, an automatic check built against zero real fraud cases is a guess, not a safeguard.
+
+Never label anything "fraud" or "fake" automatically, always "Requires Review", the owner investigates and decides.
+
+---
+
+## Part 5E: Notifications, Audit Log, and 2FA
+
+**Notifications centre.** A lightweight `owner_notifications` table, written at the moments that already exist across earlier phases, a verification submitted, a complaint filed, a payout batch completed. Don't build a generic event bus, just add one write call at each of those existing points.
+
+**Audit log.** An `audit_logs` table:
+```ts
+id
+actorUserId
+action          text
+targetType      text
+targetId        text
+detail          text
+createdAt
+```
+This is retroactive work as much as new work, go back through the owner actions built in Phases 1 through 4, verify, reject, suspend, refund, hold/release payment, mark paid, resolve complaint, bank verify, and add one logging call to each. Append only, nothing here is ever edited or deleted.
+
+**2FA for the owner account.** The most sensitive piece in this whole phase, do it last and carefully. Add a TOTP secret and an enabled flag to the owner's user record, extend login so that if it's enabled, a code is required after the password succeeds, before a token is issued. Provide a way to see and revoke active sessions too, while this part's already open. Test this thoroughly before relying on it, a broken 2FA implementation that locks the owner out is a worse outcome than not having 2FA yet.
+
+---
+
+## Handoff prompt
+
+```
+Building Phase 5 of the Bonisa Owner Command Centre. This is five
+separate parts, work through them one at a time in this order, with a
+typecheck and a stop between each: 5A Artist Management, 5B Client
+Management, 5C Brand Management, 5D Flags, 5E Notifications/Audit
+Log/2FA. Do not do more than one part per pass.
+
+5A and 5B mostly assemble data already created in earlier phases, no
+new schema expected beyond the accountStatus field already added in
+Phase 3.
+
+5C: first fix casting_calls.budget from free text to a real number
+column, migrating existing values, then build brand verification and
+campaign spend totals on top of the fixed field.
+
+5D: add a flags table. Only two ways to create a flag in this phase, a
+manual "flag for review" button, and one automatic check for more than
+two rejected verification attempts on the same profile. Never
+automatically label anything fraud, always "Requires Review".
+
+5E: add owner_notifications and audit_logs tables, and hook logging
+calls into the existing owner actions from Phases 1 through 4. Do 2FA
+last within this part, add a TOTP secret and enabled flag to the
+owner's account, require a code after password on login when enabled,
+and test it thoroughly, since a broken 2FA implementation locking the
+owner out is worse than not having it yet.
+
+Run pnpm run typecheck and confirm zero errors after each of the five
+parts, not just at the very end.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · Owner Command Centre, Phase 5 of 5*
