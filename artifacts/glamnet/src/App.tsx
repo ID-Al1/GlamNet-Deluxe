@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AppLayout } from "@/components/layout/app-layout";
 import { BonisaSplash } from "@/components/bonisa-splash";
 import { Loader2 } from "lucide-react";
+import { OwnerLayout } from "@/components/layout/owner-layout";
 
 // Lazy-load all page components for automatic code splitting
 const Home = lazy(() => import("@/pages/home"));
@@ -25,7 +26,10 @@ const ProfileSetup = lazy(() => import("@/pages/profile/setup"));
 const LeaveReview = lazy(() => import("@/pages/reviews/[appointmentId]"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-const OwnerPortal = lazy(() => import("@/pages/owner"));
+const OwnerPortal = lazy(() => import("@/pages/owner/index"));
+const OwnerRegistry = lazy(() => import("@/pages/owner/registry/index"));
+const OwnerRegistryProfile = lazy(() => import("@/pages/owner/registry/[userId]"));
+const OwnerVerifications = lazy(() => import("@/pages/owner/verifications"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,9 +85,38 @@ function Router() {
                 <Route path="/payments" component={PaymentHistory} />
                 <Route path="/owner">
                   <RequireOwner>
-                    <Suspense fallback={<PageLoader />}>
-                      <OwnerPortal />
-                    </Suspense>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerPortal />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/registry">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerRegistry />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/registry/:userId">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerRegistryProfile />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/verifications">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerVerifications />
+                      </Suspense>
+                    </OwnerLayout>
                   </RequireOwner>
                 </Route>
                 <Route component={NotFound} />

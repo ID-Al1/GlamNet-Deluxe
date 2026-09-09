@@ -3,11 +3,20 @@ import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 
+function getTokenSecret(): string {
+  const secret = process.env["SESSION_SECRET"];
+  if (!secret) {
+    throw new Error("SESSION_SECRET is required to sign authentication tokens");
+  }
+  return secret;
+}
+const tokenSecret = getTokenSecret();
+
 export function verifyToken(token: string): string | null {
   try {
     const [payloadB64, sig] = token.split(".");
     if (!payloadB64 || !sig) return null;
-    const expectedSig = createHmac("sha256", process.env["JWT_SECRET"] ?? "glamnet_secret_key")
+    const expectedSig = createHmac("sha256", tokenSecret)
       .update(Buffer.from(payloadB64, "base64url").toString())
       .digest("hex");
     if (sig.length !== expectedSig.length) return null;

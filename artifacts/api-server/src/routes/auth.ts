@@ -6,6 +6,14 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { SignupBody, LoginBody } from "@workspace/api-zod";
 
 const router = Router();
+function getTokenSecret(): string {
+  const secret = process.env["SESSION_SECRET"];
+  if (!secret) {
+    throw new Error("SESSION_SECRET is required to sign authentication tokens");
+  }
+  return secret;
+}
+const tokenSecret = getTokenSecret();
 
 function hashPassword(password: string): string {
   return createHmac("sha256", process.env["JWT_SECRET"] ?? "glamnet_secret_key")
@@ -20,7 +28,7 @@ function verifyPassword(password: string, hash: string): boolean {
 
 function signToken(userId: string): string {
   const payload = JSON.stringify({ userId, iat: Date.now() });
-  const sig = createHmac("sha256", process.env["JWT_SECRET"] ?? "glamnet_secret_key")
+  const sig = createHmac("sha256", tokenSecret)
     .update(payload)
     .digest("hex");
   return Buffer.from(payload).toString("base64url") + "." + sig;
@@ -30,7 +38,7 @@ export function verifyToken(token: string): string | null {
   try {
     const [payloadB64, sig] = token.split(".");
     if (!payloadB64 || !sig) return null;
-    const expectedSig = createHmac("sha256", process.env["JWT_SECRET"] ?? "glamnet_secret_key")
+    const expectedSig = createHmac("sha256", tokenSecret)
       .update(Buffer.from(payloadB64, "base64url").toString())
       .digest("hex");
     if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
