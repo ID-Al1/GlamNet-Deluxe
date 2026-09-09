@@ -13,3 +13,4 @@
 - [Bonisa mockup redesign lessons](bonisa-mockup-redesign.md) — restyle = re-skin only; delegated redesigns tend to swap live logic for static mockup data, so audit for fake data and dead buttons.
 - [stylistId naming trap](glamnet-stylistid-naming-trap.md) — conversations.stylistId holds a USER id; all other tables hold a PROFILE id. Rename to stylistUserId on next messaging touch.
 - [Private identity verification](bonisa-private-identity-verification.md) — identity data uses a dedicated private upload and owner-gated review flow; never place it in public DTOs or storage paths.
+- [Bonisa complaint adjudication](bonisa-complaint-adjudication.md) — complaint evidence and owner notes stay private; money actions must atomically update escrow, ledger, and both audit trails.
