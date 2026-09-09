@@ -30,6 +30,8 @@ const OwnerPortal = lazy(() => import("@/pages/owner/index"));
 const OwnerRegistry = lazy(() => import("@/pages/owner/registry/index"));
 const OwnerRegistryProfile = lazy(() => import("@/pages/owner/registry/[userId]"));
 const OwnerVerifications = lazy(() => import("@/pages/owner/verifications"));
+const OwnerPayouts = lazy(() => import("@/pages/owner/payouts/index"));
+const OwnerPaymentsOverview = lazy(() => import("@/pages/owner/payments-overview/index"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +90,24 @@ function Router() {
                     <OwnerLayout>
                       <Suspense fallback={<PageLoader />}>
                         <OwnerPortal />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/payouts">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerPayouts />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/payments-overview">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerPaymentsOverview />
                       </Suspense>
                     </OwnerLayout>
                   </RequireOwner>

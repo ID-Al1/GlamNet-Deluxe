@@ -31,6 +31,7 @@ import type {
   CastingCallUpdate,
   ClientDashboard,
   Conversation,
+  GetOwnerPayoutsParams,
   HealthStatus,
   IdentityVerificationInput,
   IdentityVerificationStatus,
@@ -38,6 +39,7 @@ import type {
   ListCastingCallsParams,
   ListStylistsParams,
   LoginInput,
+  MarkOwnerPayoutInput,
   MediaUploadUrlRequest,
   MediaUploadUrlResponse,
   Message,
@@ -46,6 +48,9 @@ import type {
   MyStylistProfile,
   OwnerCommandCentreMetrics,
   OwnerIdentitySummary,
+  OwnerPaymentOverview,
+  OwnerPayoutBatch,
+  OwnerPayoutGroup,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
   PortfolioItem,
@@ -2435,6 +2440,238 @@ export function useSearchOwnerRegistry<TData = Awaited<ReturnType<typeof searchO
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getSearchOwnerRegistryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOwnerPayoutsUrl = (params?: GetOwnerPayoutsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/owner/payouts?${stringifiedParams}` : `/api/owner/payouts`
+}
+
+/**
+ * @summary List unpaid payouts grouped by artist
+ */
+export const getOwnerPayouts = async (params?: GetOwnerPayoutsParams, options?: RequestInit): Promise<OwnerPayoutGroup[]> => {
+
+  return customFetch<OwnerPayoutGroup[]>(getGetOwnerPayoutsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerPayoutsQueryKey = (params?: GetOwnerPayoutsParams,) => {
+    return [
+    `/api/owner/payouts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOwnerPayoutsQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerPayouts>>, TError = ErrorType<unknown>>(params?: GetOwnerPayoutsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerPayouts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerPayoutsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerPayouts>>> = ({ signal }) => getOwnerPayouts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerPayouts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerPayoutsQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerPayouts>>>
+export type GetOwnerPayoutsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List unpaid payouts grouped by artist
+ */
+
+export function useGetOwnerPayouts<TData = Awaited<ReturnType<typeof getOwnerPayouts>>, TError = ErrorType<unknown>>(
+ params?: GetOwnerPayoutsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerPayouts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerPayoutsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMarkOwnerPayoutPaidUrl = (artistProfileId: string,) => {
+
+
+
+
+  return `/api/owner/payouts/${artistProfileId}/mark-paid`
+}
+
+/**
+ * @summary Record an EFT and mark currently due lines paid
+ */
+export const markOwnerPayoutPaid = async (artistProfileId: string,
+    markOwnerPayoutInput: MarkOwnerPayoutInput, options?: RequestInit): Promise<OwnerPayoutBatch> => {
+
+  return customFetch<OwnerPayoutBatch>(getMarkOwnerPayoutPaidUrl(artistProfileId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(markOwnerPayoutInput)
+  }
+);}
+
+
+
+
+export const getMarkOwnerPayoutPaidMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markOwnerPayoutPaid>>, TError,{artistProfileId: string;data: BodyType<MarkOwnerPayoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markOwnerPayoutPaid>>, TError,{artistProfileId: string;data: BodyType<MarkOwnerPayoutInput>}, TContext> => {
+
+const mutationKey = ['markOwnerPayoutPaid'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markOwnerPayoutPaid>>, {artistProfileId: string;data: BodyType<MarkOwnerPayoutInput>}> = (props) => {
+          const {artistProfileId,data} = props ?? {};
+
+          return  markOwnerPayoutPaid(artistProfileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkOwnerPayoutPaidMutationResult = NonNullable<Awaited<ReturnType<typeof markOwnerPayoutPaid>>>
+    export type MarkOwnerPayoutPaidMutationBody = BodyType<MarkOwnerPayoutInput>
+    export type MarkOwnerPayoutPaidMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record an EFT and mark currently due lines paid
+ */
+export const useMarkOwnerPayoutPaid = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markOwnerPayoutPaid>>, TError,{artistProfileId: string;data: BodyType<MarkOwnerPayoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markOwnerPayoutPaid>>,
+        TError,
+        {artistProfileId: string;data: BodyType<MarkOwnerPayoutInput>},
+        TContext
+      > => {
+      return useMutation(getMarkOwnerPayoutPaidMutationOptions(options));
+    }
+
+export const getGetOwnerPaymentsOverviewUrl = () => {
+
+
+
+
+  return `/api/owner/payments-overview`
+}
+
+/**
+ * @summary List booking-level payout and ledger details
+ */
+export const getOwnerPaymentsOverview = async ( options?: RequestInit): Promise<OwnerPaymentOverview[]> => {
+
+  return customFetch<OwnerPaymentOverview[]>(getGetOwnerPaymentsOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerPaymentsOverviewQueryKey = () => {
+    return [
+    `/api/owner/payments-overview`
+    ] as const;
+    }
+
+
+export const getGetOwnerPaymentsOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerPaymentsOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerPaymentsOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerPaymentsOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerPaymentsOverview>>> = ({ signal }) => getOwnerPaymentsOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerPaymentsOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerPaymentsOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerPaymentsOverview>>>
+export type GetOwnerPaymentsOverviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List booking-level payout and ledger details
+ */
+
+export function useGetOwnerPaymentsOverview<TData = Awaited<ReturnType<typeof getOwnerPaymentsOverview>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerPaymentsOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerPaymentsOverviewQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

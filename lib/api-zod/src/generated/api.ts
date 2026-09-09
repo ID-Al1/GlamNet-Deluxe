@@ -765,6 +765,90 @@ export const SearchOwnerRegistryResponse = zod.array(SearchOwnerRegistryResponse
 
 
 /**
+ * @summary List unpaid payouts grouped by artist
+ */
+export const GetOwnerPayoutsQueryParams = zod.object({
+  "filter": zod.enum(['oldest', 'highest', 'this-week', 'all-time']).optional()
+})
+
+export const GetOwnerPayoutsResponseItem = zod.object({
+  "artistProfileId": zod.string(),
+  "artistName": zod.string(),
+  "totalAmount": zod.number(),
+  "lineCount": zod.number(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "artistProfileId": zod.string(),
+  "artistName": zod.string(),
+  "amount": zod.number(),
+  "appointmentId": zod.string(),
+  "clientName": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "dueAt": zod.coerce.date()
+}))
+})
+export const GetOwnerPayoutsResponse = zod.array(GetOwnerPayoutsResponseItem)
+
+
+/**
+ * @summary Record an EFT and mark currently due lines paid
+ */
+export const MarkOwnerPayoutPaidParams = zod.object({
+  "artistProfileId": zod.coerce.string()
+})
+
+
+
+
+
+export const MarkOwnerPayoutPaidBody = zod.object({
+  "reference": zod.string().min(1),
+  "lineIds": zod.array(zod.string()).min(1),
+  "expectedTotal": zod.number()
+})
+
+export const MarkOwnerPayoutPaidResponse = zod.object({
+  "id": zod.string(),
+  "artistProfileId": zod.string(),
+  "totalAmount": zod.number(),
+  "lineCount": zod.number(),
+  "reference": zod.string(),
+  "paidBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List booking-level payout and ledger details
+ */
+export const GetOwnerPaymentsOverviewResponseItem = zod.object({
+  "appointmentId": zod.string(),
+  "clientName": zod.string(),
+  "stylistName": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "payoutStatus": zod.enum(['held', 'released', 'disputed']),
+  "grossAmount": zod.number(),
+  "platformFeeAmount": zod.number(),
+  "artistPool": zod.number(),
+  "isTeamBooking": zod.boolean(),
+  "ledger": zod.array(zod.object({
+  "appointmentId": zod.string(),
+  "artistProfileId": zod.string(),
+  "artistName": zod.string(),
+  "sharePercent": zod.number(),
+  "grossAmount": zod.number(),
+  "platformFeeAmount": zod.number(),
+  "netAmount": zod.number(),
+  "status": zod.enum(['due', 'paid', 'reversed']),
+  "paidAt": zod.coerce.date().nullable()
+}))
+})
+export const GetOwnerPaymentsOverviewResponse = zod.array(GetOwnerPaymentsOverviewResponseItem)
+
+
+/**
  * @summary Get an owner-only internal profile
  */
 export const GetOwnerRegistryProfileParams = zod.object({

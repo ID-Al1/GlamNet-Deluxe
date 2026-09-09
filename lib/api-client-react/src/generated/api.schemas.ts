@@ -47,6 +47,89 @@ export interface OwnerCommandCentreMetrics {
   openDisputes: number;
 }
 
+export interface OwnerPayoutLine {
+  id: string;
+  artistProfileId: string;
+  artistName: string;
+  amount: number;
+  appointmentId: string;
+  clientName: string;
+  serviceName: string;
+  date: string;
+  dueAt: string;
+}
+
+export interface OwnerPayoutGroup {
+  artistProfileId: string;
+  artistName: string;
+  totalAmount: number;
+  lineCount: number;
+  lines: OwnerPayoutLine[];
+}
+
+export interface OwnerPayoutBatch {
+  id: string;
+  artistProfileId: string;
+  totalAmount: number;
+  lineCount: number;
+  reference: string;
+  paidBy: string;
+  createdAt: string;
+}
+
+export interface MarkOwnerPayoutInput {
+  /** @minLength 1 */
+  reference: string;
+  /** @minItems 1 */
+  lineIds: string[];
+  expectedTotal: number;
+}
+
+export type OwnerPaymentOverviewPayoutStatus = typeof OwnerPaymentOverviewPayoutStatus[keyof typeof OwnerPaymentOverviewPayoutStatus];
+
+
+export const OwnerPaymentOverviewPayoutStatus = {
+  held: 'held',
+  released: 'released',
+  disputed: 'disputed',
+} as const;
+
+export type OwnerPaymentOverviewLedgerItemStatus = typeof OwnerPaymentOverviewLedgerItemStatus[keyof typeof OwnerPaymentOverviewLedgerItemStatus];
+
+
+export const OwnerPaymentOverviewLedgerItemStatus = {
+  due: 'due',
+  paid: 'paid',
+  reversed: 'reversed',
+} as const;
+
+export type OwnerPaymentOverviewLedgerItem = {
+  appointmentId: string;
+  artistProfileId: string;
+  artistName: string;
+  sharePercent: number;
+  grossAmount: number;
+  platformFeeAmount: number;
+  netAmount: number;
+  status: OwnerPaymentOverviewLedgerItemStatus;
+  /** @nullable */
+  paidAt: string | null;
+};
+
+export interface OwnerPaymentOverview {
+  appointmentId: string;
+  clientName: string;
+  stylistName: string;
+  serviceName: string;
+  date: string;
+  payoutStatus: OwnerPaymentOverviewPayoutStatus;
+  grossAmount: number;
+  platformFeeAmount: number;
+  artistPool: number;
+  isTeamBooking: boolean;
+  ledger: OwnerPaymentOverviewLedgerItem[];
+}
+
 export type OwnerRegistryEntryRole = typeof OwnerRegistryEntryRole[keyof typeof OwnerRegistryEntryRole];
 
 
@@ -612,6 +695,20 @@ export type SearchOwnerRegistryParams = {
  */
 q?: string;
 };
+
+export type GetOwnerPayoutsParams = {
+filter?: GetOwnerPayoutsFilter;
+};
+
+export type GetOwnerPayoutsFilter = typeof GetOwnerPayoutsFilter[keyof typeof GetOwnerPayoutsFilter];
+
+
+export const GetOwnerPayoutsFilter = {
+  oldest: 'oldest',
+  highest: 'highest',
+  'this-week': 'this-week',
+  'all-time': 'all-time',
+} as const;
 
 export type ListCastingCallsParams = {
 specialty?: string;

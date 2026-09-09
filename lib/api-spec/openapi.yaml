@@ -683,6 +683,66 @@ paths:
                 items:
                   $ref: "#/components/schemas/OwnerRegistryEntry"
 
+  /owner/payouts:
+    get:
+      operationId: getOwnerPayouts
+      tags: [owner]
+      summary: List unpaid payouts grouped by artist
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [oldest, highest, this-week, all-time]
+      responses:
+        "200":
+          description: Unpaid payout groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnerPayoutGroup"
+
+  /owner/payouts/{artistProfileId}/mark-paid:
+    post:
+      operationId: markOwnerPayoutPaid
+      tags: [owner]
+      summary: Record an EFT and mark currently due lines paid
+      parameters:
+        - name: artistProfileId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkOwnerPayoutInput"
+      responses:
+        "200":
+          description: Payout batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerPayoutBatch"
+
+  /owner/payments-overview:
+    get:
+      operationId: getOwnerPaymentsOverview
+      tags: [owner]
+      summary: List booking-level payout and ledger details
+      responses:
+        "200":
+          description: Booking payment overview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnerPaymentOverview"
+
   /owner/registry/{userId}:
     get:
       operationId: getOwnerRegistryProfile
@@ -977,6 +1037,85 @@ components:
           type: number
         openDisputes:
           type: integer
+
+    OwnerPayoutLine:
+      type: object
+      properties:
+        id: { type: string }
+        artistProfileId: { type: string }
+        artistName: { type: string }
+        amount: { type: number }
+        appointmentId: { type: string }
+        clientName: { type: string }
+        serviceName: { type: string }
+        date: { type: string }
+        dueAt: { type: string, format: date-time }
+      required: [id, artistProfileId, artistName, amount, appointmentId, clientName, serviceName, date, dueAt]
+
+    OwnerPayoutGroup:
+      type: object
+      properties:
+        artistProfileId: { type: string }
+        artistName: { type: string }
+        totalAmount: { type: number }
+        lineCount: { type: integer }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/OwnerPayoutLine" }
+      required: [artistProfileId, artistName, totalAmount, lineCount, lines]
+
+    OwnerPayoutBatch:
+      type: object
+      properties:
+        id: { type: string }
+        artistProfileId: { type: string }
+        totalAmount: { type: number }
+        lineCount: { type: integer }
+        reference: { type: string }
+        paidBy: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, artistProfileId, totalAmount, lineCount, reference, paidBy, createdAt]
+
+    MarkOwnerPayoutInput:
+      type: object
+      required: [reference, lineIds, expectedTotal]
+      properties:
+        reference: { type: string, minLength: 1 }
+        lineIds:
+          type: array
+          minItems: 1
+          items: { type: string }
+        expectedTotal: { type: number }
+
+    OwnerPaymentOverview:
+      type: object
+      properties:
+        appointmentId: { type: string }
+        clientName: { type: string }
+        stylistName: { type: string }
+        serviceName: { type: string }
+        date: { type: string }
+        payoutStatus: { type: string, enum: [held, released, disputed] }
+        grossAmount: { type: number }
+        platformFeeAmount: { type: number }
+        artistPool: { type: number }
+        isTeamBooking: { type: boolean }
+        ledger:
+          type: array
+          items:
+            type: object
+            properties:
+              appointmentId: { type: string }
+              artistProfileId: { type: string }
+              artistName: { type: string }
+              sharePercent: { type: number }
+              grossAmount: { type: number }
+              platformFeeAmount: { type: number }
+              netAmount: { type: number }
+              status: { type: string, enum: [due, paid, reversed] }
+              paidAt: { type: ["string", "null"], format: date-time }
+            required: [appointmentId, artistProfileId, artistName, sharePercent, grossAmount, platformFeeAmount, netAmount, status, paidAt]
+      required: [appointmentId, clientName, stylistName, serviceName, date, payoutStatus, grossAmount, platformFeeAmount, artistPool, isTeamBooking, ledger]
 
     OwnerRegistryEntry:
       type: object

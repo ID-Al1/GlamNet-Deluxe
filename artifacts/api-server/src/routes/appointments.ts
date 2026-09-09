@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, appointmentsTable, stylistProfilesTable, servicesTable, usersTable, paymentsTable } from "@workspace/db";
+import { db, appointmentsTable, stylistProfilesTable, servicesTable, usersTable, paymentsTable, payoutLedgerTable } from "@workspace/db";
 import { eq, and, or, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
@@ -9,10 +9,11 @@ import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
 import { recordPayoutEvent, splitAmount } from "../lib/escrow";
 import { param } from "../lib/params";
+import { createPayoutLedgerLines } from "../lib/payout-ledger";
 
 const router = Router();
 
-import { ARTIST_SHARE as ARTIST_PAYOUT_PCT, PLATFORM_SHARE as PLATFORM_FEE_PCT } from "../lib/money";
+import { ARTIST_SHARE as ARTIST_PAYOUT_PCT, PLATFORM_SHARE as PLATFORM_FEE_PCT, payoutDueAt } from "../lib/money";
 
 function formatAppt(a: typeof appointmentsTable.$inferSelect) {
   return {
@@ -377,20 +378,24 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
       : appt.price + appt.tipAmount);
   const { artistShare: artistPayout, platformShare: platformFee } = splitAmount(actualCollected);
 
-  const releasedRows = await db.update(appointmentsTable)
-    .set({
-      payoutStatus: "released",
-      artistPayoutAmount: artistPayout,
-      platformFeeAmount: platformFee,
-      status: "completed",
-    })
-    .where(and(
-      eq(appointmentsTable.id, appointmentId),
-      eq(appointmentsTable.payoutStatus, "held"),
-      eq(appointmentsTable.workConfirmedByClient, true),
-      eq(appointmentsTable.workConfirmedByArtist, true),
-    ))
-    .returning();
+  const releasedRows = await db.transaction(async (tx) => {
+    const rows = await tx.update(appointmentsTable)
+      .set({
+        payoutStatus: "released",
+        artistPayoutAmount: artistPayout,
+        platformFeeAmount: platformFee,
+        status: "completed",
+      })
+      .where(and(
+        eq(appointmentsTable.id, appointmentId),
+        eq(appointmentsTable.payoutStatus, "held"),
+        eq(appointmentsTable.workConfirmedByClient, true),
+        eq(appointmentsTable.workConfirmedByArtist, true),
+      ))
+      .returning();
+    if (rows.length > 0) await createPayoutLedgerLines(tx, rows[0], payoutDueAt());
+    return rows;
+  });
 
   if (releasedRows.length > 0) {
     await recordPayoutEvent({
@@ -401,25 +406,32 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
     try {
       await postSystemMessage(
         appt.clientId, appt.stylistId,
-        `Both parties confirmed the appointment. R${artistPayout.toFixed(2)} released to ${appt.stylistName} (Bonisa fee: R${platformFee.toFixed(2)}).`
+        appt.isTeamBooking
+          ? `Both parties confirmed the appointment. R${artistPayout.toFixed(2)} allocated across the confirmed team artists (Bonisa fee: R${platformFee.toFixed(2)}).`
+          : `Both parties confirmed the appointment. R${artistPayout.toFixed(2)} released to ${appt.stylistName} (Bonisa fee: R${platformFee.toFixed(2)}).`
       );
     } catch { /* non-fatal */ }
-    // Notify artist her money has cleared — email + WhatsApp, non-fatal
+    // Notify each paid artist of only their own allocation — email + WhatsApp, non-fatal.
     setImmediate(async () => {
       try {
-        const [artistProfile] = await db.select().from(stylistProfilesTable)
-          .where(eq(stylistProfilesTable.id, appt.stylistId));
-        if (!artistProfile) return;
-        const [artistUser] = await db.select().from(usersTable)
-          .where(eq(usersTable.id, artistProfile.userId));
-        if (!artistUser) return;
-        const payoutDueAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-          .toLocaleDateString("en-ZA");
-        await notify(
-          { phone: artistUser.phone, email: artistUser.email, name: artistUser.name },
-          "payout.released",
-          { artistName: artistProfile.name, serviceName: appt.serviceName, amount: artistPayout, payoutDueAt },
-        );
+        const ledgerLines = await db.select({
+          artistProfileId: payoutLedgerTable.artistProfileId,
+          amount: payoutLedgerTable.netAmount,
+        }).from(payoutLedgerTable).where(eq(payoutLedgerTable.appointmentId, appointmentId));
+        const dueDate = payoutDueAt().toLocaleDateString("en-ZA");
+        for (const line of ledgerLines) {
+          const [artistProfile] = await db.select().from(stylistProfilesTable)
+            .where(eq(stylistProfilesTable.id, line.artistProfileId));
+          if (!artistProfile) continue;
+          const [artistUser] = await db.select().from(usersTable)
+            .where(eq(usersTable.id, artistProfile.userId));
+          if (!artistUser) continue;
+          await notify(
+            { phone: artistUser.phone, email: artistUser.email, name: artistUser.name },
+            "payout.released",
+            { artistName: artistProfile.name, serviceName: appt.serviceName, amount: line.amount, payoutDueAt: dueDate },
+          );
+        }
       } catch { /* non-fatal */ }
     });
     res.json(formatAppt(releasedRows[0]));

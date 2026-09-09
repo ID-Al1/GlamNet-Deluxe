@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Banknote, ListTree } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function OwnerLayout({ children }: { children: ReactNode }) {
@@ -7,6 +7,8 @@ export function OwnerLayout({ children }: { children: ReactNode }) {
 
   const tabs = [
     { href: "/owner", label: "Command Centre", icon: LayoutDashboard, exact: true },
+    { href: "/owner/payouts", label: "Payouts", icon: Banknote, exact: false },
+    { href: "/owner/payments-overview", label: "Ledger", icon: ListTree, exact: false },
     { href: "/owner/registry", label: "Registry", icon: Users, exact: false },
     { href: "/owner/verifications", label: "Verifications", icon: ShieldCheck, exact: false },
   ];

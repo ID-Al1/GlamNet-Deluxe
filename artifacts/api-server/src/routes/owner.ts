@@ -11,8 +11,9 @@
 import { Router } from "express";
 import { Readable } from "stream";
 import { param } from "../lib/params";
-import { appointmentsTable, db, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable } from "@workspace/db";
-import { desc, eq, ilike, or, sql } from "drizzle-orm";
+import { appointmentsTable, db, payoutBatchesTable, payoutLedgerTable, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable } from "@workspace/db";
+import { and, asc, desc, eq, gte, ilike, inArray, lt, or, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { requireOwner } from "../lib/auth";
 import { notify } from "../lib/notifications";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -22,27 +23,142 @@ const router = Router();
 const objectStorageService = new ObjectStorageService();
 
 router.get("/owner/command-centre", requireOwner, async (_req, res) => {
-  const [[artistMetrics], [paymentMetrics]] = await Promise.all([
+  const [[artistMetrics], [appointmentMetrics], [ledgerMetrics]] = await Promise.all([
     db.select({
       totalArtists: sql<number>`count(*)::int`,
       verifiedArtists: sql<number>`count(*) filter (where ${stylistProfilesTable.verified} = true)::int`,
       pendingVerifications: sql<number>`count(*) filter (where ${stylistProfilesTable.verificationStatus} = 'pending')::int`,
     }).from(stylistProfilesTable),
     db.select({
-      paymentsToRelease: sql<number>`coalesce(sum(${appointmentsTable.artistPayoutAmount}) filter (where ${appointmentsTable.payoutStatus} = 'released'), 0)::float8`,
       bonisaCommission: sql<number>`coalesce(sum(${appointmentsTable.platformFeeAmount}) filter (where ${appointmentsTable.payoutStatus} = 'released'), 0)::float8`,
       openDisputes: sql<number>`count(*) filter (where ${appointmentsTable.payoutStatus} = 'disputed')::int`,
     }).from(appointmentsTable),
+    db.select({
+      paymentsToRelease: sql<number>`coalesce(sum(${payoutLedgerTable.netAmount}) filter (where ${payoutLedgerTable.status} = 'due'), 0)::float8`,
+    }).from(payoutLedgerTable),
   ]);
 
   res.json({
     totalArtists: artistMetrics.totalArtists,
     verifiedArtists: artistMetrics.verifiedArtists,
     pendingVerifications: artistMetrics.pendingVerifications,
-    paymentsToRelease: paymentMetrics.paymentsToRelease,
-    bonisaCommission: paymentMetrics.bonisaCommission,
-    openDisputes: paymentMetrics.openDisputes,
+    paymentsToRelease: ledgerMetrics.paymentsToRelease,
+    bonisaCommission: appointmentMetrics.bonisaCommission,
+    openDisputes: appointmentMetrics.openDisputes,
   });
+});
+
+// Unpaid ledger lines grouped by artist. Filters are deliberately server-side so
+// the owner view remains accurate for large ledgers.
+router.get("/owner/payouts", requireOwner, async (req, res) => {
+  const filter = String(req.query.filter ?? "all-time");
+  const now = new Date();
+  const monday = new Date(now);
+  const day = monday.getDay() || 7;
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - day + 1);
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(nextMonday.getDate() + 7);
+  const since = filter === "this-week" ? monday : null;
+  const lines = await db.select({
+    id: payoutLedgerTable.id, artistProfileId: payoutLedgerTable.artistProfileId,
+    artistName: stylistProfilesTable.name, amount: payoutLedgerTable.netAmount,
+    dueAt: payoutLedgerTable.dueAt, appointmentId: appointmentsTable.id,
+    clientName: appointmentsTable.clientName, serviceName: appointmentsTable.serviceName,
+    date: appointmentsTable.date,
+  }).from(payoutLedgerTable)
+    .innerJoin(stylistProfilesTable, eq(stylistProfilesTable.id, payoutLedgerTable.artistProfileId))
+    .innerJoin(appointmentsTable, eq(appointmentsTable.id, payoutLedgerTable.appointmentId))
+    .where(since
+      ? and(eq(payoutLedgerTable.status, "due"), gte(payoutLedgerTable.dueAt, since), lt(payoutLedgerTable.dueAt, nextMonday))
+      : eq(payoutLedgerTable.status, "due"))
+    .orderBy(asc(payoutLedgerTable.dueAt), asc(payoutLedgerTable.id));
+  const groups = new Map<string, any>();
+  for (const line of lines) {
+    const group = groups.get(line.artistProfileId) ?? {
+      artistProfileId: line.artistProfileId, artistName: line.artistName,
+      totalAmount: 0, lineCount: 0, lines: [],
+    };
+    group.totalAmount = Math.round((group.totalAmount + line.amount) * 100) / 100;
+    group.lineCount++;
+    group.lines.push({ ...line, dueAt: line.dueAt.toISOString() });
+    groups.set(line.artistProfileId, group);
+  }
+  const result = [...groups.values()];
+  result.sort((a, b) => {
+    const byOldest = Date.parse(a.lines[0].dueAt) - Date.parse(b.lines[0].dueAt);
+    const primary = filter === "highest" ? b.totalAmount - a.totalAmount : byOldest;
+    return primary || byOldest || a.artistProfileId.localeCompare(b.artistProfileId);
+  });
+  res.json(result);
+});
+
+router.post("/owner/payouts/:artistProfileId/mark-paid", requireOwner, async (req, res) => {
+  const artistProfileId = param(req.params.artistProfileId);
+  const reference = typeof req.body?.reference === "string" ? req.body.reference.trim() : "";
+  const lineIds = Array.isArray(req.body?.lineIds) ? req.body.lineIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0) : [];
+  const expectedTotal = typeof req.body?.expectedTotal === "number" ? req.body.expectedTotal : Number(req.body?.expectedTotal);
+  if (!reference) { res.status(400).json({ error: "A non-empty EFT reference is required" }); return; }
+  if (!lineIds.length || !Number.isFinite(expectedTotal)) { res.status(400).json({ error: "lineIds and expectedTotal are required" }); return; }
+  const paid = await db.transaction(async (tx) => {
+    const due = await tx.select().from(payoutLedgerTable)
+      .where(and(eq(payoutLedgerTable.artistProfileId, artistProfileId), eq(payoutLedgerTable.status, "due"), inArray(payoutLedgerTable.id, lineIds)))
+      .for("update");
+    if (due.length !== lineIds.length) return null;
+    const expectedCents = Math.round(expectedTotal * 100);
+    const actualCents = due.reduce((sum, line) => sum + Math.round(line.netAmount * 100), 0);
+    if (actualCents !== expectedCents) return null;
+    const batchId = randomUUID();
+    const now = new Date();
+    await tx.insert(payoutBatchesTable).values({
+      id: batchId, artistProfileId, totalAmount: 0, lineCount: 0,
+      reference, paidBy: (req as any).user.id,
+    });
+    const updated = [];
+    for (const line of due) {
+      const rows = await tx.update(payoutLedgerTable).set({
+        status: "paid", paidAt: now, paidBatchId: batchId,
+      }).where(and(eq(payoutLedgerTable.id, line.id), eq(payoutLedgerTable.status, "due"))).returning();
+      updated.push(...rows);
+    }
+    if (!updated.length) return null;
+    const totalAmount = Math.round(updated.reduce((sum, line) => sum + line.netAmount, 0) * 100) / 100;
+    const [batch] = await tx.update(payoutBatchesTable)
+      .set({ totalAmount, lineCount: updated.length })
+      .where(eq(payoutBatchesTable.id, batchId))
+      .returning();
+    return batch;
+  });
+  if (!paid) { res.status(409).json({ error: "No currently due payout lines remain" }); return; }
+  res.json(paid);
+});
+
+router.get("/owner/payments-overview", requireOwner, async (_req, res) => {
+  const appointments = await db.select().from(appointmentsTable)
+    .orderBy(desc(appointmentsTable.createdAt), desc(appointmentsTable.id));
+  const lines = await db.select({
+    appointmentId: payoutLedgerTable.appointmentId, artistProfileId: payoutLedgerTable.artistProfileId,
+    artistName: stylistProfilesTable.name, sharePercent: payoutLedgerTable.sharePercent,
+    grossAmount: payoutLedgerTable.grossAmount, platformFeeAmount: payoutLedgerTable.platformFeeAmount,
+    netAmount: payoutLedgerTable.netAmount, status: payoutLedgerTable.status,
+    paidAt: payoutLedgerTable.paidAt,
+  }).from(payoutLedgerTable).innerJoin(stylistProfilesTable,
+    eq(stylistProfilesTable.id, payoutLedgerTable.artistProfileId))
+    .orderBy(asc(payoutLedgerTable.appointmentId), asc(payoutLedgerTable.artistProfileId));
+  res.json(appointments.map((appointment) => ({
+    appointmentId: appointment.id,
+    clientName: appointment.clientName,
+    stylistName: appointment.stylistName,
+    serviceName: appointment.serviceName,
+    date: appointment.date,
+    payoutStatus: appointment.payoutStatus,
+    grossAmount: appointment.price,
+    platformFeeAmount: appointment.platformFeeAmount,
+    artistPool: appointment.artistPayoutAmount,
+    isTeamBooking: appointment.isTeamBooking,
+    ledger: lines.filter((line) => line.appointmentId === appointment.id)
+      .map((line) => ({ ...line, paidAt: line.paidAt?.toISOString() ?? null })),
+  })));
 });
 
 router.get("/owner/registry", requireOwner, async (req, res) => {
