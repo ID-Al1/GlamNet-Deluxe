@@ -166,6 +166,15 @@ router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
   const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
   if (!review) { res.status(404).json({ error: "Review not found" }); return; }
 
+  const [reviewedArtist] = await db
+    .select({ userId: stylistProfilesTable.userId })
+    .from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.id, review.revieweeId));
+  if (reviewedArtist?.userId === user.id) {
+    res.status(403).json({ error: "Artists cannot mark reviews on their own profile as helpful" });
+    return;
+  }
+
   // Check if already voted
   const [existing] = await db.select().from(reviewHelpfulVotesTable)
     .where(and(eq(reviewHelpfulVotesTable.reviewId, id), eq(reviewHelpfulVotesTable.userId, user.id)));
