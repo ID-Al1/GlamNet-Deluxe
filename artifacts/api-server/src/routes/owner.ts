@@ -11,8 +11,8 @@
 import { Router } from "express";
 import { Readable } from "stream";
 import { param } from "../lib/params";
-import { db, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { appointmentsTable, db, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable } from "@workspace/db";
+import { desc, eq, ilike, or, sql } from "drizzle-orm";
 import { requireOwner } from "../lib/auth";
 import { notify } from "../lib/notifications";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -20,6 +20,115 @@ import { computeProfileReadiness } from "./stylists";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
+
+router.get("/owner/command-centre", requireOwner, async (_req, res) => {
+  const [[artistMetrics], [paymentMetrics]] = await Promise.all([
+    db.select({
+      totalArtists: sql<number>`count(*)::int`,
+      verifiedArtists: sql<number>`count(*) filter (where ${stylistProfilesTable.verified} = true)::int`,
+      pendingVerifications: sql<number>`count(*) filter (where ${stylistProfilesTable.verificationStatus} = 'pending')::int`,
+    }).from(stylistProfilesTable),
+    db.select({
+      paymentsToRelease: sql<number>`coalesce(sum(${appointmentsTable.artistPayoutAmount}) filter (where ${appointmentsTable.payoutStatus} = 'released'), 0)::float8`,
+      bonisaCommission: sql<number>`coalesce(sum(${appointmentsTable.platformFeeAmount}) filter (where ${appointmentsTable.payoutStatus} = 'released'), 0)::float8`,
+      openDisputes: sql<number>`count(*) filter (where ${appointmentsTable.payoutStatus} = 'disputed')::int`,
+    }).from(appointmentsTable),
+  ]);
+
+  res.json({
+    totalArtists: artistMetrics.totalArtists,
+    verifiedArtists: artistMetrics.verifiedArtists,
+    pendingVerifications: artistMetrics.pendingVerifications,
+    paymentsToRelease: paymentMetrics.paymentsToRelease,
+    bonisaCommission: paymentMetrics.bonisaCommission,
+    openDisputes: paymentMetrics.openDisputes,
+  });
+});
+
+router.get("/owner/registry", requireOwner, async (req, res) => {
+  const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+  const search = `%${q}%`;
+  const query = db.select({
+    userId: usersTable.id,
+    name: usersTable.name,
+    email: usersTable.email,
+    phone: usersTable.phone,
+    role: usersTable.role,
+    businessName: usersTable.businessName,
+    specialty: stylistProfilesTable.specialty,
+    verificationStatus: stylistProfilesTable.verificationStatus,
+    joinedAt: usersTable.createdAt,
+  })
+    .from(usersTable)
+    .leftJoin(stylistProfilesTable, eq(stylistProfilesTable.userId, usersTable.id))
+    .$dynamic();
+
+  const rows = await (q
+    ? query.where(or(
+        ilike(usersTable.name, search),
+        ilike(usersTable.email, search),
+        ilike(usersTable.phone, search),
+        ilike(usersTable.businessName, search),
+        ilike(stylistProfilesTable.specialty, search),
+      ))
+    : query)
+    .orderBy(desc(usersTable.createdAt))
+    .limit(100);
+
+  res.json(rows.map((row) => ({
+    ...row,
+    joinedAt: row.joinedAt.toISOString(),
+  })));
+});
+
+router.get("/owner/registry/:userId", requireOwner, async (req, res) => {
+  const userId = param(req.params.userId);
+  const [user] = await db.select({
+    userId: usersTable.id,
+    name: usersTable.name,
+    email: usersTable.email,
+    phone: usersTable.phone,
+    role: usersTable.role,
+    businessName: usersTable.businessName,
+    joinedAt: usersTable.createdAt,
+  }).from(usersTable).where(eq(usersTable.id, userId));
+  if (!user) { res.status(404).json({ error: "Account not found" }); return; }
+
+  let artist = null;
+  if (user.role === "stylist") {
+    const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, userId));
+    if (profile) {
+      const [services, [portfolioCount]] = await Promise.all([
+        db.select({
+          id: servicesTable.id,
+          name: servicesTable.name,
+          price: servicesTable.price,
+          duration: servicesTable.duration,
+        }).from(servicesTable).where(eq(servicesTable.stylistId, profile.id)),
+        db.select({ count: sql<number>`count(*)::int` })
+          .from(portfolioItemsTable)
+          .where(eq(portfolioItemsTable.stylistId, profile.id)),
+      ]);
+      artist = {
+        profileId: profile.id,
+        specialty: profile.specialty,
+        area: profile.area,
+        location: profile.location,
+        verified: profile.verified,
+        verificationStatus: profile.verificationStatus,
+        services,
+        portfolioItemCount: portfolioCount.count,
+        identityDocumentAvailable: !!profile.idDocumentUrl,
+      };
+    }
+  }
+
+  res.json({
+    ...user,
+    joinedAt: user.joinedAt.toISOString(),
+    artist,
+  });
+});
 
 // ---------------------------------------------------------------------------
 // List pending artists

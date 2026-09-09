@@ -1,0 +1,103 @@
+# Bonisa Owner Command Centre, Phase 1: Dashboard & Registry
+
+Checked against the live repo before writing this. This phase only reads existing data, no new schema, no new decisions needed. It's the safest possible starting point for the Command Centre.
+
+Do not build anything from later phases yet, payments, complaints, bank details, flags. Just this.
+
+---
+
+## Non-negotiables for this phase
+
+- Owner only. Every route in this phase goes through the existing `requireOwner` middleware, same as `routes/owner.ts` already does. No new auth pattern.
+- Do not touch the existing identity verification routes (`/owner/artists/:profileId/identity` and `/identity-document`). They already work and already keep the ID document private. This phase links to them, it doesn't rebuild them.
+- Never show a real ID number, full bank details, or the ID document image directly inside the Registry or dashboard. If a record needs identity detail, it links out to the existing dedicated identity route, which is already gated separately.
+- No fake data, no fake status pills. If something isn't tracked yet (phone verification, bank verification, last active time), leave it out of this phase entirely rather than showing a placeholder that looks real. It's fine for a screen to be smaller than the original wishlist, it is not fine for it to lie.
+
+---
+
+## Part A: Dashboard cards
+
+Add a new owner-only page, "Bonisa Command Centre", with these cards, each backed by a real query:
+
+| Card | Query |
+|---|---|
+| Total Artists | count of `stylist_profiles` |
+| Verified Artists | count where `verified = true` |
+| Pending Verifications | count where `verificationStatus = 'pending'` |
+| Payments to Release | sum of `artistPayoutAmount` where `payoutStatus = 'released'` |
+| Bonisa Commission | sum of `platformFeeAmount` where `payoutStatus = 'released'` |
+| Open Disputes | count of appointments where `payoutStatus = 'disputed'` |
+
+**One honest limitation to flag on this screen, in a small note, not hidden:** "released" currently means the split has been calculated and is ready to pay, it does not yet mean the money has actually reached the artist's bank account, since there's no `paidOutAt` field yet. So "Payments to Release" is accurate today, but it will become more precise once Phase 2 adds actual payout tracking. Say this plainly on the card itself, a small caption is enough, rather than letting the number imply more certainty than it has.
+
+Do not add cards for bank verification or flagged accounts yet, those don't have real data behind them until Phase 4 and Phase 5. An empty or fake card is worse than no card.
+
+---
+
+## Part B: Bonisa Registry
+
+A search screen, owner only, searching across:
+- `users` — name, email, phone, businessName
+- `stylist_profiles` — for artist specific matches on specialty
+
+Results come back grouped by role, Artists, Clients, Brands, each shown as a simple card:
+- Name
+- Role
+- For artists: specialty and verification status (verified / pending / none)
+- For clients and brands: just role and contact info, nothing else yet
+
+Clicking a card opens the Internal Profile View.
+
+---
+
+## Part C: Internal Profile View
+
+When the owner opens someone's record, show:
+
+**Basic info:** name, email, phone, role, date joined (from `createdAt`).
+
+**For artists, professional info:** specialty, area, location, services listed, portfolio item count.
+
+**Verification section**, using only what's real today:
+- Identity: verified / pending / none, pulled from the existing `verified` and `verificationStatus` fields
+- A link through to the existing identity document view for a closer look, don't inline the document itself here
+- Do not add rows for phone verification, bank verification, or professional credential verification in this phase, none of that is tracked yet, adding the row implies it exists
+
+---
+
+## Handoff prompt
+
+```
+Building Phase 1 of the Bonisa Owner Command Centre: a dashboard and a
+searchable registry. Read-only against existing data, no new schema, no
+new payment or verification logic. Do not build payments, complaints, or
+bank detail screens yet, those are later phases.
+
+Reuse the existing requireOwner middleware from routes/owner.ts. Do not
+modify the existing identity verification routes, link out to them
+instead of rebuilding them.
+
+Dashboard cards: Total Artists, Verified Artists, Pending Verifications,
+Payments to Release, Bonisa Commission, Open Disputes. Each is a real
+query against stylist_profiles and appointments, listed in the brief.
+Add a small caption on Payments to Release noting that "released" means
+calculated and ready, not yet confirmed paid, since paidOutAt doesn't
+exist yet.
+
+Registry: search users and stylist_profiles by name, email, phone,
+business name, specialty. Group results by role. Clicking opens an
+internal profile view with basic info, professional info for artists,
+and a verification section using only the verified and
+verificationStatus fields that already exist, with a link to the
+existing identity document route rather than showing it inline.
+
+Do not add UI for anything not listed above, no bank verification row,
+no phone verification row, no flags. If it's not real yet, leave it out
+rather than showing a placeholder.
+
+Run pnpm run typecheck and confirm zero errors when done.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · Owner Command Centre, Phase 1 of 5*

@@ -648,6 +648,66 @@ paths:
               schema:
                 $ref: "#/components/schemas/MediaUploadUrlResponse"
 
+  /owner/command-centre:
+    get:
+      operationId: getOwnerCommandCentre
+      tags: [owner]
+      summary: Get the owner command-centre metrics
+      responses:
+        "200":
+          description: Real-time owner metrics from existing artist and appointment data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerCommandCentreMetrics"
+
+  /owner/registry:
+    get:
+      operationId: searchOwnerRegistry
+      tags: [owner]
+      summary: Search the owner registry
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        "200":
+          description: Owner-only registry entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnerRegistryEntry"
+
+  /owner/registry/{userId}:
+    get:
+      operationId: getOwnerRegistryProfile
+      tags: [owner]
+      summary: Get an owner-only internal profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Internal profile using existing account and artist data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerRegistryProfile"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /owner/artists/{profileId}/identity:
     get:
       operationId: getArtistIdentityForOwner
@@ -900,6 +960,113 @@ components:
           type: string
         documentAvailable:
           type: boolean
+
+    OwnerCommandCentreMetrics:
+      type: object
+      required: [totalArtists, verifiedArtists, pendingVerifications, paymentsToRelease, bonisaCommission, openDisputes]
+      properties:
+        totalArtists:
+          type: integer
+        verifiedArtists:
+          type: integer
+        pendingVerifications:
+          type: integer
+        paymentsToRelease:
+          type: number
+        bonisaCommission:
+          type: number
+        openDisputes:
+          type: integer
+
+    OwnerRegistryEntry:
+      type: object
+      required: [userId, name, email, role, joinedAt]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [client, stylist, brand]
+        businessName:
+          type: ["string", "null"]
+        specialty:
+          type: ["string", "null"]
+        verificationStatus:
+          type: ["string", "null"]
+          enum: [none, pending, verified, null]
+        joinedAt:
+          type: string
+          format: date-time
+
+    OwnerRegistryService:
+      type: object
+      required: [id, name, price, duration]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        duration:
+          type: integer
+
+    OwnerRegistryArtistProfile:
+      type: object
+      required: [profileId, specialty, area, location, verified, verificationStatus, services, portfolioItemCount, identityDocumentAvailable]
+      properties:
+        profileId:
+          type: string
+        specialty:
+          type: string
+        area:
+          type: string
+        location:
+          type: string
+        verified:
+          type: boolean
+        verificationStatus:
+          type: string
+          enum: [none, pending, verified]
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/OwnerRegistryService"
+        portfolioItemCount:
+          type: integer
+        identityDocumentAvailable:
+          type: boolean
+
+    OwnerRegistryProfile:
+      type: object
+      required: [userId, name, email, role, joinedAt, artist]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [client, stylist, brand]
+        businessName:
+          type: ["string", "null"]
+        joinedAt:
+          type: string
+          format: date-time
+        artist:
+          anyOf:
+            - $ref: "#/components/schemas/OwnerRegistryArtistProfile"
+            - type: "null"
 
     SignupInput:
       type: object

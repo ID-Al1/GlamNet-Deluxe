@@ -79,6 +79,19 @@ function serializeMessage(m: typeof messagesTable.$inferSelect) {
     createdAt: m.createdAt.toISOString(),
   };
 }
+
+router.post("/messages/sse-ticket", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  res.json({ ticket: mintSseTicket(user.id) });
+});
+
+router.get("/messages/sse", (req, res) => {
+  const rawTicket = req.query.ticket;
+  const ticket = typeof rawTicket === "string" ? rawTicket : null;
+  if (!ticket) {
+    res.status(401).json({ error: "Missing ticket" });
+    return;
+  }
   const userId = consumeSseTicket(ticket);
   if (!userId) {
     res.status(401).json({ error: "Invalid or expired ticket" });
@@ -115,10 +128,6 @@ function serializeMessage(m: typeof messagesTable.$inferSelect) {
 
 router.get("/messages/conversations", requireAuth, async (req, res) => {
   const user = (req as any).user;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   let convs;
   if (user.role === "stylist") {
     convs = await db.select().from(conversationsTable).where(eq(conversationsTable.stylistId, user.id));
@@ -149,11 +158,7 @@ router.get("/messages/conversations/:conversationId", requireAuth, async (req, r
 
 router.post("/messages/conversations/:conversationId/send", requireAuth, async (req, res) => {
   const user = (req as any).user;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
-  const parsed = StartConversationBody.safeParse(req.body);
+  const parsed = SendMessageBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
   const conv = await requireParticipant(req, res, param(req.params.conversationId));
@@ -212,9 +217,9 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
     try {
       const [updatedConv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, req.params.conversationId));
       if (updatedConv) {
-    const [client] = await db.select().from(usersTable).where(eq(usersTable.id, c.clientId));
-    const [stylistProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, c.stylistId));
-    const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, c.stylistId));
+        const [client] = await db.select().from(usersTable).where(eq(usersTable.id, conv.clientId));
+        const [stylistProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, conv.stylistId));
+        const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, conv.stylistId));
         // Send each participant a personalised conversation snapshot
         broadcastToUsers([conv.clientId], { type: "conversation", conversation: formatConv(updatedConv, client, client, stylistProfile, stylistUser) as Record<string, unknown> });
         broadcastToUsers([conv.stylistId], { type: "conversation", conversation: formatConv(updatedConv, stylistUser, client, stylistProfile, stylistUser) as Record<string, unknown> });
@@ -236,18 +241,14 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
 router.post("/messages/conversations/:conversationId/typing", requireAuth, async (req, res) => {
   const user = (req as any).user;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
   const typingUntil = new Date(Date.now() + 4000);
   const isClient = conv.clientId === user.id;
   const update = isClient
-    ? { clientUnread: 0, clientLastReadAt: now }
-    : { stylistUnread: 0, stylistLastReadAt: now };
+    ? { clientTypingUntil: typingUntil }
+    : { stylistTypingUntil: typingUntil };
 
   await db.update(conversationsTable).set(update).where(eq(conversationsTable.id, param(req.params.conversationId)));
   res.status(204).end();
@@ -264,12 +265,8 @@ router.post("/messages/conversations/:conversationId/typing", requireAuth, async
   });
 });
 
-router.post("/messages/start", requireAuth, async (req, res) => {
+router.post("/messages/conversations/:conversationId/read", requireAuth, async (req, res) => {
   const user = (req as any).user;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   const conv = await requireParticipant(req, res, param(req.params.conversationId));
   if (!conv) return;
 
@@ -295,10 +292,6 @@ router.post("/messages/start", requireAuth, async (req, res) => {
 
 router.post("/messages/start", requireAuth, async (req, res) => {
   const user = (req as any).user;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
-
-  const ticket = typeof rawTicket === "string" ? rawTicket : null;
   const parsed = StartConversationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
@@ -426,5 +419,3 @@ export async function postSystemMessage(clientId: string, stylistId: string, con
 }
 
 export default router;
-
-  const rawTicket = req.query.ticket;

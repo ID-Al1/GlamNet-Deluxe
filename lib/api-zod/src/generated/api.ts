@@ -27,6 +27,7 @@ export const signupBodyPhoneMin = 7;
 export const signupBodyPhoneMax = 32;
 
 
+
 export const SignupBody = zod.object({
   "name": zod.string().min(signupBodyNameMin),
   "email": zod.string().email(),
@@ -368,6 +369,8 @@ export const UpdateMyStylistProfileResponse = zod.object({
 export const addStylistServiceBodyPriceMin = 0;
 
 
+
+
 export const AddStylistServiceBody = zod.object({
   "name": zod.string().min(1),
   "price": zod.number().min(addStylistServiceBodyPriceMin),
@@ -418,6 +421,7 @@ export const DeleteStylistServiceResponse = zod.object({
 /**
  * @summary Add portfolio item
  */
+
 
 
 export const AddPortfolioItemBody = zod.object({
@@ -685,6 +689,8 @@ export const SendMessageParams = zod.object({
 })
 
 
+
+
 export const SendMessageBody = zod.object({
   "content": zod.string().min(1),
   "messageType": zod.enum(['text', 'image', 'voice']).optional(),
@@ -763,6 +769,78 @@ export const RequestUploadUrlResponse = zod.object({
 
 
 /**
+ * @summary Get the owner command-centre metrics
+ */
+export const GetOwnerCommandCentreResponse = zod.object({
+  "totalArtists": zod.number(),
+  "verifiedArtists": zod.number(),
+  "pendingVerifications": zod.number(),
+  "paymentsToRelease": zod.number(),
+  "bonisaCommission": zod.number(),
+  "openDisputes": zod.number()
+})
+
+
+/**
+ * @summary Search the owner registry
+ */
+export const searchOwnerRegistryQueryQMax = 100;
+
+
+
+export const SearchOwnerRegistryQueryParams = zod.object({
+  "q": zod.coerce.string().max(searchOwnerRegistryQueryQMax).optional()
+})
+
+export const SearchOwnerRegistryResponseItem = zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "role": zod.enum(['client', 'stylist', 'brand']),
+  "businessName": zod.string().nullish(),
+  "specialty": zod.string().nullish(),
+  "verificationStatus": zod.union([zod.literal('none'),zod.literal('pending'),zod.literal('verified'),zod.literal(null)]).nullish(),
+  "joinedAt": zod.coerce.date()
+})
+export const SearchOwnerRegistryResponse = zod.array(SearchOwnerRegistryResponseItem)
+
+
+/**
+ * @summary Get an owner-only internal profile
+ */
+export const GetOwnerRegistryProfileParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetOwnerRegistryProfileResponse = zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "role": zod.enum(['client', 'stylist', 'brand']),
+  "businessName": zod.string().nullish(),
+  "joinedAt": zod.coerce.date(),
+  "artist": zod.union([zod.object({
+  "profileId": zod.string(),
+  "specialty": zod.string(),
+  "area": zod.string(),
+  "location": zod.string(),
+  "verified": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "services": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "price": zod.number(),
+  "duration": zod.number()
+})),
+  "portfolioItemCount": zod.number(),
+  "identityDocumentAvailable": zod.boolean()
+}),zod.null()])
+})
+
+
+/**
  * @summary Get a pending artist's private identity-verification summary
  */
 export const GetArtistIdentityForOwnerParams = zod.object({
@@ -815,6 +893,7 @@ export const ListCastingCallsResponse = zod.array(ListCastingCallsResponseItem)
 export const createCastingCallBodyTitleMin = 3;
 
 export const createCastingCallBodyBriefMin = 10;
+
 
 
 export const CreateCastingCallBody = zod.object({
@@ -1063,3 +1142,5 @@ export const GetBrandDashboardResponse = zod.object({
   "createdAt": zod.string()
 }))
 })
+
+

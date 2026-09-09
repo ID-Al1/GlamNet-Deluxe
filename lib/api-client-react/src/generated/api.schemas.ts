@@ -38,6 +38,102 @@ export interface OwnerIdentitySummary {
   documentAvailable: boolean;
 }
 
+export interface OwnerCommandCentreMetrics {
+  totalArtists: number;
+  verifiedArtists: number;
+  pendingVerifications: number;
+  paymentsToRelease: number;
+  bonisaCommission: number;
+  openDisputes: number;
+}
+
+export type OwnerRegistryEntryRole = typeof OwnerRegistryEntryRole[keyof typeof OwnerRegistryEntryRole];
+
+
+export const OwnerRegistryEntryRole = {
+  client: 'client',
+  stylist: 'stylist',
+  brand: 'brand',
+} as const;
+
+/**
+ * @nullable
+ */
+export type OwnerRegistryEntryVerificationStatus = typeof OwnerRegistryEntryVerificationStatus[keyof typeof OwnerRegistryEntryVerificationStatus] | null;
+
+
+export const OwnerRegistryEntryVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+export interface OwnerRegistryEntry {
+  userId: string;
+  name: string;
+  email: string;
+  /** @nullable */
+  phone?: string | null;
+  role: OwnerRegistryEntryRole;
+  /** @nullable */
+  businessName?: string | null;
+  /** @nullable */
+  specialty?: string | null;
+  /** @nullable */
+  verificationStatus?: OwnerRegistryEntryVerificationStatus;
+  joinedAt: string;
+}
+
+export interface OwnerRegistryService {
+  id: string;
+  name: string;
+  price: number;
+  duration: number;
+}
+
+export type OwnerRegistryArtistProfileVerificationStatus = typeof OwnerRegistryArtistProfileVerificationStatus[keyof typeof OwnerRegistryArtistProfileVerificationStatus];
+
+
+export const OwnerRegistryArtistProfileVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+export interface OwnerRegistryArtistProfile {
+  profileId: string;
+  specialty: string;
+  area: string;
+  location: string;
+  verified: boolean;
+  verificationStatus: OwnerRegistryArtistProfileVerificationStatus;
+  services: OwnerRegistryService[];
+  portfolioItemCount: number;
+  identityDocumentAvailable: boolean;
+}
+
+export type OwnerRegistryProfileRole = typeof OwnerRegistryProfileRole[keyof typeof OwnerRegistryProfileRole];
+
+
+export const OwnerRegistryProfileRole = {
+  client: 'client',
+  stylist: 'stylist',
+  brand: 'brand',
+} as const;
+
+export interface OwnerRegistryProfile {
+  userId: string;
+  name: string;
+  email: string;
+  /** @nullable */
+  phone?: string | null;
+  role: OwnerRegistryProfileRole;
+  /** @nullable */
+  businessName?: string | null;
+  joinedAt: string;
+  artist: OwnerRegistryArtistProfile | null;
+}
+
 export type SignupInputRole = typeof SignupInputRole[keyof typeof SignupInputRole];
 
 
@@ -149,58 +245,36 @@ export interface ProfileReadiness {
 
 export interface StylistProfile {
   id: string;
-
   userId: string;
-
   name: string;
-
   specialty: string;
-
   location: string;
-
   area?: string;
   /** @nullable */
-
   bio?: string | null;
-
   rating: number;
-
   reviewCount: number;
-
   verified: boolean;
-
   verificationStatus: StylistProfileVerificationStatus;
-
   services: Service[];
-
   portfolio: PortfolioItem[];
-
   availability: string[];
-
   tags?: string[];
   /** @nullable */
-
   instagram?: string | null;
   /** @nullable */
-
   website?: string | null;
   /** @nullable */
-
   accentColor?: string | null;
-
   houseCalls?: boolean;
   /** @nullable */
-
   phone?: string | null;
   /**
      * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
      * @nullable
      */
-
   reputationScore?: number | null;
-
   reputationBreakdown?: StylistProfileReputationBreakdown;
-
   profileReadiness?: ProfileReadiness | null;
 }
 
@@ -525,7 +599,15 @@ export const ListAppointmentsRole = {
   stylist: 'stylist',
 } as const;
 
+export type SearchOwnerRegistryParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+};
+
 export type ListCastingCallsParams = {
 specialty?: string;
 brandId?: string;
 };
+
