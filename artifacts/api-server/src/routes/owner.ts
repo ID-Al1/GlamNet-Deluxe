@@ -11,7 +11,7 @@
 import { Router } from "express";
 import { Readable } from "stream";
 import { param } from "../lib/params";
-import { appointmentsTable, db, payoutBatchesTable, payoutLedgerTable, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable } from "@workspace/db";
+import { appointmentsTable, db, payoutBatchesTable, payoutLedgerTable, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable, bankAccountsTable, bankAccountAccessLogTable } from "@workspace/db";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, or, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireOwner } from "../lib/auth";
@@ -77,6 +77,7 @@ router.get("/owner/payouts", requireOwner, async (req, res) => {
   for (const line of lines) {
     const group = groups.get(line.artistProfileId) ?? {
       artistProfileId: line.artistProfileId, artistName: line.artistName,
+      bankVerificationStatus: "none",
       totalAmount: 0, lineCount: 0, lines: [],
     };
     group.totalAmount = Math.round((group.totalAmount + line.amount) * 100) / 100;
@@ -84,6 +85,8 @@ router.get("/owner/payouts", requireOwner, async (req, res) => {
     group.lines.push({ ...line, dueAt: line.dueAt.toISOString() });
     groups.set(line.artistProfileId, group);
   }
+  const accountRows = await db.select({ stylistProfileId: bankAccountsTable.stylistProfileId, verificationStatus: bankAccountsTable.verificationStatus }).from(bankAccountsTable).where(inArray(bankAccountsTable.stylistProfileId, [...groups.keys()]));
+  for (const account of accountRows) groups.get(account.stylistProfileId).bankVerificationStatus = account.verificationStatus;
   const result = [...groups.values()];
   result.sort((a, b) => {
     const byOldest = Date.parse(a.lines[0].dueAt) - Date.parse(b.lines[0].dueAt);
@@ -101,6 +104,9 @@ router.post("/owner/payouts/:artistProfileId/mark-paid", requireOwner, async (re
   if (!reference) { res.status(400).json({ error: "A non-empty EFT reference is required" }); return; }
   if (!lineIds.length || !Number.isFinite(expectedTotal)) { res.status(400).json({ error: "lineIds and expectedTotal are required" }); return; }
   const paid = await db.transaction(async (tx) => {
+    const [bank] = await tx.select().from(bankAccountsTable)
+      .where(and(eq(bankAccountsTable.stylistProfileId, artistProfileId), eq(bankAccountsTable.verificationStatus, "verified"))).for("update");
+    if (!bank) return { error: "Needs bank verification" } as const;
     const due = await tx.select().from(payoutLedgerTable)
       .where(and(eq(payoutLedgerTable.artistProfileId, artistProfileId), eq(payoutLedgerTable.status, "due"), inArray(payoutLedgerTable.id, lineIds)))
       .for("update");
@@ -130,6 +136,7 @@ router.post("/owner/payouts/:artistProfileId/mark-paid", requireOwner, async (re
     return batch;
   });
   if (!paid) { res.status(409).json({ error: "No currently due payout lines remain" }); return; }
+  if ("error" in paid) { res.status(409).json(paid); return; }
   res.json(paid);
 });
 
@@ -225,6 +232,7 @@ router.get("/owner/registry/:userId", requireOwner, async (req, res) => {
           .from(portfolioItemsTable)
           .where(eq(portfolioItemsTable.stylistId, profile.id)),
       ]);
+      const [bank] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.stylistProfileId, profile.id));
       artist = {
         profileId: profile.id,
         specialty: profile.specialty,
@@ -235,6 +243,12 @@ router.get("/owner/registry/:userId", requireOwner, async (req, res) => {
         services,
         portfolioItemCount: portfolioCount.count,
         identityDocumentAvailable: !!profile.idDocumentUrl,
+        bank: bank ? {
+          id: bank.id, bankName: bank.bankName, accountHolderName: bank.accountHolderName,
+          maskedAccountNumber: `••••${bank.accountNumber.slice(-4)}`, accountType: bank.accountType,
+          verificationStatus: bank.verificationStatus, verifiedAt: bank.verifiedAt?.toISOString() ?? null,
+          revision: bank.revision,
+        } : null,
       };
     }
   }
@@ -244,6 +258,39 @@ router.get("/owner/registry/:userId", requireOwner, async (req, res) => {
     joinedAt: user.joinedAt.toISOString(),
     artist,
   });
+});
+
+router.patch("/owner/artists/:profileId/bank", requireOwner, async (req, res) => {
+  const profileId = param(req.params.profileId);
+  const status = req.body?.status;
+  const revision = req.body?.revision;
+  if (status !== "verified" && status !== "failed") { res.status(400).json({ error: "Status must be verified or failed" }); return; }
+  if (!Number.isInteger(revision) || revision < 1) { res.status(400).json({ error: "A valid bank account revision is required" }); return; }
+  const [account] = await db.update(bankAccountsTable).set({
+    verificationStatus: status, verifiedAt: new Date(),
+    verifiedBy: (req as any).user.id, updatedAt: new Date(),
+  }).where(and(
+    eq(bankAccountsTable.stylistProfileId, profileId),
+    eq(bankAccountsTable.revision, revision),
+  )).returning();
+  if (!account) { res.status(409).json({ error: "These bank details changed. Reload and review the latest version before deciding." }); return; }
+  res.json({ verificationStatus: account.verificationStatus, verifiedAt: account.verifiedAt?.toISOString() ?? null });
+});
+
+router.post("/owner/artists/:profileId/bank/reveal", requireOwner, async (req, res) => {
+  const profileId = param(req.params.profileId);
+  const result = await db.transaction(async (tx) => {
+    const [account] = await tx.select().from(bankAccountsTable).where(and(
+      eq(bankAccountsTable.stylistProfileId, profileId),
+      eq(bankAccountsTable.verificationStatus, "verified"),
+    )).for("update");
+    if (!account) return null;
+    await tx.insert(bankAccountAccessLogTable).values({ id: randomUUID(), bankAccountId: account.id, viewedByUserId: (req as any).user.id });
+    return account;
+  });
+  if (!result) { res.status(409).json({ error: "The bank account must be verified before it can be revealed." }); return; }
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({ accountNumber: result.accountNumber });
 });
 
 // ---------------------------------------------------------------------------

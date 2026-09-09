@@ -203,6 +203,87 @@ export interface HealthStatus {
   status: string;
 }
 
+export type BankAccountInputAccountType = typeof BankAccountInputAccountType[keyof typeof BankAccountInputAccountType];
+
+
+export const BankAccountInputAccountType = {
+  cheque: 'cheque',
+  savings: 'savings',
+  other: 'other',
+} as const;
+
+export interface BankAccountInput {
+  /**
+     * @minLength 2
+     * @maxLength 100
+     * @pattern .*\S.*
+     */
+  bankName: string;
+  /**
+     * @minLength 2
+     * @maxLength 150
+     * @pattern .*\S.*
+     */
+  accountHolderName: string;
+  /**
+     * @minLength 5
+     * @maxLength 34
+     * @pattern ^[0-9]+$
+     */
+  accountNumber: string;
+  accountType: BankAccountInputAccountType;
+}
+
+export type BankAccountSafeVerificationStatus = typeof BankAccountSafeVerificationStatus[keyof typeof BankAccountSafeVerificationStatus];
+
+
+export const BankAccountSafeVerificationStatus = {
+  pending: 'pending',
+  verified: 'verified',
+  failed: 'failed',
+} as const;
+
+export interface BankAccountSafe {
+  id: string;
+  bankName: string;
+  accountHolderName: string;
+  maskedAccountNumber: string;
+  accountType: string;
+  verificationStatus: BankAccountSafeVerificationStatus;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @minimum 1 */
+  revision: number;
+}
+
+export type BankVerificationResultVerificationStatus = typeof BankVerificationResultVerificationStatus[keyof typeof BankVerificationResultVerificationStatus];
+
+
+export const BankVerificationResultVerificationStatus = {
+  verified: 'verified',
+  failed: 'failed',
+} as const;
+
+export interface BankVerificationResult {
+  verificationStatus: BankVerificationResultVerificationStatus;
+  /** @nullable */
+  verifiedAt: string | null;
+}
+
+export type BankVerificationInputStatus = typeof BankVerificationInputStatus[keyof typeof BankVerificationInputStatus];
+
+
+export const BankVerificationInputStatus = {
+  verified: 'verified',
+  failed: 'failed',
+} as const;
+
+export interface BankVerificationInput {
+  status: BankVerificationInputStatus;
+  /** @minimum 1 */
+  revision: number;
+}
+
 export interface ApiError {
   error: string;
 }
@@ -253,11 +334,22 @@ export interface OwnerPayoutLine {
   dueAt: string;
 }
 
+export type OwnerPayoutGroupBankVerificationStatus = typeof OwnerPayoutGroupBankVerificationStatus[keyof typeof OwnerPayoutGroupBankVerificationStatus];
+
+
+export const OwnerPayoutGroupBankVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+  failed: 'failed',
+} as const;
+
 export interface OwnerPayoutGroup {
   artistProfileId: string;
   artistName: string;
   totalAmount: number;
   lineCount: number;
+  bankVerificationStatus: OwnerPayoutGroupBankVerificationStatus;
   lines: OwnerPayoutLine[];
 }
 
@@ -387,6 +479,7 @@ export interface OwnerRegistryArtistProfile {
   services: OwnerRegistryService[];
   portfolioItemCount: number;
   identityDocumentAvailable: boolean;
+  bank: BankAccountSafe | null;
 }
 
 export type OwnerRegistryProfileRole = typeof OwnerRegistryProfileRole[keyof typeof OwnerRegistryProfileRole];
@@ -928,6 +1021,10 @@ export const GetOwnerPayoutsFilter = {
   'this-week': 'this-week',
   'all-time': 'all-time',
 } as const;
+
+export type RevealArtistBankAccount200 = {
+  accountNumber: string;
+};
 
 export type ListOwnerComplaintsParams = {
 status?: ComplaintStatus;

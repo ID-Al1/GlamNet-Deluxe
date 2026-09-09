@@ -10,7 +10,8 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
-    ,"migrate:complaints:dev": "node ./scripts/migrate-complaints-phase3.mjs"
+    ,"migrate:complaints:dev": "node ./scripts/migrate-complaints-phase3.mjs",
+    "migrate:bank-details:dev": "node ./scripts/migrate-bank-details-phase4.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

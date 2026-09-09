@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { 
   useGetOwnerPayouts, 
   useMarkOwnerPayoutPaid, 
@@ -44,14 +44,29 @@ function PayoutGroup({ group }: { group: OwnerPayoutGroup }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [reference, setReference] = useState("");
+  const [revealedNumber, setRevealedNumber] = useState<string | null>(null);
+  const revealGeneration = useRef(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const closeDialog = () => {
+    revealGeneration.current += 1;
+    setRevealedNumber(null);
+    setIsDialogOpen(false);
+  };
+  useEffect(() => {
+    revealGeneration.current += 1;
+    setRevealedNumber(null);
+    return () => {
+      revealGeneration.current += 1;
+      setRevealedNumber(null);
+    };
+  }, [group.artistProfileId]);
 
   const markPaid = useMarkOwnerPayoutPaid({
     mutation: {
       onSuccess: () => {
         toast({ title: "EFT Recorded", description: `Payout for ${group.artistName} marked as paid.` });
-        setIsDialogOpen(false);
+        closeDialog();
         setReference("");
         queryClient.invalidateQueries({ queryKey: getGetOwnerPayoutsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetOwnerPaymentsOverviewQueryKey() });
@@ -81,6 +96,24 @@ function PayoutGroup({ group }: { group: OwnerPayoutGroup }) {
     });
   };
 
+  async function revealAccount() {
+    const generation = ++revealGeneration.current;
+    const stored = localStorage.getItem("glamnet_auth");
+    const token = stored ? JSON.parse(stored)?.token : null;
+    const response = await fetch(`${import.meta.env.BASE_URL}api/owner/artists/${group.artistProfileId}/bank/reveal`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const body = await response.json().catch(() => ({}));
+    if (generation !== revealGeneration.current) return;
+    if (!response.ok) {
+      toast({ title: "Could not reveal account", description: body.error || "Try again.", variant: "destructive" });
+      return;
+    }
+    setRevealedNumber(body.accountNumber);
+  }
+  const bankVerified = (group as any).bankVerificationStatus === "verified";
+
   return (
     <Card className="bg-card border-border/60 shadow-sm overflow-hidden mb-4">
       <div 
@@ -106,13 +139,15 @@ function PayoutGroup({ group }: { group: OwnerPayoutGroup }) {
           </div>
           
           <div className="flex items-center gap-2">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { if (open) setIsDialogOpen(true); else closeDialog(); }}>
               <DialogTrigger asChild>
                 <Button 
                   onClick={(e) => e.stopPropagation()} 
                   className="font-medium"
+                  disabled={!bankVerified}
+                  title={!bankVerified ? "Needs bank verification" : undefined}
                 >
-                  Record EFT
+                  {bankVerified ? "Record EFT" : "Needs bank verification"}
                 </Button>
               </DialogTrigger>
               <DialogContent onClick={(e) => e.stopPropagation()}>
@@ -132,6 +167,14 @@ function PayoutGroup({ group }: { group: OwnerPayoutGroup }) {
                     <span className="text-muted-foreground">Lines to Settle</span>
                     <span className="font-medium">{group.lineCount}</span>
                   </div>
+                  <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-3 text-sm">
+                    <span className="text-muted-foreground">Verified account</span>
+                    {revealedNumber ? (
+                      <span className="font-mono font-semibold">{revealedNumber}</span>
+                    ) : (
+                      <Button type="button" size="sm" variant="outline" onClick={revealAccount}>Reveal account</Button>
+                    )}
+                  </div>
                 </div>
 
                 <form onSubmit={handleRecordEft} className="space-y-4">
@@ -146,7 +189,7 @@ function PayoutGroup({ group }: { group: OwnerPayoutGroup }) {
                     />
                   </div>
                   <DialogFooter className="pt-4">
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={markPaid.isPending}>
+                    <Button type="button" variant="outline" onClick={closeDialog} disabled={markPaid.isPending}>
                       Cancel
                     </Button>
                     <Button type="submit" disabled={!reference.trim() || markPaid.isPending}>

@@ -26,6 +26,10 @@ import type {
   AppointmentUpdate,
   AuthResult,
   BadRequestResponse,
+  BankAccountInput,
+  BankAccountSafe,
+  BankVerificationInput,
+  BankVerificationResult,
   BrandDashboard,
   CastingCall,
   CastingCallInput,
@@ -68,6 +72,7 @@ import type {
   OwnerRegistryProfile,
   PortfolioItem,
   PortfolioItemInput,
+  RevealArtistBankAccount200,
   SearchOwnerRegistryParams,
   Service,
   ServiceInput,
@@ -1348,6 +1353,141 @@ export const useSaveMyIdentityVerification = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getSaveMyIdentityVerificationMutationOptions(options));
+    }
+
+export const getGetMyBankDetailsUrl = () => {
+
+
+
+
+  return `/api/stylists/me/bank-details`
+}
+
+export const getMyBankDetails = async ( options?: RequestInit): Promise<BankAccountSafe | null> => {
+
+  return customFetch<BankAccountSafe | null>(getGetMyBankDetailsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBankDetailsQueryKey = () => {
+    return [
+    `/api/stylists/me/bank-details`
+    ] as const;
+    }
+
+
+export const getGetMyBankDetailsQueryOptions = <TData = Awaited<ReturnType<typeof getMyBankDetails>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBankDetails>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBankDetailsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBankDetails>>> = ({ signal }) => getMyBankDetails({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBankDetails>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyBankDetailsQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBankDetails>>>
+export type GetMyBankDetailsQueryError = ErrorType<unknown>
+
+
+
+export function useGetMyBankDetails<TData = Awaited<ReturnType<typeof getMyBankDetails>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBankDetails>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyBankDetailsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMyBankDetailsUrl = () => {
+
+
+
+
+  return `/api/stylists/me/bank-details`
+}
+
+export const updateMyBankDetails = async (bankAccountInput: BankAccountInput, options?: RequestInit): Promise<BankAccountSafe> => {
+
+  return customFetch<BankAccountSafe>(getUpdateMyBankDetailsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bankAccountInput)
+  }
+);}
+
+
+
+
+export const getUpdateMyBankDetailsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyBankDetails>>, TError,{data: BodyType<BankAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyBankDetails>>, TError,{data: BodyType<BankAccountInput>}, TContext> => {
+
+const mutationKey = ['updateMyBankDetails'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyBankDetails>>, {data: BodyType<BankAccountInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyBankDetails(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyBankDetailsMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyBankDetails>>>
+    export type UpdateMyBankDetailsMutationBody = BodyType<BankAccountInput>
+    export type UpdateMyBankDetailsMutationError = ErrorType<unknown>
+
+    export const useUpdateMyBankDetails = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyBankDetails>>, TError,{data: BodyType<BankAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyBankDetails>>,
+        TError,
+        {data: BodyType<BankAccountInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyBankDetailsMutationOptions(options));
     }
 
 export const getRequestIdentityDocumentUploadUrlUrl = () => {
@@ -2774,6 +2914,135 @@ export function useGetOwnerRegistryProfile<TData = Awaited<ReturnType<typeof get
 
 
 
+
+export const getUpdateArtistBankVerificationUrl = (profileId: string,) => {
+
+
+
+
+  return `/api/owner/artists/${profileId}/bank`
+}
+
+export const updateArtistBankVerification = async (profileId: string,
+    bankVerificationInput: BankVerificationInput, options?: RequestInit): Promise<BankVerificationResult> => {
+
+  return customFetch<BankVerificationResult>(getUpdateArtistBankVerificationUrl(profileId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bankVerificationInput)
+  }
+);}
+
+
+
+
+export const getUpdateArtistBankVerificationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArtistBankVerification>>, TError,{profileId: string;data: BodyType<BankVerificationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateArtistBankVerification>>, TError,{profileId: string;data: BodyType<BankVerificationInput>}, TContext> => {
+
+const mutationKey = ['updateArtistBankVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateArtistBankVerification>>, {profileId: string;data: BodyType<BankVerificationInput>}> = (props) => {
+          const {profileId,data} = props ?? {};
+
+          return  updateArtistBankVerification(profileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateArtistBankVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof updateArtistBankVerification>>>
+    export type UpdateArtistBankVerificationMutationBody = BodyType<BankVerificationInput>
+    export type UpdateArtistBankVerificationMutationError = ErrorType<unknown>
+
+    export const useUpdateArtistBankVerification = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArtistBankVerification>>, TError,{profileId: string;data: BodyType<BankVerificationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateArtistBankVerification>>,
+        TError,
+        {profileId: string;data: BodyType<BankVerificationInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateArtistBankVerificationMutationOptions(options));
+    }
+
+export const getRevealArtistBankAccountUrl = (profileId: string,) => {
+
+
+
+
+  return `/api/owner/artists/${profileId}/bank/reveal`
+}
+
+export const revealArtistBankAccount = async (profileId: string, options?: RequestInit): Promise<RevealArtistBankAccount200> => {
+
+  return customFetch<RevealArtistBankAccount200>(getRevealArtistBankAccountUrl(profileId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRevealArtistBankAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revealArtistBankAccount>>, TError,{profileId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revealArtistBankAccount>>, TError,{profileId: string}, TContext> => {
+
+const mutationKey = ['revealArtistBankAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revealArtistBankAccount>>, {profileId: string}> = (props) => {
+          const {profileId} = props ?? {};
+
+          return  revealArtistBankAccount(profileId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevealArtistBankAccountMutationResult = NonNullable<Awaited<ReturnType<typeof revealArtistBankAccount>>>
+
+    export type RevealArtistBankAccountMutationError = ErrorType<unknown>
+
+    export const useRevealArtistBankAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revealArtistBankAccount>>, TError,{profileId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revealArtistBankAccount>>,
+        TError,
+        {profileId: string},
+        TContext
+      > => {
+      return useMutation(getRevealArtistBankAccountMutationOptions(options));
+    }
 
 export const getGetArtistIdentityForOwnerUrl = (profileId: string,) => {
 

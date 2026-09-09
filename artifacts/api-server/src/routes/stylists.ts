@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { param } from "../lib/params";
-import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable } from "@workspace/db";
-import { eq, and, ilike, or } from "drizzle-orm";
+import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable, bankAccountsTable } from "@workspace/db";
+import { eq, and, ilike, or, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
 import { meetsRateFloor, rateFloorMessage } from "../lib/money";
@@ -20,6 +20,9 @@ import {
   GetStylistResponse,
   GetMyStylistProfileResponse,
   UpdateMyStylistProfileResponse,
+  UpdateMyBankDetailsBody,
+  UpdateMyBankDetailsResponse,
+  GetMyBankDetailsResponse,
 } from "@workspace/api-zod";
 import { serializePublicStylistProfile } from "./stylistHelper";
 
@@ -130,6 +133,19 @@ export function computeProfileReadiness(
     totalCount: criteria.length,
     canBeBooked: criteria[0].met, // services is the hard requirement
     isFullyReady: completedCount === criteria.length,
+  };
+}
+
+function maskAccountNumber(accountNumber: string) {
+  return `••••${accountNumber.slice(-4)}`;
+}
+
+function safeBankAccount(account: typeof bankAccountsTable.$inferSelect) {
+  return {
+    id: account.id, bankName: account.bankName, accountHolderName: account.accountHolderName,
+    maskedAccountNumber: maskAccountNumber(account.accountNumber), accountType: account.accountType,
+    verificationStatus: account.verificationStatus, verifiedAt: account.verifiedAt?.toISOString() ?? null,
+    revision: account.revision,
   };
 }
 
@@ -330,6 +346,38 @@ router.get("/stylists/me/identity-verification", requireAuth, async (req, res) =
     idNumberProvided: !!profile.idNumber,
     idDocumentProvided: !!profile.idDocumentUrl,
   });
+});
+
+router.get("/stylists/me/bank-details", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+  const [account] = await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.stylistProfileId, profile.id));
+  res.json(GetMyBankDetailsResponse.parse(account ? safeBankAccount(account) : null));
+});
+
+router.patch("/stylists/me/bank-details", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const parsed = UpdateMyBankDetailsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Enter valid bank details and choose a supported account type." }); return;
+  }
+  const { bankName, accountHolderName, accountNumber, accountType } = parsed.data;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+  const normalizedAccountNumber = accountNumber.trim();
+  const [account] = await db.insert(bankAccountsTable).values({
+    id: randomUUID(), stylistProfileId: profile.id, bankName: bankName.trim(), accountHolderName: accountHolderName.trim(),
+    accountNumber: normalizedAccountNumber, accountType,
+  }).onConflictDoUpdate({
+    target: bankAccountsTable.stylistProfileId,
+    set: {
+      bankName: bankName.trim(), accountHolderName: accountHolderName.trim(), accountNumber: normalizedAccountNumber,
+      accountType, verificationStatus: "pending", verifiedAt: null, verifiedBy: null, updatedAt: new Date(),
+      revision: sql`${bankAccountsTable.revision} + 1`,
+    },
+  }).returning();
+  res.json(UpdateMyBankDetailsResponse.parse(safeBankAccount(account)));
 });
 
 router.post("/stylists/me/identity-document/upload-url", requireAuth, async (req, res) => {

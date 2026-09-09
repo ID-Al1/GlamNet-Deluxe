@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "wouter";
 import { useGetOwnerRegistryProfile, getGetOwnerRegistryProfileQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,37 @@ export default function OwnerRegistryProfile() {
       queryKey: getGetOwnerRegistryProfileQueryKey(params.userId!) 
     }
   });
+  const [revealedAccount, setRevealedAccount] = useState<{ bankAccountId: string; accountNumber: string } | null>(null);
+  const revealGeneration = useRef(0);
+  const [bankStatus, setBankStatus] = useState<string | null>(null);
+  const bank = (profile?.artist as any)?.bank;
+  useEffect(() => {
+    revealGeneration.current += 1;
+    setRevealedAccount(null);
+    setBankStatus(null);
+    return () => {
+      revealGeneration.current += 1;
+      setRevealedAccount(null);
+    };
+  }, [params.userId, bank?.id]);
+  async function updateBank(status: "verified" | "failed") {
+    if (!bank) return;
+    revealGeneration.current += 1;
+    setRevealedAccount(null);
+    const response = await fetch(`/api/owner/artists/${(profile!.artist as any).profileId}/bank`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status, revision: bank.revision }) });
+    if (!response.ok) { toast.error("Could not update bank status."); return; }
+    setBankStatus(status); toast.success(`Bank details marked ${status}.`);
+  }
+  async function revealBank() {
+    if (!bank) return;
+    const generation = ++revealGeneration.current;
+    const bankAccountId = bank.id;
+    const response = await fetch(`/api/owner/artists/${(profile!.artist as any).profileId}/bank/reveal`, { method: "POST", headers: authHeaders() });
+    const body = await response.json();
+    if (generation !== revealGeneration.current || bankAccountId !== bank.id) return;
+    if (!response.ok) { toast.error(body.error || "Could not reveal account."); return; }
+    setRevealedAccount({ bankAccountId, accountNumber: body.accountNumber });
+  }
 
   async function reviewIdentity() {
     if (!profile?.artist) return;
@@ -218,6 +250,17 @@ export default function OwnerRegistryProfile() {
                   </div>
                 </CardContent>
               </Card>
+
+              {bank && (
+                <Card className="bg-card border-border/50">
+                  <CardHeader className="pb-3 border-b border-border/30"><CardTitle className="text-base font-serif">Bank</CardTitle></CardHeader>
+                  <CardContent className="pt-4 space-y-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3"><div><span className="text-xs text-muted-foreground">Bank</span><p>{bank.bankName}</p></div><div><span className="text-xs text-muted-foreground">Account holder</span><p>{bank.accountHolderName}</p></div><div><span className="text-xs text-muted-foreground">Account</span><p className="font-mono">{revealedAccount && revealedAccount.bankAccountId === bank.id ? revealedAccount.accountNumber : bank.maskedAccountNumber}</p></div><div><span className="text-xs text-muted-foreground">Status</span><p className="capitalize">{bankStatus ?? bank.verificationStatus}</p></div></div>
+                    <div className="flex gap-2 flex-wrap"><Button size="sm" onClick={() => updateBank("verified")}>Verify</Button><Button size="sm" variant="outline" onClick={() => updateBank("failed")}>Fail</Button>{(bankStatus ?? bank.verificationStatus) === "verified" && <Button size="sm" variant="secondary" onClick={revealBank}>Reveal</Button>}</div>
+                    {revealedAccount?.bankAccountId === bank.id && <Button size="sm" variant="ghost" onClick={() => { revealGeneration.current += 1; setRevealedAccount(null); }}>Close reveal</Button>}
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="bg-card border-border/50">
                 <CardHeader className="pb-3 border-b border-border/30 flex flex-row items-center justify-between">

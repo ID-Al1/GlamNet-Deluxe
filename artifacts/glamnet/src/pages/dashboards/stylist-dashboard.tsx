@@ -205,6 +205,9 @@ export default function StylistDashboard() {
   const [savingIdentity, setSavingIdentity] = useState(false);
   const [submittingVerification, setSubmittingVerification] = useState(false);
   const [identityStatus, setIdentityStatus] = useState<{ idNumberProvided: boolean; idDocumentProvided: boolean } | null>(null);
+  const [bankDetails, setBankDetails] = useState<any>(null);
+  const [bankForm, setBankForm] = useState({ bankName: "", accountHolderName: "", accountNumber: "", accountType: "cheque" });
+  const [savingBank, setSavingBank] = useState(false);
   const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const { data: myProfile } = useQuery({
@@ -235,6 +238,23 @@ export default function StylistDashboard() {
       if (res.ok) setIdentityStatus(await res.json());
     });
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    void fetch(`${import.meta.env.BASE_URL}api/stylists/me/bank-details`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : null).then((value) => { setBankDetails(value); if (value) setBankForm((f) => ({ ...f, bankName: value.bankName, accountHolderName: value.accountHolderName, accountType: value.accountType })); });
+  }, [token]);
+
+  const saveBankDetails = async () => {
+    setSavingBank(true);
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/bank-details`, {
+        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(bankForm),
+      });
+      const body = await response.json(); if (!response.ok) throw new Error(body.error);
+      setBankDetails(body); setBankForm((f) => ({ ...f, accountNumber: "" })); toast.success("Bank details saved for payout review.");
+    } catch (e: any) { toast.error(e.message || "Could not save bank details."); } finally { setSavingBank(false); }
+  };
 
   const submitIdentityVerification = async () => {
     if (!idNumber.trim() || !identityDocument) {
@@ -866,6 +886,20 @@ export default function StylistDashboard() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardContent className="p-5 space-y-4">
+          <div><h3 className="font-semibold text-sm">Bank details</h3><p className="text-xs text-muted-foreground mt-0.5">For manual EFT payouts. Your account number is always masked after saving.</p></div>
+          {bankDetails && <p className="text-sm text-muted-foreground">{bankDetails.bankName} · {bankDetails.maskedAccountNumber} · <span className="capitalize">{bankDetails.verificationStatus}</span></p>}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input placeholder="Bank name" value={bankForm.bankName} onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })} />
+            <Input placeholder="Account holder name" value={bankForm.accountHolderName} onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })} />
+            <Input placeholder="Account number" value={bankForm.accountNumber} onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })} inputMode="numeric" />
+            <Select value={bankForm.accountType} onValueChange={(accountType) => setBankForm({ ...bankForm, accountType })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cheque">Cheque</SelectItem><SelectItem value="savings">Savings</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select>
+          </div>
+          <Button onClick={saveBankDetails} disabled={savingBank || !bankForm.accountNumber.trim()}>{savingBank ? "Saving…" : "Save bank details"}</Button>
         </CardContent>
       </Card>
 

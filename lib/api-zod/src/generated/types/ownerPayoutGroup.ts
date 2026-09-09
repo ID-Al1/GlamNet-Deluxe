@@ -5,6 +5,7 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { OwnerPayoutGroupBankVerificationStatus } from './ownerPayoutGroupBankVerificationStatus';
 import type { OwnerPayoutLine } from './ownerPayoutLine';
 
 export interface OwnerPayoutGroup {
@@ -12,5 +13,6 @@ export interface OwnerPayoutGroup {
   artistName: string;
   totalAmount: number;
   lineCount: number;
+  bankVerificationStatus: OwnerPayoutGroupBankVerificationStatus;
   lines: OwnerPayoutLine[];
 }

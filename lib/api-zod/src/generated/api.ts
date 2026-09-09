@@ -450,6 +450,60 @@ export const SaveMyIdentityVerificationResponse = zod.object({
 })
 
 
+
+
+
+export const GetMyBankDetailsResponse = zod.union([zod.object({
+  "id": zod.string(),
+  "bankName": zod.string(),
+  "accountHolderName": zod.string(),
+  "maskedAccountNumber": zod.string(),
+  "accountType": zod.string(),
+  "verificationStatus": zod.enum(['pending', 'verified', 'failed']),
+  "verifiedAt": zod.coerce.date().nullish(),
+  "revision": zod.number().min(1)
+}),zod.null()])
+
+
+export const updateMyBankDetailsBodyBankNameMin = 2;
+export const updateMyBankDetailsBodyBankNameMax = 100;
+
+
+export const updateMyBankDetailsBodyBankNameRegExp = new RegExp('.*\\S.*');
+export const updateMyBankDetailsBodyAccountHolderNameMin = 2;
+export const updateMyBankDetailsBodyAccountHolderNameMax = 150;
+
+
+export const updateMyBankDetailsBodyAccountHolderNameRegExp = new RegExp('.*\\S.*');
+export const updateMyBankDetailsBodyAccountNumberMin = 5;
+export const updateMyBankDetailsBodyAccountNumberMax = 34;
+
+
+export const updateMyBankDetailsBodyAccountNumberRegExp = new RegExp('^[0-9]+$');
+
+
+export const UpdateMyBankDetailsBody = zod.object({
+  "bankName": zod.string().min(updateMyBankDetailsBodyBankNameMin).max(updateMyBankDetailsBodyBankNameMax).regex(updateMyBankDetailsBodyBankNameRegExp),
+  "accountHolderName": zod.string().min(updateMyBankDetailsBodyAccountHolderNameMin).max(updateMyBankDetailsBodyAccountHolderNameMax).regex(updateMyBankDetailsBodyAccountHolderNameRegExp),
+  "accountNumber": zod.string().min(updateMyBankDetailsBodyAccountNumberMin).max(updateMyBankDetailsBodyAccountNumberMax).regex(updateMyBankDetailsBodyAccountNumberRegExp),
+  "accountType": zod.enum(['cheque', 'savings', 'other'])
+})
+
+
+
+
+export const UpdateMyBankDetailsResponse = zod.object({
+  "id": zod.string(),
+  "bankName": zod.string(),
+  "accountHolderName": zod.string(),
+  "maskedAccountNumber": zod.string(),
+  "accountType": zod.string(),
+  "verificationStatus": zod.enum(['pending', 'verified', 'failed']),
+  "verifiedAt": zod.coerce.date().nullish(),
+  "revision": zod.number().min(1)
+})
+
+
 /**
  * @summary Request a private upload URL for an identity document
  */
@@ -776,6 +830,7 @@ export const GetOwnerPayoutsResponseItem = zod.object({
   "artistName": zod.string(),
   "totalAmount": zod.number(),
   "lineCount": zod.number(),
+  "bankVerificationStatus": zod.enum(['none', 'pending', 'verified', 'failed']),
   "lines": zod.array(zod.object({
   "id": zod.string(),
   "artistProfileId": zod.string(),
@@ -855,6 +910,9 @@ export const GetOwnerRegistryProfileParams = zod.object({
   "userId": zod.coerce.string()
 })
 
+
+
+
 export const GetOwnerRegistryProfileResponse = zod.object({
   "userId": zod.string(),
   "name": zod.string(),
@@ -877,8 +935,45 @@ export const GetOwnerRegistryProfileResponse = zod.object({
   "duration": zod.number()
 })),
   "portfolioItemCount": zod.number(),
-  "identityDocumentAvailable": zod.boolean()
+  "identityDocumentAvailable": zod.boolean(),
+  "bank": zod.union([zod.object({
+  "id": zod.string(),
+  "bankName": zod.string(),
+  "accountHolderName": zod.string(),
+  "maskedAccountNumber": zod.string(),
+  "accountType": zod.string(),
+  "verificationStatus": zod.enum(['pending', 'verified', 'failed']),
+  "verifiedAt": zod.coerce.date().nullish(),
+  "revision": zod.number().min(1)
 }),zod.null()])
+}),zod.null()])
+})
+
+
+export const UpdateArtistBankVerificationParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+
+
+
+export const UpdateArtistBankVerificationBody = zod.object({
+  "status": zod.enum(['verified', 'failed']),
+  "revision": zod.number().min(1)
+})
+
+export const UpdateArtistBankVerificationResponse = zod.object({
+  "verificationStatus": zod.enum(['verified', 'failed']),
+  "verifiedAt": zod.coerce.date().nullable()
+})
+
+
+export const RevealArtistBankAccountParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const RevealArtistBankAccountResponse = zod.object({
+  "accountNumber": zod.string()
 })
 
 

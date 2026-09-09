@@ -5,6 +5,7 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { BankAccountSafe } from './bankAccountSafe';
 import type { OwnerRegistryArtistProfileVerificationStatus } from './ownerRegistryArtistProfileVerificationStatus';
 import type { OwnerRegistryService } from './ownerRegistryService';
 
@@ -18,4 +19,5 @@ export interface OwnerRegistryArtistProfile {
   services: OwnerRegistryService[];
   portfolioItemCount: number;
   identityDocumentAvailable: boolean;
+  bank: BankAccountSafe | null;
 }

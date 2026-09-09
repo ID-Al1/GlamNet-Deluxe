@@ -396,6 +396,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/IdentityVerificationStatus"
 
+  /stylists/me/bank-details:
+    get:
+      operationId: getMyBankDetails
+      tags: [stylists]
+      responses:
+        "200":
+          description: Masked bank details, or null when none have been submitted
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/BankAccountSafe"
+                  - type: "null"
+    patch:
+      operationId: updateMyBankDetails
+      tags: [stylists]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/BankAccountInput" } }
+      responses:
+        "200": { description: Saved masked bank details, content: { application/json: { schema: { $ref: "#/components/schemas/BankAccountSafe" } } } }
+
   /stylists/me/identity-document/upload-url:
     post:
       operationId: requestIdentityDocumentUploadUrl
@@ -767,6 +790,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+
+  /owner/artists/{profileId}/bank:
+    patch:
+      operationId: updateArtistBankVerification
+      tags: [owner]
+      parameters: [{ name: profileId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/BankVerificationInput" } } }
+      responses:
+        "200": { description: Updated bank verification status, content: { application/json: { schema: { $ref: "#/components/schemas/BankVerificationResult" } } } }
+  /owner/artists/{profileId}/bank/reveal:
+    post:
+      operationId: revealArtistBankAccount
+      tags: [owner]
+      parameters: [{ name: profileId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Full account number (logged and no-store), content: { application/json: { schema: { type: object, required: [accountNumber], properties: { accountNumber: { type: string } } } } } }
 
   /owner/artists/{profileId}/identity:
     get:
@@ -1233,6 +1274,38 @@ components:
           type: string
       required: [status]
 
+    BankAccountInput:
+      type: object
+      required: [bankName, accountHolderName, accountNumber, accountType]
+      properties:
+        bankName: { type: string, minLength: 2, maxLength: 100, pattern: '.*\S.*' }
+        accountHolderName: { type: string, minLength: 2, maxLength: 150, pattern: '.*\S.*' }
+        accountNumber: { type: string, minLength: 5, maxLength: 34, pattern: '^[0-9]+$', writeOnly: true }
+        accountType: { type: string, enum: [cheque, savings, other] }
+    BankAccountSafe:
+      type: object
+      required: [id, bankName, accountHolderName, maskedAccountNumber, accountType, verificationStatus, revision]
+      properties:
+        id: { type: string }
+        bankName: { type: string }
+        accountHolderName: { type: string }
+        maskedAccountNumber: { type: string }
+        accountType: { type: string }
+        verificationStatus: { type: string, enum: [pending, verified, failed] }
+        verifiedAt: { type: ["string", "null"], format: date-time }
+        revision: { type: integer, minimum: 1 }
+    BankVerificationResult:
+      type: object
+      required: [verificationStatus, verifiedAt]
+      properties:
+        verificationStatus: { type: string, enum: [verified, failed] }
+        verifiedAt: { type: ["string", "null"], format: date-time }
+    BankVerificationInput:
+      type: object
+      required: [status, revision]
+      properties:
+        status: { type: string, enum: [verified, failed] }
+        revision: { type: integer, minimum: 1 }
     ApiError:
       type: object
       properties:
@@ -1318,10 +1391,11 @@ components:
         artistName: { type: string }
         totalAmount: { type: number }
         lineCount: { type: integer }
+        bankVerificationStatus: { type: string, enum: [none, pending, verified, failed] }
         lines:
           type: array
           items: { $ref: "#/components/schemas/OwnerPayoutLine" }
-      required: [artistProfileId, artistName, totalAmount, lineCount, lines]
+      required: [artistProfileId, artistName, totalAmount, lineCount, lines, bankVerificationStatus]
 
     OwnerPayoutBatch:
       type: object
@@ -1417,7 +1491,7 @@ components:
 
     OwnerRegistryArtistProfile:
       type: object
-      required: [profileId, specialty, area, location, verified, verificationStatus, services, portfolioItemCount, identityDocumentAvailable]
+      required: [profileId, specialty, area, location, verified, verificationStatus, services, portfolioItemCount, identityDocumentAvailable, bank]
       properties:
         profileId:
           type: string
@@ -1440,6 +1514,10 @@ components:
           type: integer
         identityDocumentAvailable:
           type: boolean
+        bank:
+          anyOf:
+            - $ref: "#/components/schemas/BankAccountSafe"
+            - type: "null"
 
     OwnerRegistryProfile:
       type: object

@@ -1,0 +1,107 @@
+# Bonisa Owner Command Centre, Phase 3: Complaints & Disputes
+
+Builds on top of Phase 2, since a payment related complaint needs to be able to freeze a payout, and that mechanism already exists in escrow. This phase connects to it rather than duplicating it.
+
+---
+
+## Non-negotiables for this phase
+
+- Owner notes on a complaint are private. Never return them in any response a client or artist can see. Keep them on a separate table, not a column on the complaint itself, so it's structurally harder to leak by accident.
+- Reuse the existing dispute mechanism. Escrow already has a `disputed` payout status and logs everything to `payout_events`. When a complaint needs to freeze money, flip the appointment to `disputed` the same way the existing dispute endpoint does, don't build a second, separate freezing mechanism.
+- Refunds go through Stripe's actual refund API, never a fake "mark as refunded" that doesn't touch real money. If a refund fails, the complaint should show that clearly, not silently mark it done.
+
+---
+
+## Part A: Schema
+
+**`complaints`**:
+```ts
+id
+caseNumber           text, unique, formatted like BN-2026-000123
+appointmentId        -> appointments.id, nullable, not every complaint is booking related
+complainantUserId    -> users.id
+complainantRole      text  // 'client' | 'stylist'
+category             text
+description          text
+status               text  // new | under_review | waiting_for_client | waiting_for_artist | resolved | escalated | closed
+createdAt
+updatedAt
+resolvedAt
+```
+
+**`complaint_evidence`**:
+```ts
+id
+complaintId          -> complaints.id
+uploadedByUserId      -> users.id
+url
+mimeType
+createdAt
+```
+Uploads reuse the existing presigned upload flow in `routes/storage.ts`, same as portfolio photos and the ID document. No new upload mechanism.
+
+**`complaint_owner_notes`**:
+```ts
+id
+complaintId          -> complaints.id
+ownerId              -> users.id
+note                 text
+createdAt
+```
+
+**Add to `users`**: `accountStatus text not null default 'active'` (`active` | `suspended`). Needed for the suspend action in this phase, and reused by Artist and Client Management in Phase 5.
+
+---
+
+## Part B: Submitting a complaint
+
+Add a route for clients and artists to file a complaint against a booking or against each other, category picked from a fixed list (matches the categories already drafted for Bonisa: didn't arrive, poor service, payment issue, refund request, behaviour, safety concern, false review, harassment, and so on). Generates the case number, starts at status `new`.
+
+---
+
+## Part C: Owner case view and actions
+
+Owner only screen, list of complaints filterable by status, opening into a case view showing the booking, the complaint text, evidence, and the private owner notes thread.
+
+Owner actions on a case:
+- Change status (the six states above)
+- Add a private note
+- Hold payment — sets the linked appointment's `payoutStatus` to `disputed`, using the same code path the existing dispute logic already uses, logs to `payout_events` referencing the case number
+- Release payment — clears the dispute, only usable by the owner, logs to `payout_events`
+- Approve refund / partial refund — calls Stripe's real refund API against the original payment intent, logs the result on the case
+- Suspend account — sets `accountStatus = 'suspended'` on the relevant user, logs it
+- Resolve / close case
+
+Every action on a case writes a simple entry to the case's own activity trail (can live on the complaint or as a lightweight join, doesn't need to be the full cross-app audit log yet, that's centralised properly in Phase 5).
+
+---
+
+## Handoff prompt
+
+```
+Building Phase 3 of the Bonisa Owner Command Centre: complaints and
+disputes. Builds on the existing escrow dispute mechanism, do not create
+a second way of freezing a payout, reuse payoutStatus = 'disputed' and
+the existing payout_events logging.
+
+Add complaints, complaint_evidence, and complaint_owner_notes tables as
+specified, plus an accountStatus field on users (active | suspended),
+with a migration script.
+
+Owner notes must never be returned in any client or artist facing
+response, keep them on their own table.
+
+Build the complaint submission route for clients and artists, and the
+owner case view with status changes, private notes, hold/release
+payment (reusing the existing dispute code path), refund actions
+through Stripe's real API, and account suspension.
+
+Evidence uploads reuse the existing presigned upload flow in
+storage.ts, no new upload mechanism.
+
+Run pnpm run typecheck and confirm zero errors when done.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · Owner Command Centre, Phase 3 of 5*
