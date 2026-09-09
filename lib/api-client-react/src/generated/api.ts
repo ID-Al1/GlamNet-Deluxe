@@ -25,18 +25,27 @@ import type {
   AppointmentInput,
   AppointmentUpdate,
   AuthResult,
+  BadRequestResponse,
   BrandDashboard,
   CastingCall,
   CastingCallInput,
   CastingCallUpdate,
   ClientDashboard,
+  Complaint,
+  ComplaintActionResult,
+  ComplaintCreateInput,
+  ComplaintEvidence,
+  ComplaintEvidenceInput,
+  ConflictResponse,
   Conversation,
+  ForbiddenResponse,
   GetOwnerPayoutsParams,
   HealthStatus,
   IdentityVerificationInput,
   IdentityVerificationStatus,
   ListAppointmentsParams,
   ListCastingCallsParams,
+  ListOwnerComplaintsParams,
   ListStylistsParams,
   LoginInput,
   MarkOwnerPayoutInput,
@@ -46,7 +55,11 @@ import type {
   MessageInput,
   MessageResponse,
   MyStylistProfile,
+  NotFoundResponse,
   OwnerCommandCentreMetrics,
+  OwnerComplaint,
+  OwnerComplaintAction,
+  OwnerComplaintDetail,
   OwnerIdentitySummary,
   OwnerPaymentOverview,
   OwnerPayoutBatch,
@@ -64,6 +77,7 @@ import type {
   StylistDashboard,
   StylistProfile,
   StylistProfileUpdate,
+  UnauthorizedResponse,
   User,
   VerificationChecklist
 } from './api.schemas';
@@ -2914,6 +2928,580 @@ export function useGetArtistIdentityDocumentForOwner<TData = Awaited<ReturnType<
 
 
 
+
+export const getCreateComplaintUrl = () => {
+
+
+
+
+  return `/api/complaints`
+}
+
+/**
+ * @summary Submit a complaint
+ */
+export const createComplaint = async (complaintCreateInput: ComplaintCreateInput, options?: RequestInit): Promise<Complaint> => {
+
+  return customFetch<Complaint>(getCreateComplaintUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(complaintCreateInput)
+  }
+);}
+
+
+
+
+export const getCreateComplaintMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComplaint>>, TError,{data: BodyType<ComplaintCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createComplaint>>, TError,{data: BodyType<ComplaintCreateInput>}, TContext> => {
+
+const mutationKey = ['createComplaint'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createComplaint>>, {data: BodyType<ComplaintCreateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createComplaint(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateComplaintMutationResult = NonNullable<Awaited<ReturnType<typeof createComplaint>>>
+    export type CreateComplaintMutationBody = BodyType<ComplaintCreateInput>
+    export type CreateComplaintMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Submit a complaint
+ */
+export const useCreateComplaint = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComplaint>>, TError,{data: BodyType<ComplaintCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createComplaint>>,
+        TError,
+        {data: BodyType<ComplaintCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateComplaintMutationOptions(options));
+    }
+
+export const getListComplaintsUrl = () => {
+
+
+
+
+  return `/api/complaints`
+}
+
+/**
+ * @summary List my complaints
+ */
+export const listComplaints = async ( options?: RequestInit): Promise<Complaint[]> => {
+
+  return customFetch<Complaint[]>(getListComplaintsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListComplaintsQueryKey = () => {
+    return [
+    `/api/complaints`
+    ] as const;
+    }
+
+
+export const getListComplaintsQueryOptions = <TData = Awaited<ReturnType<typeof listComplaints>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listComplaints>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListComplaintsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listComplaints>>> = ({ signal }) => listComplaints({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listComplaints>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListComplaintsQueryResult = NonNullable<Awaited<ReturnType<typeof listComplaints>>>
+export type ListComplaintsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List my complaints
+ */
+
+export function useListComplaints<TData = Awaited<ReturnType<typeof listComplaints>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listComplaints>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListComplaintsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetComplaintUrl = (complaintId: string,) => {
+
+
+
+
+  return `/api/complaints/${complaintId}`
+}
+
+export const getComplaint = async (complaintId: string, options?: RequestInit): Promise<Complaint> => {
+
+  return customFetch<Complaint>(getGetComplaintUrl(complaintId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetComplaintQueryKey = (complaintId: string,) => {
+    return [
+    `/api/complaints/${complaintId}`
+    ] as const;
+    }
+
+
+export const getGetComplaintQueryOptions = <TData = Awaited<ReturnType<typeof getComplaint>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(complaintId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComplaint>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetComplaintQueryKey(complaintId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getComplaint>>> = ({ signal }) => getComplaint(complaintId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: complaintId !== null && complaintId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getComplaint>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetComplaintQueryResult = NonNullable<Awaited<ReturnType<typeof getComplaint>>>
+export type GetComplaintQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetComplaint<TData = Awaited<ReturnType<typeof getComplaint>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ complaintId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComplaint>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetComplaintQueryOptions(complaintId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAttachComplaintEvidenceUrl = (complaintId: string,) => {
+
+
+
+
+  return `/api/complaints/${complaintId}/evidence`
+}
+
+export const attachComplaintEvidence = async (complaintId: string,
+    complaintEvidenceInput: ComplaintEvidenceInput, options?: RequestInit): Promise<ComplaintEvidence> => {
+
+  return customFetch<ComplaintEvidence>(getAttachComplaintEvidenceUrl(complaintId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(complaintEvidenceInput)
+  }
+);}
+
+
+
+
+export const getAttachComplaintEvidenceMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachComplaintEvidence>>, TError,{complaintId: string;data: BodyType<ComplaintEvidenceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof attachComplaintEvidence>>, TError,{complaintId: string;data: BodyType<ComplaintEvidenceInput>}, TContext> => {
+
+const mutationKey = ['attachComplaintEvidence'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachComplaintEvidence>>, {complaintId: string;data: BodyType<ComplaintEvidenceInput>}> = (props) => {
+          const {complaintId,data} = props ?? {};
+
+          return  attachComplaintEvidence(complaintId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AttachComplaintEvidenceMutationResult = NonNullable<Awaited<ReturnType<typeof attachComplaintEvidence>>>
+    export type AttachComplaintEvidenceMutationBody = BodyType<ComplaintEvidenceInput>
+    export type AttachComplaintEvidenceMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    export const useAttachComplaintEvidence = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachComplaintEvidence>>, TError,{complaintId: string;data: BodyType<ComplaintEvidenceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof attachComplaintEvidence>>,
+        TError,
+        {complaintId: string;data: BodyType<ComplaintEvidenceInput>},
+        TContext
+      > => {
+      return useMutation(getAttachComplaintEvidenceMutationOptions(options));
+    }
+
+export const getGetComplaintEvidenceUrl = (evidenceId: string,) => {
+
+
+
+
+  return `/api/complaints/evidence/${evidenceId}`
+}
+
+/**
+ * @summary Download complaint evidence for an authorized participant or owner
+ */
+export const getComplaintEvidence = async (evidenceId: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetComplaintEvidenceUrl(evidenceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetComplaintEvidenceQueryKey = (evidenceId: string,) => {
+    return [
+    `/api/complaints/evidence/${evidenceId}`
+    ] as const;
+    }
+
+
+export const getGetComplaintEvidenceQueryOptions = <TData = Awaited<ReturnType<typeof getComplaintEvidence>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(evidenceId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComplaintEvidence>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetComplaintEvidenceQueryKey(evidenceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getComplaintEvidence>>> = ({ signal }) => getComplaintEvidence(evidenceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: evidenceId !== null && evidenceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getComplaintEvidence>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetComplaintEvidenceQueryResult = NonNullable<Awaited<ReturnType<typeof getComplaintEvidence>>>
+export type GetComplaintEvidenceQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Download complaint evidence for an authorized participant or owner
+ */
+
+export function useGetComplaintEvidence<TData = Awaited<ReturnType<typeof getComplaintEvidence>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ evidenceId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComplaintEvidence>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetComplaintEvidenceQueryOptions(evidenceId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOwnerComplaintsUrl = (params?: ListOwnerComplaintsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/owner/complaints?${stringifiedParams}` : `/api/owner/complaints`
+}
+
+export const listOwnerComplaints = async (params?: ListOwnerComplaintsParams, options?: RequestInit): Promise<OwnerComplaint[]> => {
+
+  return customFetch<OwnerComplaint[]>(getListOwnerComplaintsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerComplaintsQueryKey = (params?: ListOwnerComplaintsParams,) => {
+    return [
+    `/api/owner/complaints`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListOwnerComplaintsQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerComplaints>>, TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>>(params?: ListOwnerComplaintsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerComplaints>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerComplaintsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerComplaints>>> = ({ signal }) => listOwnerComplaints(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerComplaints>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerComplaintsQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerComplaints>>>
+export type ListOwnerComplaintsQueryError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+
+
+export function useListOwnerComplaints<TData = Awaited<ReturnType<typeof listOwnerComplaints>>, TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListOwnerComplaintsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerComplaints>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerComplaintsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOwnerComplaintUrl = (complaintId: string,) => {
+
+
+
+
+  return `/api/owner/complaints/${complaintId}`
+}
+
+export const getOwnerComplaint = async (complaintId: string, options?: RequestInit): Promise<OwnerComplaintDetail> => {
+
+  return customFetch<OwnerComplaintDetail>(getGetOwnerComplaintUrl(complaintId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerComplaintQueryKey = (complaintId: string,) => {
+    return [
+    `/api/owner/complaints/${complaintId}`
+    ] as const;
+    }
+
+
+export const getGetOwnerComplaintQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerComplaint>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(complaintId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerComplaint>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerComplaintQueryKey(complaintId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerComplaint>>> = ({ signal }) => getOwnerComplaint(complaintId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: complaintId !== null && complaintId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerComplaint>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerComplaintQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerComplaint>>>
+export type GetOwnerComplaintQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetOwnerComplaint<TData = Awaited<ReturnType<typeof getOwnerComplaint>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ complaintId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerComplaint>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerComplaintQueryOptions(complaintId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getOwnerComplaintActionUrl = (complaintId: string,) => {
+
+
+
+
+  return `/api/owner/complaints/${complaintId}/actions`
+}
+
+export const ownerComplaintAction = async (complaintId: string,
+    ownerComplaintAction: OwnerComplaintAction, options?: RequestInit): Promise<ComplaintActionResult> => {
+
+  return customFetch<ComplaintActionResult>(getOwnerComplaintActionUrl(complaintId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(ownerComplaintAction)
+  }
+);}
+
+
+
+
+export const getOwnerComplaintActionMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ownerComplaintAction>>, TError,{complaintId: string;data: BodyType<OwnerComplaintAction>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ownerComplaintAction>>, TError,{complaintId: string;data: BodyType<OwnerComplaintAction>}, TContext> => {
+
+const mutationKey = ['ownerComplaintAction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ownerComplaintAction>>, {complaintId: string;data: BodyType<OwnerComplaintAction>}> = (props) => {
+          const {complaintId,data} = props ?? {};
+
+          return  ownerComplaintAction(complaintId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OwnerComplaintActionMutationResult = NonNullable<Awaited<ReturnType<typeof ownerComplaintAction>>>
+    export type OwnerComplaintActionMutationBody = BodyType<OwnerComplaintAction>
+    export type OwnerComplaintActionMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    export const useOwnerComplaintAction = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ownerComplaintAction>>, TError,{complaintId: string;data: BodyType<OwnerComplaintAction>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof ownerComplaintAction>>,
+        TError,
+        {complaintId: string;data: BodyType<OwnerComplaintAction>},
+        TContext
+      > => {
+      return useMutation(getOwnerComplaintActionMutationOptions(options));
+    }
 
 export const getListCastingCallsUrl = (params?: ListCastingCallsParams,) => {
   const normalizedParams = new URLSearchParams();

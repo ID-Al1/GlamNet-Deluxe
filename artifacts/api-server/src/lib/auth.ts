@@ -59,6 +59,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     res.status(401).json({ error: "User not found" });
     return;
   }
+  const ownerEmail = process.env["OWNER_EMAIL"];
+  if (user.accountStatus === "suspended" && (!ownerEmail || user.email.trim().toLowerCase() !== ownerEmail.trim().toLowerCase())) {
+    res.status(403).json({ error: "Account suspended" }); return;
+  }
   (req as any).user = user;
   next();
 }

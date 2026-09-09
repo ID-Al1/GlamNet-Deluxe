@@ -12,6 +12,7 @@ import referralsRouter from "./referrals";
 import reviewsRouter from "./reviews";
 import storageRouter from "./storage";
 import ownerRouter from "./owner";
+import complaintsRouter from "./complaints";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(referralsRouter);
 router.use(reviewsRouter);
 router.use(storageRouter);
 router.use(ownerRouter);
+router.use(complaintsRouter);
 
 export default router;

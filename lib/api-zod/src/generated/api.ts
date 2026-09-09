@@ -906,6 +906,219 @@ export const GetArtistIdentityDocumentForOwnerResponse = zod.unknown()
 
 
 /**
+ * @summary Submit a complaint
+ */
+export const createComplaintBodyDescriptionMax = 10000;
+
+
+
+export const CreateComplaintBody = zod.object({
+  "appointmentId": zod.string().optional(),
+  "subjectUserId": zod.string().optional(),
+  "category": zod.string(),
+  "description": zod.string().min(1).max(createComplaintBodyDescriptionMax)
+})
+
+export const createComplaintResponseCaseNumberRegExp = new RegExp('^BN-[0-9]{4}-[0-9]{6}$');
+
+
+export const CreateComplaintResponse = zod.object({
+  "id": zod.string(),
+  "caseNumber": zod.string().regex(createComplaintResponseCaseNumberRegExp),
+  "appointmentId": zod.string().nullish(),
+  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other']),
+  "description": zod.string(),
+  "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "mimeType": zod.string(),
+  "url": zod.string()
+}))
+})
+
+
+/**
+ * @summary List my complaints
+ */
+export const listComplaintsResponseCaseNumberRegExp = new RegExp('^BN-[0-9]{4}-[0-9]{6}$');
+
+
+export const ListComplaintsResponseItem = zod.object({
+  "id": zod.string(),
+  "caseNumber": zod.string().regex(listComplaintsResponseCaseNumberRegExp),
+  "appointmentId": zod.string().nullish(),
+  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other']),
+  "description": zod.string(),
+  "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "mimeType": zod.string(),
+  "url": zod.string()
+}))
+})
+export const ListComplaintsResponse = zod.array(ListComplaintsResponseItem)
+
+
+export const GetComplaintParams = zod.object({
+  "complaintId": zod.coerce.string()
+})
+
+export const getComplaintResponseCaseNumberRegExp = new RegExp('^BN-[0-9]{4}-[0-9]{6}$');
+
+
+export const GetComplaintResponse = zod.object({
+  "id": zod.string(),
+  "caseNumber": zod.string().regex(getComplaintResponseCaseNumberRegExp),
+  "appointmentId": zod.string().nullish(),
+  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other']),
+  "description": zod.string(),
+  "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "mimeType": zod.string(),
+  "url": zod.string()
+}))
+})
+
+
+export const AttachComplaintEvidenceParams = zod.object({
+  "complaintId": zod.coerce.string()
+})
+
+export const attachComplaintEvidenceBodyObjectPathRegExp = new RegExp('^/objects/uploads/[A-Za-z0-9-]+$');
+
+
+export const AttachComplaintEvidenceBody = zod.object({
+  "objectPath": zod.string().regex(attachComplaintEvidenceBodyObjectPathRegExp),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'application/pdf', 'video/mp4'])
+})
+
+export const AttachComplaintEvidenceResponse = zod.object({
+  "id": zod.string(),
+  "mimeType": zod.string(),
+  "url": zod.string()
+})
+
+
+/**
+ * @summary Download complaint evidence for an authorized participant or owner
+ */
+export const GetComplaintEvidenceParams = zod.object({
+  "evidenceId": zod.coerce.string()
+})
+
+export const GetComplaintEvidenceResponse = zod.unknown()
+
+
+export const ListOwnerComplaintsQueryParams = zod.object({
+  "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']).optional()
+})
+
+export const ListOwnerComplaintsResponseItem = zod.object({
+  "id": zod.string(),
+  "caseNumber": zod.string(),
+  "appointmentId": zod.string().nullish(),
+  "subjectUserId": zod.string().nullish(),
+  "complainantRole": zod.string().optional(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+export const ListOwnerComplaintsResponse = zod.array(ListOwnerComplaintsResponseItem)
+
+
+export const GetOwnerComplaintParams = zod.object({
+  "complaintId": zod.coerce.string()
+})
+
+export const GetOwnerComplaintResponse = zod.object({
+  "id": zod.string(),
+  "caseNumber": zod.string(),
+  "appointmentId": zod.string().nullish(),
+  "subjectUserId": zod.string().nullish(),
+  "complainantRole": zod.string().optional(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "mimeType": zod.string(),
+  "url": zod.string()
+})).optional(),
+  "complainant": zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "accountStatus": zod.enum(['active', 'suspended'])
+}),
+  "subject": zod.union([zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "accountStatus": zod.enum(['active', 'suspended'])
+}),zod.null()]).optional(),
+  "appointment": zod.union([zod.object({
+  "id": zod.string(),
+  "clientUserId": zod.string(),
+  "clientName": zod.string(),
+  "artistUserId": zod.string(),
+  "artistName": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "bookingStatus": zod.string(),
+  "payoutStatus": zod.string(),
+  "grossCollected": zod.number(),
+  "refundedAmount": zod.number(),
+  "refundableAmount": zod.number()
+}),zod.null()]).optional(),
+  "notes": zod.array(zod.object({
+  "id": zod.string(),
+  "complaintId": zod.string(),
+  "ownerId": zod.string(),
+  "note": zod.string(),
+  "createdAt": zod.string()
+})),
+  "activities": zod.array(zod.object({
+  "id": zod.string(),
+  "complaintId": zod.string(),
+  "actorUserId": zod.string().nullish(),
+  "action": zod.string(),
+  "details": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+})
+
+
+export const OwnerComplaintActionParams = zod.object({
+  "complaintId": zod.coerce.string()
+})
+
+export const ownerComplaintActionBodyNoteMax = 1000;
+
+export const ownerComplaintActionBodyAmountMin = 0;
+
+
+
+export const OwnerComplaintActionBody = zod.object({
+  "action": zod.enum(['status', 'note', 'suspend', 'hold', 'release', 'refund']),
+  "status": zod.string().optional(),
+  "note": zod.string().max(ownerComplaintActionBodyNoteMax).optional().describe('Required when action is suspend; reason is recorded in the owner-only activity trail.'),
+  "userId": zod.string().optional(),
+  "amount": zod.number().min(ownerComplaintActionBodyAmountMin).optional()
+})
+
+export const OwnerComplaintActionResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary List active casting calls
  */
 export const ListCastingCallsQueryParams = zod.object({

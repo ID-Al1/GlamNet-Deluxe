@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, MessageCircle, Image, Mic, Square, Play, Pause, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Image, Mic, Square, Play, Pause, Check, CheckCheck, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
 
 type Message = {
@@ -572,6 +572,18 @@ export default function Messages() {
                   )}
                 </p>
               </div>
+              {otherParticipant(selectedConv)?.id && (
+                <Link href={`/complaints/new?subjectUserId=${encodeURIComponent(otherParticipant(selectedConv)!.id)}`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 h-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5 px-3"
+                  >
+                    <ShieldAlert className="h-3.5 w-3.5" strokeWidth={1.9} />
+                    <span className="text-[11px] font-semibold hidden md:inline">Report</span>
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Messages */}

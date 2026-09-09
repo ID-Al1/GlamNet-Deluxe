@@ -5,6 +5,200 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+export type ComplaintStatus = typeof ComplaintStatus[keyof typeof ComplaintStatus];
+
+
+export const ComplaintStatus = {
+  new: 'new',
+  under_review: 'under_review',
+  waiting_for_client: 'waiting_for_client',
+  waiting_for_artist: 'waiting_for_artist',
+  resolved: 'resolved',
+  escalated: 'escalated',
+  closed: 'closed',
+} as const;
+
+export type ComplaintCategory = typeof ComplaintCategory[keyof typeof ComplaintCategory];
+
+
+export const ComplaintCategory = {
+  didnt_arrive: 'didnt_arrive',
+  poor_service: 'poor_service',
+  payment_issue: 'payment_issue',
+  refund_request: 'refund_request',
+  behaviour: 'behaviour',
+  safety_concern: 'safety_concern',
+  false_review: 'false_review',
+  harassment: 'harassment',
+  other: 'other',
+} as const;
+
+export type ComplaintStatusProperty = typeof ComplaintStatusProperty[keyof typeof ComplaintStatusProperty];
+
+
+export const ComplaintStatusProperty = {
+  new: 'new',
+  under_review: 'under_review',
+  waiting_for_client: 'waiting_for_client',
+  waiting_for_artist: 'waiting_for_artist',
+  resolved: 'resolved',
+  escalated: 'escalated',
+  closed: 'closed',
+} as const;
+
+export interface ComplaintEvidence {
+  id: string;
+  mimeType: string;
+  url: string;
+}
+
+export interface Complaint {
+  id: string;
+  /** @pattern ^BN-[0-9]{4}-[0-9]{6}$ */
+  caseNumber: string;
+  appointmentId?: string | null;
+  category: ComplaintCategory;
+  description: string;
+  status: ComplaintStatusProperty;
+  evidence: ComplaintEvidence[];
+}
+
+export interface ComplaintCreateInput {
+  appointmentId?: string;
+  subjectUserId?: string;
+  category: string;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  description: string;
+}
+
+export type ComplaintEvidenceInputMimeType = typeof ComplaintEvidenceInputMimeType[keyof typeof ComplaintEvidenceInputMimeType];
+
+
+export const ComplaintEvidenceInputMimeType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'application/pdf': 'application/pdf',
+  'video/mp4': 'video/mp4',
+} as const;
+
+export interface ComplaintEvidenceInput {
+  /** @pattern ^/objects/uploads/[A-Za-z0-9-]+$ */
+  objectPath: string;
+  mimeType: ComplaintEvidenceInputMimeType;
+}
+
+export interface OwnerComplaint {
+  id: string;
+  caseNumber: string;
+  appointmentId?: string | null;
+  subjectUserId?: string | null;
+  complainantRole?: string;
+  category: string;
+  description: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type OwnerComplaintDetailNotesItem = {
+  id: string;
+  complaintId: string;
+  ownerId: string;
+  note: string;
+  createdAt: string;
+};
+
+export type OwnerComplaintDetailActivitiesItem = {
+  id: string;
+  complaintId: string;
+  actorUserId?: string | null;
+  action: string;
+  details?: string | null;
+  createdAt: string;
+};
+
+export type OwnerComplaintUserSummaryAccountStatus = typeof OwnerComplaintUserSummaryAccountStatus[keyof typeof OwnerComplaintUserSummaryAccountStatus];
+
+
+export const OwnerComplaintUserSummaryAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface OwnerComplaintUserSummary {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  accountStatus: OwnerComplaintUserSummaryAccountStatus;
+}
+
+export interface OwnerComplaintAppointmentSummary {
+  id: string;
+  clientUserId: string;
+  clientName: string;
+  artistUserId: string;
+  artistName: string;
+  serviceName: string;
+  date: string;
+  bookingStatus: string;
+  payoutStatus: string;
+  grossCollected: number;
+  refundedAmount: number;
+  refundableAmount: number;
+}
+
+export interface OwnerComplaintDetail {
+  id: string;
+  caseNumber: string;
+  appointmentId?: string | null;
+  subjectUserId?: string | null;
+  complainantRole?: string;
+  category: string;
+  description: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  evidence?: ComplaintEvidence[];
+  complainant: OwnerComplaintUserSummary;
+  subject?: OwnerComplaintUserSummary | null;
+  appointment?: OwnerComplaintAppointmentSummary | null;
+  notes: OwnerComplaintDetailNotesItem[];
+  activities: OwnerComplaintDetailActivitiesItem[];
+}
+
+export type OwnerComplaintActionAction = typeof OwnerComplaintActionAction[keyof typeof OwnerComplaintActionAction];
+
+
+export const OwnerComplaintActionAction = {
+  status: 'status',
+  note: 'note',
+  suspend: 'suspend',
+  hold: 'hold',
+  release: 'release',
+  refund: 'refund',
+} as const;
+
+export interface OwnerComplaintAction {
+  action: OwnerComplaintActionAction;
+  status?: string;
+  /**
+     * Required when action is suspend; reason is recorded in the owner-only activity trail.
+     * @maxLength 1000
+     */
+  note?: string;
+  userId?: string;
+  /** @minimum 0 */
+  amount?: number;
+}
+
+export interface ComplaintActionResult {
+  ok: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -645,6 +839,31 @@ export interface VerificationChecklist {
   isFullyReady: boolean;
 }
 
+/**
+ * Validation error
+ */
+export type BadRequestResponse = ApiError;
+
+/**
+ * Not authenticated
+ */
+export type UnauthorizedResponse = ApiError;
+
+/**
+ * Forbidden
+ */
+export type ForbiddenResponse = ApiError;
+
+/**
+ * Not found
+ */
+export type NotFoundResponse = ApiError;
+
+/**
+ * Conflict
+ */
+export type ConflictResponse = ApiError;
+
 export type ListStylistsParams = {
 specialty?: string;
 location?: string;
@@ -709,6 +928,10 @@ export const GetOwnerPayoutsFilter = {
   'this-week': 'this-week',
   'all-time': 'all-time',
 } as const;
+
+export type ListOwnerComplaintsParams = {
+status?: ComplaintStatus;
+};
 
 export type ListCastingCallsParams = {
 specialty?: string;

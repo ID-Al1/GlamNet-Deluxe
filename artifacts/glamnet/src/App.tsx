@@ -25,6 +25,9 @@ const CastingCalls = lazy(() => import("@/pages/casting/index"));
 const ProfileSetup = lazy(() => import("@/pages/profile/setup"));
 const LeaveReview = lazy(() => import("@/pages/reviews/[appointmentId]"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
+const ComplaintsList = lazy(() => import("@/pages/complaints/index"));
+const NewComplaint = lazy(() => import("@/pages/complaints/new"));
+const ComplaintDetail = lazy(() => import("@/pages/complaints/[id]"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const OwnerPortal = lazy(() => import("@/pages/owner/index"));
 const OwnerRegistry = lazy(() => import("@/pages/owner/registry/index"));
@@ -32,6 +35,8 @@ const OwnerRegistryProfile = lazy(() => import("@/pages/owner/registry/[userId]"
 const OwnerVerifications = lazy(() => import("@/pages/owner/verifications"));
 const OwnerPayouts = lazy(() => import("@/pages/owner/payouts/index"));
 const OwnerPaymentsOverview = lazy(() => import("@/pages/owner/payments-overview/index"));
+const OwnerComplaints = lazy(() => import("@/pages/owner/complaints/index"));
+const OwnerComplaintDetail = lazy(() => import("@/pages/owner/complaints/[id]"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +90,9 @@ function Router() {
                 <Route path="/casting" component={CastingCalls} />
                 <Route path="/reviews/:appointmentId" component={LeaveReview} />
                 <Route path="/payments" component={PaymentHistory} />
+                <Route path="/complaints" component={ComplaintsList} />
+                <Route path="/complaints/new" component={NewComplaint} />
+                <Route path="/complaints/:id" component={ComplaintDetail} />
                 <Route path="/owner">
                   <RequireOwner>
                     <OwnerLayout>
@@ -135,6 +143,24 @@ function Router() {
                     <OwnerLayout>
                       <Suspense fallback={<PageLoader />}>
                         <OwnerVerifications />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/complaints">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerComplaints />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/complaints/:id">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerComplaintDetail />
                       </Suspense>
                     </OwnerLayout>
                   </RequireOwner>

@@ -7,7 +7,7 @@ import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod
 import { sendNotification, notify } from "../lib/notifications";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
-import { recordPayoutEvent, splitAmount } from "../lib/escrow";
+import { recordPayoutEvent, splitAmount, transitionToDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
 import { createPayoutLedgerLines } from "../lib/payout-ledger";
 
@@ -310,10 +310,9 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
   if (dispute) {
     // Disputes can only freeze funds still in escrow. A released payout is
     // final here; post-release complaints go through support, not the ledger.
-    const [updated] = await db.update(appointmentsTable)
-      .set({ payoutStatus: "disputed" })
-      .where(and(eq(appointmentsTable.id, appointmentId), eq(appointmentsTable.payoutStatus, "held")))
-      .returning();
+    const result = await db.transaction(tx => transitionToDisputed(tx, appt, user.id,
+      `Issue reported by ${isClient ? "client" : "artist"} — funds frozen in escrow pending review`));
+    const updated = result.appointment;
     if (!updated) {
       const state = appt.payoutStatus === "released"
         ? "Payout was already released. Please contact support to raise a complaint."
@@ -321,10 +320,6 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
       res.status(409).json({ error: state });
       return;
     }
-    await recordPayoutEvent({
-      appointmentId, type: "disputed", actorUserId: user.id,
-      note: `Issue reported by ${isClient ? "client" : "artist"} — funds frozen in escrow pending review`,
-    });
     try {
       await postSystemMessage(
         appt.clientId, appt.stylistId,

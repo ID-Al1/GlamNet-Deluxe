@@ -584,11 +584,18 @@ export default function StylistDashboard() {
             </div>
           )}
         </div>
-        <Link href="/casting">
-          <Button variant="outline" className="gap-2 shrink-0 rounded-full px-5">
-            <Briefcase className="h-4 w-4" />Find Castings
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/complaints">
+            <Button variant="outline" className="gap-2 shrink-0 rounded-full px-5">
+              <ShieldAlert className="h-4 w-4" strokeWidth={1.9} />Cases
+            </Button>
+          </Link>
+          <Link href="/casting">
+            <Button variant="outline" className="gap-2 shrink-0 rounded-full px-5">
+              <Briefcase className="h-4 w-4" />Find Castings
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -952,15 +959,15 @@ export default function StylistDashboard() {
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5" />Yes, appointment completed
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-1.5 h-8 text-xs rounded-full border-destructive/50 text-destructive hover:bg-destructive/10"
-                                    onClick={() => confirmWork.mutate({ appointmentId: apt.id, dispute: true })}
-                                    disabled={confirmWork.isPending}
-                                  >
-                                    <ShieldAlert className="h-3.5 w-3.5" />Report an issue
-                                  </Button>
+                                  <Link href={`/complaints/new?appointmentId=${encodeURIComponent(apt.id)}`}>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-1.5 h-8 text-xs rounded-full border-destructive/50 text-destructive hover:bg-destructive/10"
+                                    >
+                                      <ShieldAlert className="h-3.5 w-3.5" strokeWidth={1.9} />Report an issue
+                                    </Button>
+                                  </Link>
                                 </>
                               )
                             )}

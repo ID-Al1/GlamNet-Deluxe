@@ -804,6 +804,127 @@ paths:
           content:
             application/octet-stream: {}
 
+  /complaints:
+    post:
+      operationId: createComplaint
+      tags: [complaints]
+      summary: Submit a complaint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComplaintCreateInput" }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Complaint" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    get:
+      operationId: listComplaints
+      tags: [complaints]
+      summary: List my complaints
+      responses:
+        "200": { description: Complaints, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Complaint" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /complaints/{complaintId}:
+    get:
+      operationId: getComplaint
+      tags: [complaints]
+      parameters: [{ name: complaintId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Complaint, content: { application/json: { schema: { $ref: "#/components/schemas/Complaint" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /complaints/{complaintId}/evidence:
+    post:
+      operationId: attachComplaintEvidence
+      tags: [complaints]
+      parameters: [{ name: complaintId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ComplaintEvidenceInput" } } }
+      responses:
+        "201": { description: Evidence, content: { application/json: { schema: { $ref: "#/components/schemas/ComplaintEvidence" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /complaints/evidence/{evidenceId}:
+    get:
+      operationId: getComplaintEvidence
+      tags: [complaints]
+      summary: Download complaint evidence for an authorized participant or owner
+      parameters:
+        - name: evidenceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Private complaint evidence bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+            video/mp4:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /owner/complaints:
+    get:
+      operationId: listOwnerComplaints
+      tags: [owner]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ComplaintStatus"
+      responses:
+        "200": { description: Cases, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerComplaint" } } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/complaints/{complaintId}:
+    get:
+      operationId: getOwnerComplaint
+      tags: [owner]
+      parameters: [{ name: complaintId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Owner case, content: { application/json: { schema: { $ref: "#/components/schemas/OwnerComplaintDetail" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /owner/complaints/{complaintId}/actions:
+    post:
+      operationId: ownerComplaintAction
+      tags: [owner]
+      parameters: [{ name: complaintId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/OwnerComplaintAction" } } }
+      responses:
+        "200": { description: Action result, content: { application/json: { schema: { $ref: "#/components/schemas/ComplaintActionResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /casting:
     get:
       operationId: listCastingCalls
@@ -967,6 +1088,144 @@ paths:
 
 components:
   schemas:
+    ComplaintStatus:
+      type: string
+      enum: [new, under_review, waiting_for_client, waiting_for_artist, resolved, escalated, closed]
+    Complaint:
+      type: object
+      required: [id, caseNumber, category, description, status, evidence]
+      properties:
+        id: { type: string }
+        caseNumber: { type: string, pattern: "^BN-[0-9]{4}-[0-9]{6}$" }
+        appointmentId: { type: string, nullable: true }
+        category: { type: string, enum: [didnt_arrive, poor_service, payment_issue, refund_request, behaviour, safety_concern, false_review, harassment, other] }
+        description: { type: string }
+        status: { type: string, enum: [new, under_review, waiting_for_client, waiting_for_artist, resolved, escalated, closed] }
+        evidence: { type: array, items: { $ref: "#/components/schemas/ComplaintEvidence" } }
+    ComplaintCreateInput:
+      type: object
+      required: [category, description]
+      properties:
+        appointmentId: { type: string }
+        subjectUserId: { type: string }
+        category: { type: string }
+        description: { type: string, minLength: 1, maxLength: 10000 }
+    ComplaintEvidenceInput:
+      type: object
+      required: [objectPath, mimeType]
+      properties:
+        objectPath: { type: string, pattern: "^/objects/uploads/[A-Za-z0-9-]+$" }
+        mimeType: { type: string, enum: [image/jpeg, image/png, application/pdf, video/mp4] }
+    ComplaintEvidence:
+      type: object
+      required: [id, mimeType, url]
+      properties:
+        id: { type: string }
+        mimeType: { type: string }
+        url: { type: string }
+    OwnerComplaint:
+      type: object
+      required: [id, caseNumber, category, description, status]
+      properties:
+        id: { type: string }
+        caseNumber: { type: string }
+        appointmentId: { type: string, nullable: true }
+        subjectUserId: { type: string, nullable: true }
+        complainantRole: { type: string }
+        category: { type: string }
+        description: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    OwnerComplaintDetail:
+      type: object
+      required: [id, caseNumber, category, description, status, complainant, notes, activities]
+      properties:
+        id: { type: string }
+        caseNumber: { type: string }
+        appointmentId: { type: string, nullable: true }
+        subjectUserId: { type: string, nullable: true }
+        complainantRole: { type: string }
+        category: { type: string }
+        description: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        evidence: { type: array, items: { $ref: "#/components/schemas/ComplaintEvidence" } }
+        complainant:
+          $ref: "#/components/schemas/OwnerComplaintUserSummary"
+        subject:
+          oneOf:
+            - $ref: "#/components/schemas/OwnerComplaintUserSummary"
+            - type: "null"
+        appointment:
+          oneOf:
+            - $ref: "#/components/schemas/OwnerComplaintAppointmentSummary"
+            - type: "null"
+        notes:
+          type: array
+          items:
+            type: object
+            required: [id, complaintId, ownerId, note, createdAt]
+            properties:
+              id: { type: string }
+              complaintId: { type: string }
+              ownerId: { type: string }
+              note: { type: string }
+              createdAt: { type: string }
+        activities:
+          type: array
+          items:
+            type: object
+            required: [id, complaintId, action, createdAt]
+            properties:
+              id: { type: string }
+              complaintId: { type: string }
+              actorUserId: { type: string, nullable: true }
+              action: { type: string }
+              details: { type: string, nullable: true }
+              createdAt: { type: string }
+    OwnerComplaintUserSummary:
+      type: object
+      required: [userId, name, email, role, accountStatus]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        accountStatus: { type: string, enum: [active, suspended] }
+    OwnerComplaintAppointmentSummary:
+      type: object
+      required: [id, clientUserId, clientName, artistUserId, artistName, serviceName, date, bookingStatus, payoutStatus, grossCollected, refundedAmount, refundableAmount]
+      properties:
+        id: { type: string }
+        clientUserId: { type: string }
+        clientName: { type: string }
+        artistUserId: { type: string }
+        artistName: { type: string }
+        serviceName: { type: string }
+        date: { type: string }
+        bookingStatus: { type: string }
+        payoutStatus: { type: string }
+        grossCollected: { type: number }
+        refundedAmount: { type: number }
+        refundableAmount: { type: number }
+    OwnerComplaintAction:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [status, note, suspend, hold, release, refund] }
+        status: { type: string }
+        note:
+          type: string
+          maxLength: 1000
+          description: Required when action is suspend; reason is recorded in the owner-only activity trail.
+        userId: { type: string }
+        amount: { type: number, minimum: 0 }
+    ComplaintActionResult:
+      type: object
+      required: [ok]
+      properties: { ok: { type: boolean } }
     HealthStatus:
       type: object
       properties:
@@ -1824,3 +2083,20 @@ components:
         status:
           type: string
           enum: [pending, accepted, rejected]
+
+  responses:
+    BadRequest:
+      description: Validation error
+      content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } }
+    Unauthorized:
+      description: Not authenticated
+      content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } }
+    Forbidden:
+      description: Forbidden
+      content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } }
+    NotFound:
+      description: Not found
+      content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } }
+    Conflict:
+      description: Conflict
+      content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } }

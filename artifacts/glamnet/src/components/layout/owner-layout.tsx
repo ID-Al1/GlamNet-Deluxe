@@ -11,6 +11,7 @@ export function OwnerLayout({ children }: { children: ReactNode }) {
     { href: "/owner/payments-overview", label: "Ledger", icon: ListTree, exact: false },
     { href: "/owner/registry", label: "Registry", icon: Users, exact: false },
     { href: "/owner/verifications", label: "Verifications", icon: ShieldCheck, exact: false },
+    { href: "/owner/complaints", label: "Cases", icon: ShieldCheck, exact: false },
   ];
 
   return (

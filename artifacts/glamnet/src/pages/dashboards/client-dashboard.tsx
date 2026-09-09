@@ -151,7 +151,7 @@ export default function ClientDashboard() {
             </p>
             <Link href="/stylists">
               <Button className="bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-full text-xs font-semibold px-5 h-9 w-fit shadow-sm backdrop-blur-sm">
-                Find an Artist <ChevronRight className="h-3 w-3 ml-1" />
+                Find an Artist <ChevronRight strokeWidth={1.9} className="h-3 w-3 ml-1" />
               </Button>
             </Link>
           </div>
@@ -193,7 +193,7 @@ export default function ClientDashboard() {
                 <div className="flex items-center gap-1 mt-1.5">
                   {featured.reviewCount ? (
                     <>
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <Star strokeWidth={1.9} className="h-3 w-3 fill-amber-400 text-amber-400" />
                       <span className="text-xs font-semibold">{formatRating(featured.rating ?? 0)}</span>
                       <span className="text-[10px] text-muted-foreground">({featured.reviewCount})</span>
                     </>
@@ -211,7 +211,7 @@ export default function ClientDashboard() {
               </Link>
               <Link href={`/stylists/${featured.id}`}>
                 <button className="w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted transition-colors">
-                  <Play className="h-3 w-3 ml-0.5" />
+                  <Play strokeWidth={1.9} className="h-3 w-3 ml-0.5" />
                 </button>
               </Link>
             </div>
@@ -249,7 +249,7 @@ export default function ClientDashboard() {
                   </span>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-white/50" />
+              <ChevronRight strokeWidth={1.9} className="h-5 w-5 text-white/50" />
             </div>
           </Link>
         </div>
@@ -291,7 +291,7 @@ export default function ClientDashboard() {
                       </Link>
                     </p>
                     <div className="flex items-center text-[11px] text-muted-foreground gap-1.5 mt-1.5">
-                      <Calendar className="h-3 w-3" />
+                      <Calendar strokeWidth={1.9} className="h-3 w-3" />
                       {new Date(apt.date).toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" })} at {apt.time}
                     </div>
                   </div>
@@ -303,12 +303,12 @@ export default function ClientDashboard() {
                 <div className="flex flex-wrap items-center gap-1.5 mt-3">
                   {(apt as any).payoutStatus === "released" && (
                     <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      <Banknote className="h-3 w-3" />Payout released
+                      <Banknote strokeWidth={1.9} className="h-3 w-3" />Payout released
                     </span>
                   )}
                   {(apt as any).payoutStatus === "disputed" && (
                     <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                      <ShieldAlert className="h-3 w-3" />Dispute raised
+                      <ShieldAlert strokeWidth={1.9} className="h-3 w-3" />Dispute raised
                     </span>
                   )}
 
@@ -318,7 +318,7 @@ export default function ClientDashboard() {
                     (apt as any).payoutStatus !== "released" && (
                     (apt as any).workConfirmedByClient ? (
                       <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">
-                        <CircleCheck className="h-3 w-3" />You confirmed
+                        <CircleCheck strokeWidth={1.9} className="h-3 w-3" />You confirmed
                         {!(apt as any).workConfirmedByArtist && (
                           <span className="ml-1 text-muted-foreground">· waiting for artist</span>
                         )}
@@ -331,17 +331,17 @@ export default function ClientDashboard() {
                           onClick={() => confirmWorkMutation.mutate({ appointmentId: apt.id })}
                           disabled={confirmWorkMutation.isPending}
                         >
-                          <CheckCircle className="h-3.5 w-3.5" />Yes, everything went well
+                          <CheckCircle className="h-3.5 w-3.5" strokeWidth={1.9} />Yes, everything went well
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1.5 h-8 text-[11px] rounded-full border-destructive/50 text-destructive hover:bg-destructive/10"
-                          onClick={() => confirmWorkMutation.mutate({ appointmentId: apt.id, dispute: true })}
-                          disabled={confirmWorkMutation.isPending}
-                        >
-                          <ShieldAlert className="h-3.5 w-3.5" />Report a problem
-                        </Button>
+                        <Link href={`/complaints/new?appointmentId=${encodeURIComponent(apt.id)}`}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 h-8 text-[11px] rounded-full border-destructive/50 text-destructive hover:bg-destructive/10"
+                          >
+                            <ShieldAlert className="h-3.5 w-3.5" strokeWidth={1.9} />Report a problem
+                          </Button>
+                        </Link>
                       </>
                     )
                   )}
@@ -349,13 +349,13 @@ export default function ClientDashboard() {
                   {apt.status === "completed" && (
                     <Link href={`/reviews/${apt.id}`}>
                       <Button size="sm" variant="outline" className="gap-1.5 h-8 text-[11px] rounded-full">
-                        <Star className="h-3.5 w-3.5" />Leave Review
+                        <Star strokeWidth={1.9} className="h-3.5 w-3.5" />Leave Review
                       </Button>
                     </Link>
                   )}
                   <Link href={`/messages?stylistId=${apt.stylistId}`}>
                     <Button variant="outline" size="sm" className="gap-1.5 h-8 text-[11px] rounded-full">
-                      <MessageCircle className="h-3.5 w-3.5" />Message
+                      <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.9} />Message
                     </Button>
                   </Link>
                 </div>
@@ -369,6 +369,25 @@ export default function ClientDashboard() {
             <Link href="/stylists"><Button size="sm" variant="outline" className="rounded-full">Browse artists</Button></Link>
           </div>
         )}
+      </div>
+
+      {/* ── MY CASES ── */}
+      <div className="px-5 mb-8">
+        <SectionHeading title="Support Cases" actionLabel="View All" href="/complaints" />
+        <Link href="/complaints">
+          <div className="bg-card rounded-[20px] p-4 border border-border/40 shadow-sm flex items-center justify-between cursor-pointer group">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <ShieldAlert className="h-5 w-5" strokeWidth={1.9} />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-foreground">My Cases</p>
+                <p className="text-[11px] text-muted-foreground">Track your reports and disputes</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.9} />
+          </div>
+        </Link>
       </div>
 
       {/* ── WHATSAPP NOTIFICATIONS ── */}
