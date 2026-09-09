@@ -117,7 +117,6 @@ export const ListStylistsQueryParams = zod.object({
 
 export const ListStylistsResponseItem = zod.object({
   "id": zod.string(),
-  "userId": zod.string(),
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
@@ -126,7 +125,6 @@ export const ListStylistsResponseItem = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "verified": zod.boolean(),
-  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "services": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -146,27 +144,7 @@ export const ListStylistsResponseItem = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "phone": zod.string().nullish(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews'),
-  "reputationBreakdown": zod.object({
-  "score": zod.number().optional(),
-  "cancellationRate": zod.number().optional(),
-  "repeatClientRate": zod.number().optional(),
-  "completedBookings": zod.number().optional(),
-  "totalBookings": zod.number().optional()
-}).nullish(),
-  "profileReadiness": zod.object({
-  "criteria": zod.array(zod.object({
-  "id": zod.number(),
-  "label": zod.string(),
-  "met": zod.boolean(),
-  "hint": zod.string()
-})),
-  "completedCount": zod.number(),
-  "totalCount": zod.number(),
-  "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
-}).nullish()
+  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
 })
 export const ListStylistsResponse = zod.array(ListStylistsResponseItem)
 
@@ -180,7 +158,6 @@ export const GetStylistParams = zod.object({
 
 export const GetStylistResponse = zod.object({
   "id": zod.string(),
-  "userId": zod.string(),
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
@@ -189,7 +166,6 @@ export const GetStylistResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "verified": zod.boolean(),
-  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "services": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -209,27 +185,7 @@ export const GetStylistResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "phone": zod.string().nullish(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews'),
-  "reputationBreakdown": zod.object({
-  "score": zod.number().optional(),
-  "cancellationRate": zod.number().optional(),
-  "repeatClientRate": zod.number().optional(),
-  "completedBookings": zod.number().optional(),
-  "totalBookings": zod.number().optional()
-}).nullish(),
-  "profileReadiness": zod.object({
-  "criteria": zod.array(zod.object({
-  "id": zod.number(),
-  "label": zod.string(),
-  "met": zod.boolean(),
-  "hint": zod.string()
-})),
-  "completedCount": zod.number(),
-  "totalCount": zod.number(),
-  "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
-}).nullish()
+  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
 })
 
 
@@ -238,7 +194,6 @@ export const GetStylistResponse = zod.object({
  */
 export const GetMyStylistProfileResponse = zod.object({
   "id": zod.string(),
-  "userId": zod.string(),
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
@@ -247,7 +202,6 @@ export const GetMyStylistProfileResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "verified": zod.boolean(),
-  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "services": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -267,15 +221,18 @@ export const GetMyStylistProfileResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "phone": zod.string().nullish(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews'),
+  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+}).and(zod.object({
+  "userId": zod.string(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "phone": zod.string().nullable(),
   "reputationBreakdown": zod.object({
   "score": zod.number().optional(),
   "cancellationRate": zod.number().optional(),
   "repeatClientRate": zod.number().optional(),
   "completedBookings": zod.number().optional(),
   "totalBookings": zod.number().optional()
-}).nullish(),
+}).nullable(),
   "profileReadiness": zod.object({
   "criteria": zod.array(zod.object({
   "id": zod.number(),
@@ -287,8 +244,8 @@ export const GetMyStylistProfileResponse = zod.object({
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
   "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
-}).nullish()
 })
+}))
 
 
 /**
@@ -309,7 +266,6 @@ export const UpdateMyStylistProfileBody = zod.object({
 
 export const UpdateMyStylistProfileResponse = zod.object({
   "id": zod.string(),
-  "userId": zod.string(),
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
@@ -318,7 +274,6 @@ export const UpdateMyStylistProfileResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "verified": zod.boolean(),
-  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "services": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -338,15 +293,18 @@ export const UpdateMyStylistProfileResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "phone": zod.string().nullish(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews'),
+  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+}).and(zod.object({
+  "userId": zod.string(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "phone": zod.string().nullable(),
   "reputationBreakdown": zod.object({
   "score": zod.number().optional(),
   "cancellationRate": zod.number().optional(),
   "repeatClientRate": zod.number().optional(),
   "completedBookings": zod.number().optional(),
   "totalBookings": zod.number().optional()
-}).nullish(),
+}).nullable(),
   "profileReadiness": zod.object({
   "criteria": zod.array(zod.object({
   "id": zod.number(),
@@ -358,8 +316,8 @@ export const UpdateMyStylistProfileResponse = zod.object({
   "totalCount": zod.number(),
   "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
   "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
-}).nullish()
 })
+}))
 
 
 /**
@@ -1057,7 +1015,6 @@ export const GetClientDashboardResponse = zod.object({
 })),
   "recommendedStylists": zod.array(zod.object({
   "id": zod.string(),
-  "userId": zod.string(),
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
@@ -1066,7 +1023,6 @@ export const GetClientDashboardResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "verified": zod.boolean(),
-  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "services": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -1086,27 +1042,7 @@ export const GetClientDashboardResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "phone": zod.string().nullish(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews'),
-  "reputationBreakdown": zod.object({
-  "score": zod.number().optional(),
-  "cancellationRate": zod.number().optional(),
-  "repeatClientRate": zod.number().optional(),
-  "completedBookings": zod.number().optional(),
-  "totalBookings": zod.number().optional()
-}).nullish(),
-  "profileReadiness": zod.object({
-  "criteria": zod.array(zod.object({
-  "id": zod.number(),
-  "label": zod.string(),
-  "met": zod.boolean(),
-  "hint": zod.string()
-})),
-  "completedCount": zod.number(),
-  "totalCount": zod.number(),
-  "canBeBooked": zod.boolean().describe('True when the artist has at least one service listed — minimum for booking to work'),
-  "isFullyReady": zod.boolean().describe('True when all 8 readiness criteria are met')
-}).nullish()
+  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
 })).optional()
 })
 

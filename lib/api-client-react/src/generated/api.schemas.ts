@@ -192,23 +192,6 @@ export interface AuthResult {
   token: string;
 }
 
-export type StylistProfileVerificationStatus = typeof StylistProfileVerificationStatus[keyof typeof StylistProfileVerificationStatus];
-
-
-export const StylistProfileVerificationStatus = {
-  none: 'none',
-  pending: 'pending',
-  verified: 'verified',
-} as const;
-
-export type StylistProfileReputationBreakdown = {
-  score?: number;
-  cancellationRate?: number;
-  repeatClientRate?: number;
-  completedBookings?: number;
-  totalBookings?: number;
-} | null;
-
 export interface Service {
   id: string;
   name: string;
@@ -225,6 +208,55 @@ export interface PortfolioItem {
   /** @nullable */
   imageUrl?: string | null;
 }
+
+export interface StylistProfile {
+  id: string;
+  name: string;
+  specialty: string;
+  location: string;
+  area?: string;
+  /** @nullable */
+  bio?: string | null;
+  rating: number;
+  reviewCount: number;
+  verified: boolean;
+  services: Service[];
+  portfolio: PortfolioItem[];
+  availability: string[];
+  tags?: string[];
+  /** @nullable */
+  instagram?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  accentColor?: string | null;
+  houseCalls?: boolean;
+  /**
+     * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+     * @nullable
+     */
+  reputationScore?: number | null;
+}
+
+export type MyStylistProfileVerificationStatus = typeof MyStylistProfileVerificationStatus[keyof typeof MyStylistProfileVerificationStatus];
+
+
+export const MyStylistProfileVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+/**
+ * @nullable
+ */
+export type MyStylistProfileReputationBreakdown = {
+  score?: number;
+  cancellationRate?: number;
+  repeatClientRate?: number;
+  completedBookings?: number;
+  totalBookings?: number;
+} | null;
 
 export interface ProfileReadinessCriterion {
   id: number;
@@ -243,40 +275,15 @@ export interface ProfileReadiness {
   isFullyReady: boolean;
 }
 
-export interface StylistProfile {
-  id: string;
+export type MyStylistProfile = StylistProfile & ({
   userId: string;
-  name: string;
-  specialty: string;
-  location: string;
-  area?: string;
+  verificationStatus: MyStylistProfileVerificationStatus;
   /** @nullable */
-  bio?: string | null;
-  rating: number;
-  reviewCount: number;
-  verified: boolean;
-  verificationStatus: StylistProfileVerificationStatus;
-  services: Service[];
-  portfolio: PortfolioItem[];
-  availability: string[];
-  tags?: string[];
+  phone: string | null;
   /** @nullable */
-  instagram?: string | null;
-  /** @nullable */
-  website?: string | null;
-  /** @nullable */
-  accentColor?: string | null;
-  houseCalls?: boolean;
-  /** @nullable */
-  phone?: string | null;
-  /**
-     * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
-     * @nullable
-     */
-  reputationScore?: number | null;
-  reputationBreakdown?: StylistProfileReputationBreakdown;
-  profileReadiness?: ProfileReadiness | null;
-}
+  reputationBreakdown: MyStylistProfileReputationBreakdown;
+  profileReadiness: ProfileReadiness;
+});
 
 export interface StylistProfileUpdate {
   bio?: string;

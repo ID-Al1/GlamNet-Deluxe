@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useGetStylist, useGetStylistDashboard, useUpdateMyStylistProfile } from "@workspace/api-client-react";
+import { useGetStylistDashboard, useUpdateMyStylistProfile } from "@workspace/api-client-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -219,16 +219,9 @@ export default function StylistDashboard() {
     enabled: !!token,
   });
 
-  const { data: reputationProfile } = useGetStylist(myProfile?.id ?? "", {
-    query: {
-      enabled: !!myProfile?.id,
-      queryKey: ["stylist-reputation", myProfile?.id],
-    },
-  });
-
-  const reputationScore = reputationProfile?.reputationScore ?? 0;
+  const reputationScore = myProfile?.reputationScore ?? 0;
   const reputationTier = getReputationTier(reputationScore);
-  const completedJobs = reputationProfile?.reputationBreakdown?.completedBookings ?? 0;
+  const completedJobs = myProfile?.reputationBreakdown?.completedBookings ?? 0;
 
   useEffect(() => {
     if (myProfile?.availability) setAvail(myProfile.availability);

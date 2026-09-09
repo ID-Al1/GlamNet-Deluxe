@@ -223,7 +223,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StylistProfile"
+                $ref: "#/components/schemas/MyStylistProfile"
 
     patch:
       operationId: updateMyStylistProfile
@@ -241,7 +241,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StylistProfile"
+                $ref: "#/components/schemas/MyStylistProfile"
 
   /stylists/me/services:
     post:
@@ -1138,11 +1138,9 @@ components:
 
     StylistProfile:
       type: object
-      required: [id, userId, name, specialty, location, rating, reviewCount, verified, verificationStatus, services, portfolio, availability]
+      required: [id, name, specialty, location, rating, reviewCount, verified, services, portfolio, availability]
       properties:
         id:
-          type: string
-        userId:
           type: string
         name:
           type: string
@@ -1160,9 +1158,6 @@ components:
           type: integer
         verified:
           type: boolean
-        verificationStatus:
-          type: string
-          enum: [none, pending, verified]
         services:
           type: array
           items:
@@ -1187,28 +1182,38 @@ components:
           type: ["string", "null"]
         houseCalls:
           type: boolean
-        phone:
-          type: ["string", "null"]
         reputationScore:
           type: ["number", "null"]
           description: Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
-        reputationBreakdown:
-          nullable: true
-          type: object
+
+    MyStylistProfile:
+      allOf:
+        - $ref: "#/components/schemas/StylistProfile"
+        - type: object
+          required: [userId, verificationStatus, phone, reputationBreakdown, profileReadiness]
           properties:
-            score:
-              type: number
-            cancellationRate:
-              type: number
-            repeatClientRate:
-              type: number
-            completedBookings:
-              type: integer
-            totalBookings:
-              type: integer
-        profileReadiness:
-          nullable: true
-          $ref: "#/components/schemas/ProfileReadiness"
+            userId:
+              type: string
+            verificationStatus:
+              type: string
+              enum: [none, pending, verified]
+            phone:
+              type: ["string", "null"]
+            reputationBreakdown:
+              type: ["object", "null"]
+              properties:
+                score:
+                  type: number
+                cancellationRate:
+                  type: number
+                repeatClientRate:
+                  type: number
+                completedBookings:
+                  type: integer
+                totalBookings:
+                  type: integer
+            profileReadiness:
+              $ref: "#/components/schemas/ProfileReadiness"
 
     StylistProfileUpdate:
       type: object

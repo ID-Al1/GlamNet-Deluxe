@@ -43,6 +43,7 @@ import type {
   Message,
   MessageInput,
   MessageResponse,
+  MyStylistProfile,
   OwnerCommandCentreMetrics,
   OwnerIdentitySummary,
   OwnerRegistryEntry,
@@ -625,9 +626,9 @@ export const getGetMyStylistProfileUrl = () => {
 /**
  * @summary Get my stylist profile
  */
-export const getMyStylistProfile = async ( options?: RequestInit): Promise<StylistProfile> => {
+export const getMyStylistProfile = async ( options?: RequestInit): Promise<MyStylistProfile> => {
 
-  return customFetch<StylistProfile>(getGetMyStylistProfileUrl(),
+  return customFetch<MyStylistProfile>(getGetMyStylistProfileUrl(),
   {
     ...options,
     method: 'GET'
@@ -702,9 +703,9 @@ export const getUpdateMyStylistProfileUrl = () => {
 /**
  * @summary Update my stylist profile
  */
-export const updateMyStylistProfile = async (stylistProfileUpdate: StylistProfileUpdate, options?: RequestInit): Promise<StylistProfile> => {
+export const updateMyStylistProfile = async (stylistProfileUpdate: StylistProfileUpdate, options?: RequestInit): Promise<MyStylistProfile> => {
 
-  return customFetch<StylistProfile>(getUpdateMyStylistProfileUrl(),
+  return customFetch<MyStylistProfile>(getUpdateMyStylistProfileUrl(),
   {
     ...options,
     method: 'PATCH',

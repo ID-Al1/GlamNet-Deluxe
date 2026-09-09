@@ -16,7 +16,12 @@ import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   SaveMyIdentityVerificationBody,
+  ListStylistsResponse,
+  GetStylistResponse,
+  GetMyStylistProfileResponse,
+  UpdateMyStylistProfileResponse,
 } from "@workspace/api-zod";
+import { serializePublicStylistProfile } from "./stylistHelper";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -128,37 +133,28 @@ export function computeProfileReadiness(
   };
 }
 
-async function buildStylistResponse(profileId: string) {
+async function buildStylistResponse(profileId: string, includePrivateSelfFields = false) {
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, profileId));
   if (!profile) return null;
   const services = await db.select().from(servicesTable).where(eq(servicesTable.stylistId, profileId));
   const portfolio = await db.select().from(portfolioItemsTable).where(eq(portfolioItemsTable.stylistId, profileId));
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
   const reputation = await computeReputationScore(profile.id, profile.rating ?? 0, profile.reviewCount ?? 0);
+  const publicProfile = serializePublicStylistProfile(
+    profile,
+    services,
+    portfolio,
+    reputation?.score ?? null,
+  );
+  if (!includePrivateSelfFields) return publicProfile;
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
   const phone = user?.phone ?? null;
   const readiness = computeProfileReadiness(profile, services, portfolio, phone);
   return {
-    id: profile.id,
+    ...publicProfile,
     userId: profile.userId,
-    name: profile.name,
-    specialty: profile.specialty,
-    location: profile.location,
-    area: profile.area,
-    bio: profile.bio ?? null,
-    rating: profile.rating,
-    reviewCount: profile.reviewCount,
-    verified: profile.verified,
-    verificationStatus: profile.verificationStatus,
-    services: services.map(s => ({ id: s.id, name: s.name, price: s.price, duration: s.duration })),
-    portfolio: portfolio.map(p => ({ id: p.id, title: p.title, description: p.description ?? null, type: p.type, imageUrl: p.imageUrl ?? null })),
-    availability: profile.availability,
-    tags: profile.tags,
-    instagram: profile.instagram ?? null,
-    website: profile.website ?? null,
-    accentColor: profile.accentColor ?? null,
-    houseCalls: profile.houseCalls,
     phone,
-    reputationScore: reputation?.score ?? null,
+    verificationStatus: profile.verificationStatus,
     reputationBreakdown: reputation ?? null,
     profileReadiness: readiness,
   };
@@ -250,7 +246,7 @@ router.get("/stylists", async (req, res) => {
   }
 
   const results = await Promise.all(profiles.map(p => buildStylistResponse(p.id)));
-  res.json(results.filter(Boolean));
+  res.json(ListStylistsResponse.parse(results.filter(Boolean)));
 });
 
 router.get("/stylists/me/profile", requireAuth, async (req, res) => {
@@ -260,8 +256,8 @@ router.get("/stylists/me/profile", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Stylist profile not found" });
     return;
   }
-  const result = await buildStylistResponse(profile.id);
-  res.json(result);
+  const result = await buildStylistResponse(profile.id, true);
+  res.json(GetMyStylistProfileResponse.parse(result));
 });
 
 router.patch("/stylists/me/profile", requireAuth, async (req, res) => {
@@ -285,8 +281,8 @@ router.patch("/stylists/me/profile", requireAuth, async (req, res) => {
     ...(data.tags !== undefined && { tags: data.tags }),
     ...(data.houseCalls !== undefined && { houseCalls: data.houseCalls }),
   }).where(eq(stylistProfilesTable.id, profile.id));
-  const result = await buildStylistResponse(profile.id);
-  res.json(result);
+  const result = await buildStylistResponse(profile.id, true);
+  res.json(UpdateMyStylistProfileResponse.parse(result));
 });
 
 // Artist submits her profile for verification.
@@ -497,24 +493,31 @@ router.get("/stylists/me/verification-checklist", requireAuth, async (req, res) 
 });
 
 router.get("/stylists/:stylistId", async (req, res) => {
-  const result = await buildStylistResponse(param(req.params.stylistId));
+  const profileId = param(req.params.stylistId);
+  const [profile] = await db.select({
+    userId: stylistProfilesTable.userId,
+    verified: stylistProfilesTable.verified,
+  }).from(stylistProfilesTable).where(eq(stylistProfilesTable.id, profileId));
+  if (!profile) { res.status(404).json({ error: "Stylist not found" }); return; }
+
+  const result = await buildStylistResponse(profileId);
   if (!result) { res.status(404).json({ error: "Stylist not found" }); return; }
 
   // Part b: unverified artists are invisible to everyone except the artist herself
   // (so she can preview her own profile while she completes the checklist).
-  if (!result.verified) {
+  if (!profile.verified) {
     const auth = req.headers.authorization;
     let requestingUserId: string | null = null;
     if (auth?.startsWith("Bearer ")) {
       requestingUserId = verifyToken(auth.slice(7));
     }
-    if (requestingUserId !== result.userId) {
+    if (requestingUserId !== profile.userId) {
       res.status(404).json({ error: "Stylist not found" });
       return;
     }
   }
 
-  res.json(result);
+  res.json(GetStylistResponse.parse(result));
 });
 
 export default router;

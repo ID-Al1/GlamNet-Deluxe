@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type StylistProfileReputationBreakdown = {
+/**
+ * @nullable
+ */
+export type MyStylistProfileReputationBreakdown = {
   score?: number;
   cancellationRate?: number;
   repeatClientRate?: number;

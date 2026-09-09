@@ -12,6 +12,7 @@ import { eq, and, gte, or, sql, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { splitAmount } from "../lib/money";
 import buildStylistResponse from "./stylistHelper";
+import { ListStylistsResponse } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -181,7 +182,7 @@ router.get("/dashboard/client", requireAuth, async (req, res) => {
     completedBookings: appts.filter((a) => a.status === "completed").length,
     favouriteStylists: 0,
     recentAppointments: upcoming,
-    recommendedStylists: recommended.filter(Boolean),
+    recommendedStylists: ListStylistsResponse.parse(recommended.filter(Boolean)),
   });
 });
 

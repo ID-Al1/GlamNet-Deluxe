@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type StylistProfileVerificationStatus = typeof StylistProfileVerificationStatus[keyof typeof StylistProfileVerificationStatus];
+export type MyStylistProfileVerificationStatus = typeof MyStylistProfileVerificationStatus[keyof typeof MyStylistProfileVerificationStatus];
 
 
-export const StylistProfileVerificationStatus = {
+export const MyStylistProfileVerificationStatus = {
   none: 'none',
   pending: 'pending',
   verified: 'verified',
