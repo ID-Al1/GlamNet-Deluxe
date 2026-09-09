@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, conversationsTable, messagesTable, usersTable, stylistProfilesTable } from "@workspace/db";
 import { eq, and, like } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, verifyToken } from "../lib/auth";
 import { SendMessageBody, StartConversationBody } from "@workspace/api-zod";
 import { sendNotification } from "../lib/notifications";
 import { wasUploadedBy } from "../lib/upload-registry";

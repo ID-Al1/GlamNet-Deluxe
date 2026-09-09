@@ -6,10 +6,10 @@ import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
-import { param } from "../lib/params";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { fulfillCheckoutSession } from "../lib/paymentHelpers";
 import { sendNotification } from "../lib/notifications";
+import { param } from "../lib/params";
 
 const router = Router();
 
@@ -61,9 +61,16 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
   const [profile] = await db.select().from(stylistProfilesTable)
     .where(eq(stylistProfilesTable.id, stylistId));
   const [service] = await db.select().from(servicesTable)
-    .where(eq(servicesTable.id, serviceId));
+    .where(and(
+      eq(servicesTable.id, serviceId),
+      eq(servicesTable.stylistId, stylistId),
+    ));
   if (!profile || !service) {
     res.status(404).json({ error: "Stylist or service not found" });
+    return;
+  }
+  if (!profile.verified) {
+    res.status(403).json({ error: "This artist is not yet verified on Bonisa and cannot accept bookings." });
     return;
   }
 
@@ -86,7 +93,7 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
   const stripe = await getUncachableStripeClient();
 
   // Find or create Stripe customer
-  let [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+  const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
   let customerId = dbUser?.stripeCustomerId;
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -114,11 +121,13 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
     {
       price_data: {
         currency: "zar",
-        product_data: {
-          name: paymentMode === "deposit" ? `Deposit: ${service.name}` : service.name,
-          description: `${service.duration} min with ${profile.name} on ${date} at ${time}`,
-        },
         unit_amount: Math.round(chargeAmount * 100),
+        product_data: {
+          name: paymentMode === "deposit"
+            ? `${service.name} with ${profile.name} — ${actualDepositPct}% Deposit`
+            : `${service.name} with ${profile.name}`,
+          description: `${service.duration} min appointment on ${date} at ${time}`,
+        },
       },
       quantity: 1,
     },
@@ -339,7 +348,7 @@ router.post("/stripe/refund", requireAuth, async (req, res) => {
   }
 
   const [appt] = await db.select().from(appointmentsTable)
-    .where(eq(appointmentsTable.id, appointmentId));
+    .where(and(eq(appointmentsTable.id, appointmentId), eq(appointmentsTable.clientId, user.id)));
   if (!appt) {
     res.status(404).json({ error: "Appointment not found" });
     return;

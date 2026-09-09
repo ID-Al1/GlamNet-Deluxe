@@ -221,7 +221,7 @@ router.get("/stylists", async (req, res) => {
   if (maxPrice && profiles.length > 0) {
     const price = parseFloat(maxPrice);
     if (!isNaN(price)) {
-    const profileIds = new Set(profiles.map(p => p.id));
+      const profileIds = new Set(profiles.map(p => p.id));
       const minPriceById: Record<string, number> = {};
       for (const s of allServices) {
         if (profileIds.has(s.stylistId)) {
@@ -264,9 +264,6 @@ router.get("/stylists/me/profile", requireAuth, async (req, res) => {
   res.json(result);
 });
 
-// Artist submits her profile for verification.
-// "none" → "pending" (also allows resubmission after a rejection resets to "none").
-// Returns 409 if already pending or already verified.
 router.patch("/stylists/me/profile", requireAuth, async (req, res) => {
   const user = (req as any).user;
   const parsed = UpdateMyStylistProfileBody.safeParse(req.body);
@@ -415,10 +412,17 @@ router.post("/stylists/me/services", requireAuth, async (req, res) => {
 });
 
 router.patch("/stylists/me/services/:serviceId", requireAuth, async (req, res) => {
+  const user = (req as any).user;
   const parsed = UpdateStylistServiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
   const serviceId = param(req.params.serviceId);
-  const [existingService] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
+  const [profile] = await db.select().from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  const [existingService] = await db.select().from(servicesTable).where(and(
+    eq(servicesTable.id, serviceId),
+    eq(servicesTable.stylistId, profile.id),
+  ));
   if (!existingService) { res.status(404).json({ error: "Service not found" }); return; }
 
   const price = parsed.data.price ?? existingService.price;
@@ -427,12 +431,24 @@ router.patch("/stylists/me/services/:serviceId", requireAuth, async (req, res) =
     res.status(400).json({ error: rateFloorMessage() }); return;
   }
 
-  const [service] = await db.update(servicesTable).set(parsed.data).where(eq(servicesTable.id, serviceId)).returning();
+  const [service] = await db.update(servicesTable).set(parsed.data).where(and(
+    eq(servicesTable.id, serviceId),
+    eq(servicesTable.stylistId, profile.id),
+  )).returning();
   res.json({ id: service.id, name: service.name, price: service.price, duration: service.duration });
 });
 
 router.delete("/stylists/me/services/:serviceId", requireAuth, async (req, res) => {
-  await db.delete(servicesTable).where(eq(servicesTable.id, param(req.params.serviceId)));
+  const user = (req as any).user;
+  const serviceId = param(req.params.serviceId);
+  const [profile] = await db.select().from(stylistProfilesTable)
+    .where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  const [deleted] = await db.delete(servicesTable).where(and(
+    eq(servicesTable.id, serviceId),
+    eq(servicesTable.stylistId, profile.id),
+  )).returning({ id: servicesTable.id });
+  if (!deleted) { res.status(404).json({ error: "Service not found" }); return; }
   res.json({ message: "Deleted" });
 });
 
@@ -481,7 +497,7 @@ router.get("/stylists/me/verification-checklist", requireAuth, async (req, res) 
 });
 
 router.get("/stylists/:stylistId", async (req, res) => {
-  const result = await buildStylistResponse(req.params.stylistId);
+  const result = await buildStylistResponse(param(req.params.stylistId));
   if (!result) { res.status(404).json({ error: "Stylist not found" }); return; }
 
   // Part b: unverified artists are invisible to everyone except the artist herself

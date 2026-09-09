@@ -158,6 +158,7 @@ router.patch("/reviews/:id/reply", requireAuth, async (req, res) => {
   });
 });
 
+// Toggle helpful vote on a review
 router.post("/reviews/:id/helpful", requireAuth, async (req, res) => {
   const user = (req as any).user;
   const id = param(req.params.id);

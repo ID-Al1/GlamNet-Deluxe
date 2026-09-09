@@ -27,6 +27,7 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
     .where(eq(stylistProfilesTable.userId, user.id))
     .limit(1);
   const profile = profileRows;
+
   const appts = profileRows[0]
     ? await db
         .select()

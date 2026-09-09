@@ -82,7 +82,10 @@ router.post("/appointments", requireAuth, async (req, res) => {
   if (!slotCheck.ok) { res.status(400).json({ error: slotCheck.error }); return; }
 
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
-  const [service] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
+  const [service] = await db.select().from(servicesTable).where(and(
+    eq(servicesTable.id, serviceId),
+    eq(servicesTable.stylistId, stylistId),
+  ));
 
   if (!profile || !service) { res.status(404).json({ error: "Stylist or service not found" }); return; }
   // Part c: block bookings with unverified artists server-side.
@@ -119,7 +122,7 @@ router.post("/appointments", requireAuth, async (req, res) => {
 
   // Notify stylist of new booking (non-fatal)
   try {
-    const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
+            const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, profile.userId));
     await sendNotification(stylistUser?.phone, "booking.created", {
       clientName: user.name,
       serviceName: service.name,
@@ -132,43 +135,80 @@ router.post("/appointments", requireAuth, async (req, res) => {
 });
 
 router.get("/appointments/:appointmentId", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const appointmentId = param(req.params.appointmentId);
   const [appt] = await db.select().from(appointmentsTable)
-    .where(eq(appointmentsTable.id, param(req.params.appointmentId)));
+    .where(eq(appointmentsTable.id, appointmentId));
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
+  const [callerProfile] = await db.select().from(stylistProfilesTable)
+    .where(and(
+      eq(stylistProfilesTable.id, appt.stylistId),
+      eq(stylistProfilesTable.userId, user.id),
+    ));
+  if (appt.clientId !== user.id && !callerProfile) {
+    res.status(403).json({ error: "You are not a participant in this booking" });
+    return;
+  }
   res.json(formatAppt(appt));
 });
 
 router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const appointmentId = param(req.params.appointmentId);
   const parsed = UpdateAppointmentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
   const data = parsed.data;
 
   // Fetch the appointment before updating so we have context for notifications
-  const [before] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, param(req.params.appointmentId)));
+  const [before] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, appointmentId));
   if (!before) { res.status(404).json({ error: "Not found" }); return; }
 
-  // Decline gate: only the artist on this booking can decline, and only while
-  // the booking is still pending. A client cancelling a confirmed booking uses
-  // "cancelled". Declined bookings never enter escrow — the confirm-work flow
-  // already requires status === "confirmed" before it will touch funds.
-  if (data.status === "declined") {
-  const user = (req as any).user;
-    const [callerProfile] = await db.select().from(stylistProfilesTable)
-      .where(and(eq(stylistProfilesTable.id, before.stylistId), eq(stylistProfilesTable.userId, user.id)));
-    if (!callerProfile) {
-      res.status(403).json({ error: "Only the artist can decline a booking request" }); return;
+  const isClient = before.clientId === user.id;
+  const [callerProfile] = await db.select().from(stylistProfilesTable)
+    .where(and(
+      eq(stylistProfilesTable.id, before.stylistId),
+      eq(stylistProfilesTable.userId, user.id),
+    ));
+  const isArtist = !!callerProfile;
+  if (!isClient && !isArtist) {
+    res.status(403).json({ error: "You are not a participant in this booking" });
+    return;
+  }
+
+  if (isArtist) {
+    if (data.date !== undefined || data.time !== undefined || data.notes !== undefined) {
+      res.status(403).json({ error: "Only the client can edit booking details" });
+      return;
+    }
+    if (data.status !== "confirmed" && data.status !== "declined") {
+      res.status(403).json({ error: "Artists can only confirm or decline booking requests" });
+      return;
     }
     if (before.status !== "pending") {
-      res.status(409).json({ error: "Only pending bookings can be declined" }); return;
+      res.status(409).json({ error: "Only pending bookings can be confirmed or declined" });
+      return;
+    }
+  } else {
+    if (data.status && data.status !== "cancelled") {
+      res.status(403).json({ error: "Clients can only cancel bookings" });
+      return;
+    }
+    if ((data.date !== undefined || data.time !== undefined || data.notes !== undefined) && before.status !== "pending") {
+      res.status(409).json({ error: "Only pending booking details can be edited" });
+      return;
+    }
+    if (data.status === "cancelled" && !["pending", "confirmed"].includes(before.status)) {
+      res.status(409).json({ error: "This booking can no longer be cancelled" });
+      return;
     }
   }
 
   const [appt] = await db.update(appointmentsTable).set({
-    ...(data.status && { status: data.status as any }),
+    ...(data.status && { status: data.status }),
     ...(data.date && { date: data.date }),
     ...(data.time && { time: data.time }),
     ...(data.notes !== undefined && { notes: data.notes }),
-  }).where(eq(appointmentsTable.id, param(req.params.appointmentId))).returning();
+  }).where(eq(appointmentsTable.id, appointmentId)).returning();
   if (!appt) { res.status(404).json({ error: "Not found" }); return; }
 
   res.json(formatAppt(appt));
