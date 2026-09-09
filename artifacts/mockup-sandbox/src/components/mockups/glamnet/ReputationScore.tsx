@@ -89,7 +89,7 @@ export function ReputationScore() {
       <div className="rounded-2xl p-4 border" style={{ background: "#6E4B7208", borderColor: "#d4b8d6" }}>
         <p className="text-sm font-semibold mb-2" style={{ color: "#6E4B72" }}>How does this compare?</p>
         <div className="space-y-1.5">
-          {[["Platform average score", "72"], ["Top artists", "90+"], ["Alwande Khoza", "94", true]].map(([label, val, highlight]) => (
+          {([["Platform average score", "72"], ["Top artists", "90+"], ["Alwande Khoza", "94", true]] as const).map(([label, val, highlight]) => (
             <div key={label} className="flex items-center justify-between">
               <span className="text-xs" style={{ color: highlight ? "#6E4B72" : "#888", fontWeight: highlight ? 600 : 400 }}>{label}</span>
               <span className="text-xs font-bold" style={{ color: highlight ? "#6E4B72" : "#aaa" }}>{val}</span>

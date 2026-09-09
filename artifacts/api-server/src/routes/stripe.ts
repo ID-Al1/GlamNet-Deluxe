@@ -6,6 +6,7 @@ import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
+import { param } from "../lib/params";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { fulfillCheckoutSession } from "../lib/paymentHelpers";
 import { sendNotification } from "../lib/notifications";
@@ -58,9 +59,9 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
   }
 
   const [profile] = await db.select().from(stylistProfilesTable)
-    .where(eq(stylistProfilesTable.id, appt.stylistId));
+    .where(eq(stylistProfilesTable.id, stylistId));
   const [service] = await db.select().from(servicesTable)
-    .where(eq(servicesTable.id, appt.serviceId));
+    .where(eq(servicesTable.id, serviceId));
   if (!profile || !service) {
     res.status(404).json({ error: "Stylist or service not found" });
     return;
@@ -86,9 +87,13 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
 
   // Find or create Stripe customer
   let [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
-  let customerId: string | undefined;
+  let customerId = dbUser?.stripeCustomerId;
   if (!customerId) {
-      const customer = await stripe.customers.create({ email: stripeUserRow.email, name: stripeUserRow.name });
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: user.name,
+      metadata: { userId: user.id },
+    });
     customerId = customer.id;
     await db.update(usersTable).set({ stripeCustomerId: customerId }).where(eq(usersTable.id, user.id));
   }
@@ -110,12 +115,10 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
       price_data: {
         currency: "zar",
         product_data: {
-          name: appt.serviceName,
-          description: `with ${appt.stylistName} on ${appt.date} at ${appt.time}${
-            appt.paymentMode === "deposit" && appt.balanceDue > 0 ? " (balance due)" : ""
-          }`,
+          name: paymentMode === "deposit" ? `Deposit: ${service.name}` : service.name,
+          description: `${service.duration} min with ${profile.name} on ${date} at ${time}`,
         },
-        unit_amount: Math.round(retryServiceAmount * 100),
+        unit_amount: Math.round(chargeAmount * 100),
       },
       quantity: 1,
     },
@@ -207,25 +210,7 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
       ...(pendingAppt ? { pendingAppointmentId: pendingAppt.id } : {}),
     },
   };
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    line_items: lineItems,
-    mode: "payment",
-    success_url: `${origin}${basePath}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}${basePath}/payments`,
-    allow_promotion_codes: true,
-    metadata: {
-      userId: user.id,
-      stylistId: appt.stylistId,
-      serviceId: appt.serviceId,
-      date: appt.date,
-      time: appt.time,
-      paymentMode: appt.paymentMode,
-      tipAmount: String(appt.tipAmount),
-      depositPct: "0",
-      retryForAppointmentId: appointmentId,
-    },
-  });
+  const session = await stripe.checkout.sessions.create(sessionParams);
 
   // Link the pending appointment to this session so it can be found on failure
   if (pendingAppt) {
@@ -354,7 +339,7 @@ router.post("/stripe/refund", requireAuth, async (req, res) => {
   }
 
   const [appt] = await db.select().from(appointmentsTable)
-    .where(and(eq(appointmentsTable.id, appointmentId), eq(appointmentsTable.clientId, user.id)));
+    .where(eq(appointmentsTable.id, appointmentId));
   if (!appt) {
     res.status(404).json({ error: "Appointment not found" });
     return;

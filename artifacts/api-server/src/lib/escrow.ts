@@ -49,14 +49,3 @@ export async function holdEscrow(appointmentId: string, amountCollected: number,
   });
   return { artistShare, platformShare };
 }
-
-export const ARTIST_SHARE = 0.82;
-
-export const PLATFORM_SHARE = 0.18;
-
-export function splitAmount(total: number) {
-  return {
-    artistShare: Math.round(total * ARTIST_SHARE * 100) / 100,
-    platformShare: Math.round(total * PLATFORM_SHARE * 100) / 100,
-  };
-}

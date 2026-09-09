@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, conversationsTable, messagesTable, usersTable, stylistProfilesTable } from "@workspace/db";
 import { eq, and, like } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { requireAuth, verifyToken } from "../lib/auth";
+import { requireAuth } from "../lib/auth";
 import { SendMessageBody, StartConversationBody } from "@workspace/api-zod";
 import { sendNotification } from "../lib/notifications";
 import { wasUploadedBy } from "../lib/upload-registry";
@@ -158,10 +158,11 @@ router.get("/messages/conversations/:conversationId", requireAuth, async (req, r
 
 router.post("/messages/conversations/:conversationId/send", requireAuth, async (req, res) => {
   const user = (req as any).user;
+  const conversationId = param(req.params.conversationId);
   const parsed = SendMessageBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
-  const conv = await requireParticipant(req, res, param(req.params.conversationId));
+  const conv = await requireParticipant(req, res, conversationId);
   if (!conv) return;
 
   const messageType = (parsed.data as any).messageType ?? "text";
@@ -188,7 +189,7 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
   const [msg] = await db.insert(messagesTable).values({
     id: randomUUID(),
-    conversationId: param(req.params.conversationId),
+    conversationId,
     senderId: user.id,
     senderName: user.name,
     content: parsed.data.content,
@@ -203,19 +204,19 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
     lastMessage: lastMessagePreview,
     lastMessageAt: new Date(),
     ...(isClient ? { stylistUnread: conv.stylistUnread + 1 } : { clientUnread: conv.clientUnread + 1 }),
-  }).where(eq(conversationsTable.id, param(req.params.conversationId)));
+  }).where(eq(conversationsTable.id, conversationId));
 
   const serialized = serializeMessage(msg);
   res.status(201).json(serialized);
 
   // Broadcast real-time event to both participants
-  const msgEvent: ChatEvent = { type: "message", conversationId: req.params.conversationId, message: serialized as Record<string, unknown> };
+  const msgEvent: ChatEvent = { type: "message", conversationId, message: serialized as Record<string, unknown> };
   broadcastToUsers([conv.clientId, conv.stylistId], msgEvent);
 
   // Also push updated conversation state so unread counts refresh instantly
   setImmediate(async () => {
     try {
-      const [updatedConv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, req.params.conversationId));
+      const [updatedConv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, conversationId));
       if (updatedConv) {
         const [client] = await db.select().from(usersTable).where(eq(usersTable.id, conv.clientId));
         const [stylistProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, conv.stylistId));

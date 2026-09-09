@@ -164,8 +164,6 @@ async function buildStylistResponse(profileId: string) {
   };
 }
 
-  const { specialty, location, search, minRating, maxPrice, houseCalls, availabilityDay, language, service, area } = req.query as Record<string, string>;
-
 router.get("/stylists", async (req, res) => {
   const { specialty, location, search, minRating, maxPrice, houseCalls, availabilityDay, language, service, area } = req.query as Record<string, string>;
   // Part a: only verified artists appear in browse results — enforced at DB level.
@@ -221,7 +219,7 @@ router.get("/stylists", async (req, res) => {
   }
 
   if (maxPrice && profiles.length > 0) {
-  const price = parsed.data.price ?? existingService.price;
+    const price = parseFloat(maxPrice);
     if (!isNaN(price)) {
     const profileIds = new Set(profiles.map(p => p.id));
       const minPriceById: Record<string, number> = {};
@@ -262,16 +260,16 @@ router.get("/stylists/me/profile", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Stylist profile not found" });
     return;
   }
-  const result = await buildStylistResponse(req.params.stylistId);
+  const result = await buildStylistResponse(profile.id);
   res.json(result);
 });
 
 // Artist submits her profile for verification.
 // "none" → "pending" (also allows resubmission after a rejection resets to "none").
 // Returns 409 if already pending or already verified.
-router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) => {
+router.patch("/stylists/me/profile", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const parsed = AddPortfolioItemBody.safeParse(req.body);
+  const parsed = UpdateMyStylistProfileBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
   if (!profile) {
@@ -290,7 +288,7 @@ router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) =
     ...(data.tags !== undefined && { tags: data.tags }),
     ...(data.houseCalls !== undefined && { houseCalls: data.houseCalls }),
   }).where(eq(stylistProfilesTable.id, profile.id));
-  const result = await buildStylistResponse(req.params.stylistId);
+  const result = await buildStylistResponse(profile.id);
   res.json(result);
 });
 
@@ -399,19 +397,25 @@ router.patch("/stylists/me/identity-verification", requireAuth, async (req, res)
 
 router.post("/stylists/me/services", requireAuth, async (req, res) => {
   const user = (req as any).user;
-  const parsed = AddPortfolioItemBody.safeParse(req.body);
+  const parsed = AddStylistServiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
   const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
   if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
   if (!meetsRateFloor(parsed.data.price, parsed.data.duration)) {
     res.status(400).json({ error: rateFloorMessage() }); return;
   }
-  const [service] = await db.update(servicesTable).set(parsed.data).where(eq(servicesTable.id, serviceId)).returning();
+  const [service] = await db.insert(servicesTable).values({
+    id: randomUUID(),
+    stylistId: profile.id,
+    name: parsed.data.name,
+    price: parsed.data.price,
+    duration: parsed.data.duration,
+  }).returning();
   res.status(201).json({ id: service.id, name: service.name, price: service.price, duration: service.duration });
 });
 
 router.patch("/stylists/me/services/:serviceId", requireAuth, async (req, res) => {
-  const parsed = AddPortfolioItemBody.safeParse(req.body);
+  const parsed = UpdateStylistServiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
   const serviceId = param(req.params.serviceId);
   const [existingService] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId));
