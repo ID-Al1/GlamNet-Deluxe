@@ -1,0 +1,124 @@
+# Bonisa Owner Command Centre, Phase 2: Payments & Manual Payouts
+
+Stays on Stripe. No PayFast work in this phase, that's paused until the documentation clears. This phase is entirely about answering one question clearly: who needs to be paid, and how much, so the owner can send it herself.
+
+This is a manual payout system on purpose, not an automated one. One Stripe account collects everything, the owner sees who's owed money, sends it herself by EFT, and marks it done. That's the actual plan for now, until volume makes manual payouts impractical, at which point this same structure is what makes automating it later straightforward rather than a rebuild.
+
+---
+
+## Non-negotiables for this phase
+
+- Stripe stays exactly as it is. Do not touch `stripeClient.ts`, the webhook handlers, or how payments are collected. This phase only adds a view and a payout record on top of money that's already being collected correctly.
+- No automatic transfer to anyone's bank account. The owner does the actual sending, outside the app. The app's job is to tell her accurately who and how much, and to record that it happened once she confirms it.
+- Team bookings must split correctly per artist. Right now they don't, escrow calculates one lump sum for the whole team and has no idea who gets what share, even though `bookingTeamMembers.payoutPercentage` is already being captured at booking time. This phase fixes that.
+
+---
+
+## Part A: The payout ledger
+
+Two new tables, so "what's owed" and "what's been sent" are recorded separately.
+
+**`payout_ledger`**, one row per artist per booking:
+```ts
+id
+appointmentId          -> appointments.id
+artistProfileId        -> stylist_profiles.id
+sharePercent           real
+grossAmount            real     // this artist's slice of the artist pool
+platformFeeAmount      real     // this artist's slice of the 18%
+netAmount              real     // what she's actually owed
+status                 text     // 'due' | 'paid' | 'reversed'
+dueAt                  timestamp
+paidAt                 timestamp
+paidBatchId            -> payout_batches.id, null until paid
+createdAt
+```
+
+**`payout_batches`**, one row per manual payment the owner actually sends:
+```ts
+id
+artistProfileId
+totalAmount            real
+lineCount              integer
+reference              text     // whatever reference she used for the EFT, entered by hand
+paidBy                 text     // owner's user id
+createdAt
+```
+
+A ledger line points at the batch that paid it, so any artist's payment history is traceable, which job, which amount, which batch, forever.
+
+**On release** (when both sides confirm the work is done), instead of just writing one lump `artistPayoutAmount` on the appointment:
+- Solo booking: one ledger line, 100% to the artist.
+- Team booking: one line per confirmed team member, split by their stored `payoutPercentage`. If the percentages don't add to 100, the lead artist absorbs the remainder. If a team member's percentage math doesn't divide evenly to the cent, give every member their exact rounded share except the lead, and give the lead whatever's left, so the pool always balances exactly.
+
+Keep the existing `artistPayoutAmount` field on the appointment as the pool total, it's still useful, it just stops being the thing that gets paid out directly.
+
+---
+
+## Part B: "Who needs to be paid" screen
+
+The core screen for this phase. Group by artist, not by booking, since an artist working two jobs this week should show as one number to pay, not two.
+
+For each artist with unpaid ledger lines:
+- Name, total amount currently due, how many bookings/lines make up that total
+- Expandable to show the individual lines, which booking, which client, which amount
+
+A "Mark as paid" action on each artist: the owner enters a reference (whatever she used for the EFT), confirms the amount, and the app creates a `payout_batches` row and marks every included ledger line `paid`.
+
+Filters: oldest unpaid first, highest amount first, this week, all time.
+
+---
+
+## Part C: Payments overview
+
+A second screen, or a second tab on the same page, showing the underlying booking-level data for anyone who wants to check the app's math:
+- Every appointment with its `payoutStatus` (held / released / disputed), gross price, Bonisa's 18%, and the artist pool
+- For team bookings, show the per-artist breakdown from the ledger, not just the pool total
+
+This is where the honest caption from Phase 1 gets replaced with something more precise: once a ledger line is marked paid, the dashboard can now say "paid" and mean it, not just "calculated."
+
+---
+
+## What this deliberately does not do yet
+
+- No live selfie or identity work, unrelated to this phase anyway
+- No automatic transfer to a bank account, the owner sends it herself
+- No PayFast or Paystack integration, that's paused
+- Minimum payout batching, meaning a very small amount owed just sits and accumulates, isn't handled specially in this phase, add later if it matters at your volume
+
+---
+
+## Handoff prompt
+
+```
+Building Phase 2 of the Bonisa Owner Command Centre: payments and manual
+payouts. Stripe stays exactly as it is, do not touch stripeClient.ts or
+the webhook handlers. This phase adds a payout ledger and a manual
+"who needs to be paid" view on top of existing escrow logic.
+
+Add two tables, payout_ledger and payout_batches, exactly as specified
+in the brief, with a migration script.
+
+On release, replace the single artistPayoutAmount write with per-artist
+ledger lines. Solo bookings get one line at 100%. Team bookings split by
+each member's stored payoutPercentage, with the lead artist absorbing
+any shortfall from declined members or percentages that don't sum to
+100, and absorbing the rounding remainder so the pool always balances
+exactly to the cent.
+
+Build the "who needs to be paid" screen, grouped by artist, with a
+manual mark-as-paid action that takes a reference number and creates a
+payout_batches row, marking the included ledger lines paid. This does
+not call any payment provider, it is a manual record of a transfer the
+owner does herself outside the app.
+
+Add the payments overview screen showing booking-level payout status
+and, for team bookings, the per-artist ledger breakdown.
+
+No automatic bank transfers anywhere in this phase. No PayFast or
+Paystack work. Run pnpm run typecheck and confirm zero errors when done.
+```
+
+---
+
+*Bonisa · Opus Intelligence (Pty) Ltd · Owner Command Centre, Phase 2 of 5*
