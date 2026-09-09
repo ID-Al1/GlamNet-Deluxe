@@ -43,12 +43,14 @@ import type {
   ConflictResponse,
   Conversation,
   ForbiddenResponse,
+  GetOwnerArtistManagementParams,
   GetOwnerPayoutsParams,
   HealthStatus,
   IdentityVerificationInput,
   IdentityVerificationStatus,
   ListAppointmentsParams,
   ListCastingCallsParams,
+  ListOwnerArtistsParams,
   ListOwnerComplaintsParams,
   ListStylistsParams,
   LoginInput,
@@ -60,6 +62,10 @@ import type {
   MessageResponse,
   MyStylistProfile,
   NotFoundResponse,
+  OwnerArtistAccountStatusInput,
+  OwnerArtistAccountStatusResult,
+  OwnerArtistManagement,
+  OwnerArtistSummary,
   OwnerCommandCentreMetrics,
   OwnerComplaint,
   OwnerComplaintAction,
@@ -2605,6 +2611,238 @@ export function useSearchOwnerRegistry<TData = Awaited<ReturnType<typeof searchO
 
 
 
+
+export const getListOwnerArtistsUrl = (params?: ListOwnerArtistsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/owner/artists?${stringifiedParams}` : `/api/owner/artists`
+}
+
+/**
+ * @summary List owner artist management summaries
+ */
+export const listOwnerArtists = async (params?: ListOwnerArtistsParams, options?: RequestInit): Promise<OwnerArtistSummary[]> => {
+
+  return customFetch<OwnerArtistSummary[]>(getListOwnerArtistsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerArtistsQueryKey = (params?: ListOwnerArtistsParams,) => {
+    return [
+    `/api/owner/artists`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListOwnerArtistsQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerArtists>>, TError = ErrorType<unknown>>(params?: ListOwnerArtistsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtists>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerArtistsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerArtists>>> = ({ signal }) => listOwnerArtists(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtists>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerArtistsQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerArtists>>>
+export type ListOwnerArtistsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List owner artist management summaries
+ */
+
+export function useListOwnerArtists<TData = Awaited<ReturnType<typeof listOwnerArtists>>, TError = ErrorType<unknown>>(
+ params?: ListOwnerArtistsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtists>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerArtistsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOwnerArtistManagementUrl = (profileId: string,
+    params?: GetOwnerArtistManagementParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/owner/artists/${profileId}/management?${stringifiedParams}` : `/api/owner/artists/${profileId}/management`
+}
+
+export const getOwnerArtistManagement = async (profileId: string,
+    params?: GetOwnerArtistManagementParams, options?: RequestInit): Promise<OwnerArtistManagement> => {
+
+  return customFetch<OwnerArtistManagement>(getGetOwnerArtistManagementUrl(profileId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerArtistManagementQueryKey = (profileId: string,
+    params?: GetOwnerArtistManagementParams,) => {
+    return [
+    `/api/owner/artists/${profileId}/management`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOwnerArtistManagementQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerArtistManagement>>, TError = ErrorType<unknown>>(profileId: string,
+    params?: GetOwnerArtistManagementParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerArtistManagement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerArtistManagementQueryKey(profileId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerArtistManagement>>> = ({ signal }) => getOwnerArtistManagement(profileId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: profileId !== null && profileId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerArtistManagement>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerArtistManagementQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerArtistManagement>>>
+export type GetOwnerArtistManagementQueryError = ErrorType<unknown>
+
+
+
+export function useGetOwnerArtistManagement<TData = Awaited<ReturnType<typeof getOwnerArtistManagement>>, TError = ErrorType<unknown>>(
+ profileId: string,
+    params?: GetOwnerArtistManagementParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerArtistManagement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerArtistManagementQueryOptions(profileId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateOwnerArtistAccountStatusUrl = (profileId: string,) => {
+
+
+
+
+  return `/api/owner/artists/${profileId}/account-status`
+}
+
+export const updateOwnerArtistAccountStatus = async (profileId: string,
+    ownerArtistAccountStatusInput: OwnerArtistAccountStatusInput, options?: RequestInit): Promise<OwnerArtistAccountStatusResult> => {
+
+  return customFetch<OwnerArtistAccountStatusResult>(getUpdateOwnerArtistAccountStatusUrl(profileId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(ownerArtistAccountStatusInput)
+  }
+);}
+
+
+
+
+export const getUpdateOwnerArtistAccountStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOwnerArtistAccountStatus>>, TError,{profileId: string;data: BodyType<OwnerArtistAccountStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOwnerArtistAccountStatus>>, TError,{profileId: string;data: BodyType<OwnerArtistAccountStatusInput>}, TContext> => {
+
+const mutationKey = ['updateOwnerArtistAccountStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOwnerArtistAccountStatus>>, {profileId: string;data: BodyType<OwnerArtistAccountStatusInput>}> = (props) => {
+          const {profileId,data} = props ?? {};
+
+          return  updateOwnerArtistAccountStatus(profileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOwnerArtistAccountStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateOwnerArtistAccountStatus>>>
+    export type UpdateOwnerArtistAccountStatusMutationBody = BodyType<OwnerArtistAccountStatusInput>
+    export type UpdateOwnerArtistAccountStatusMutationError = ErrorType<unknown>
+
+    export const useUpdateOwnerArtistAccountStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOwnerArtistAccountStatus>>, TError,{profileId: string;data: BodyType<OwnerArtistAccountStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOwnerArtistAccountStatus>>,
+        TError,
+        {profileId: string;data: BodyType<OwnerArtistAccountStatusInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateOwnerArtistAccountStatusMutationOptions(options));
+    }
 
 export const getGetOwnerPayoutsUrl = (params?: GetOwnerPayoutsParams,) => {
   const normalizedParams = new URLSearchParams();

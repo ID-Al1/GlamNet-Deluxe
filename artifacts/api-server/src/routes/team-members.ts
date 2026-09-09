@@ -106,6 +106,8 @@ router.post("/appointments/:appointmentId/team-members", requireAuth, async (req
   const [targetProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, stylistId));
   if (!targetProfile) { res.status(404).json({ error: "Stylist not found" }); return; }
   if (!targetProfile.verified) { res.status(403).json({ error: "Only verified artists can be added to a team booking." }); return; }
+  const [targetUser] = await db.select({ accountStatus: usersTable.accountStatus }).from(usersTable).where(eq(usersTable.id, targetProfile.userId));
+  if (targetUser?.accountStatus === "suspended") { res.status(403).json({ error: "Suspended artists cannot be invited to team bookings." }); return; }
 
   // Check if already added
   const existingMembers = await db.select().from(bookingTeamMembersTable)

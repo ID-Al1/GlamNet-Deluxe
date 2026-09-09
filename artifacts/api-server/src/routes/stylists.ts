@@ -180,6 +180,9 @@ router.get("/stylists", async (req, res) => {
   const { specialty, location, search, minRating, maxPrice, houseCalls, availabilityDay, language, service, area } = req.query as Record<string, string>;
   // Part a: only verified artists appear in browse results — enforced at DB level.
   let profiles = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.verified, true));
+  const suspendedArtists = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.accountStatus, "suspended"));
+  const suspendedIds = new Set(suspendedArtists.map(row => row.id));
+  profiles = profiles.filter(profile => !suspendedIds.has(profile.userId));
 
   if (specialty && specialty !== "All") {
     profiles = profiles.filter(p => p.specialty.toLowerCase() === specialty.toLowerCase());
@@ -545,7 +548,7 @@ router.get("/stylists/:stylistId", async (req, res) => {
   const [profile] = await db.select({
     userId: stylistProfilesTable.userId,
     verified: stylistProfilesTable.verified,
-  }).from(stylistProfilesTable).where(eq(stylistProfilesTable.id, profileId));
+  }).from(stylistProfilesTable).innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId)).where(and(eq(stylistProfilesTable.id, profileId), eq(usersTable.accountStatus, "active")));
   if (!profile) { res.status(404).json({ error: "Stylist not found" }); return; }
 
   const result = await buildStylistResponse(profileId);

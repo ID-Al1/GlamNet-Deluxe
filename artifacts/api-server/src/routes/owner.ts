@@ -11,16 +11,91 @@
 import { Router } from "express";
 import { Readable } from "stream";
 import { param } from "../lib/params";
-import { appointmentsTable, db, payoutBatchesTable, payoutLedgerTable, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable, bankAccountsTable, bankAccountAccessLogTable } from "@workspace/db";
+import { appointmentsTable, bookingTeamMembersTable, db, payoutBatchesTable, payoutLedgerTable, portfolioItemsTable, servicesTable, stylistProfilesTable, usersTable, bankAccountsTable, bankAccountAccessLogTable, complaintsTable } from "@workspace/db";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, or, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireOwner } from "../lib/auth";
 import { notify } from "../lib/notifications";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { computeProfileReadiness } from "./stylists";
+import { revokeUserStreams } from "../lib/chatBroadcaster";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
+
+const ownerArtistSummary = {
+  profileId: stylistProfilesTable.id,
+  userId: usersTable.id,
+  name: stylistProfilesTable.name,
+  specialty: stylistProfilesTable.specialty,
+  location: stylistProfilesTable.location,
+  rating: stylistProfilesTable.rating,
+  reviewCount: stylistProfilesTable.reviewCount,
+  verified: stylistProfilesTable.verified,
+  verificationStatus: stylistProfilesTable.verificationStatus,
+  accountStatus: usersTable.accountStatus,
+  joinedAt: usersTable.createdAt,
+  completedBookings: sql<number>`(select count(distinct a.id)::int from appointments a left join booking_team_members tm on tm.appointment_id = a.id and tm.stylist_id = ${stylistProfilesTable.id} and tm.status = 'confirmed' where (a.stylist_id = ${stylistProfilesTable.id} or tm.stylist_id is not null) and a.status = 'completed')`,
+  totalBookings: sql<number>`(select count(distinct a.id)::int from appointments a left join booking_team_members tm on tm.appointment_id = a.id and tm.stylist_id = ${stylistProfilesTable.id} and tm.status = 'confirmed' where a.stylist_id = ${stylistProfilesTable.id} or tm.stylist_id is not null)`,
+  cancelledBookings: sql<number>`(select count(distinct a.id)::int from appointments a left join booking_team_members tm on tm.appointment_id = a.id and tm.stylist_id = ${stylistProfilesTable.id} and tm.status = 'confirmed' where (a.stylist_id = ${stylistProfilesTable.id} or tm.stylist_id is not null) and a.status = 'cancelled')`,
+  totalEarnings: sql<number>`coalesce((select sum(pl.net_amount)::float8 from payout_ledger pl where pl.artist_profile_id = ${stylistProfilesTable.id} and pl.status <> 'reversed'), 0)`,
+  complaintCount: sql<number>`(select count(*)::int from complaints c left join appointments ca on ca.id = c.appointment_id where c.subject_user_id = ${usersTable.id} or (c.subject_user_id is null and c.complainant_role = 'client' and (ca.stylist_id = ${stylistProfilesTable.id} or exists (select 1 from booking_team_members ctm where ctm.appointment_id = ca.id and ctm.stylist_id = ${stylistProfilesTable.id} and ctm.status = 'confirmed'))))`,
+  disputeCount: sql<number>`(select count(distinct a.id)::int from appointments a left join booking_team_members tm on tm.appointment_id = a.id and tm.stylist_id = ${stylistProfilesTable.id} and tm.status = 'confirmed' where (a.stylist_id = ${stylistProfilesTable.id} or tm.stylist_id is not null) and a.payout_status = 'disputed')`,
+};
+
+router.get("/owner/artists", requireOwner, async (req, res) => {
+  const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+  const status = typeof req.query.status === "string" ? req.query.status : "";
+  if (status && !["active", "suspended"].includes(status)) { res.status(400).json({ error: "Invalid account status" }); return; }
+  const query = db.select(ownerArtistSummary).from(stylistProfilesTable)
+    .innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId)).$dynamic();
+  const conditions = [];
+  if (q) conditions.push(or(ilike(stylistProfilesTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`), ilike(stylistProfilesTable.specialty, `%${q}%`)));
+  if (status) conditions.push(eq(usersTable.accountStatus, status));
+  const rows = await (conditions.length ? query.where(and(...conditions)) : query)
+    .orderBy(desc(usersTable.createdAt)).limit(100);
+  res.json(rows.map(row => ({ ...row, joinedAt: row.joinedAt.toISOString(), cancellationRate: row.totalBookings ? row.cancelledBookings / row.totalBookings : 0 })));
+});
+
+router.get("/owner/artists/:profileId/management", requireOwner, async (req, res) => {
+  const profileId = param(req.params.profileId);
+  const limit = Math.min(100, Math.max(1, Number.parseInt(String(req.query.limit ?? "25"), 10) || 25));
+  const offset = Math.min(10_000, Math.max(0, Number.parseInt(String(req.query.offset ?? "0"), 10) || 0));
+  const [artist] = await db.select(ownerArtistSummary).from(stylistProfilesTable)
+    .innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId)).where(eq(stylistProfilesTable.id, profileId));
+  if (!artist) { res.status(404).json({ error: "Artist profile not found" }); return; }
+  const [bookings, payouts, batches] = await Promise.all([
+    db.select({ id: appointmentsTable.id, clientName: appointmentsTable.clientName, serviceName: appointmentsTable.serviceName, date: appointmentsTable.date, status: appointmentsTable.status, price: appointmentsTable.price, payoutStatus: appointmentsTable.payoutStatus })
+      .from(appointmentsTable).where(or(eq(appointmentsTable.stylistId, profileId), sql`exists (select 1 from booking_team_members tm where tm.appointment_id = ${appointmentsTable.id} and tm.stylist_id = ${profileId} and tm.status = 'confirmed')`)).orderBy(desc(appointmentsTable.createdAt)).limit(limit + 1).offset(offset),
+    db.select({ id: payoutLedgerTable.id, appointmentId: payoutLedgerTable.appointmentId, amount: payoutLedgerTable.netAmount, status: payoutLedgerTable.status, dueAt: payoutLedgerTable.dueAt, paidAt: payoutLedgerTable.paidAt })
+      .from(payoutLedgerTable).where(eq(payoutLedgerTable.artistProfileId, profileId)).orderBy(desc(payoutLedgerTable.createdAt)).limit(limit + 1).offset(offset),
+    db.select({ id: payoutBatchesTable.id, totalAmount: payoutBatchesTable.totalAmount, lineCount: payoutBatchesTable.lineCount, reference: payoutBatchesTable.reference, createdAt: payoutBatchesTable.createdAt })
+      .from(payoutBatchesTable).where(eq(payoutBatchesTable.artistProfileId, profileId)).orderBy(desc(payoutBatchesTable.createdAt)).limit(limit + 1).offset(offset),
+  ]);
+  res.json({
+    ...artist, joinedAt: artist.joinedAt.toISOString(),
+    cancellationRate: artist.totalBookings ? artist.cancelledBookings / artist.totalBookings : 0,
+    bookings: bookings.slice(0, limit), payouts: payouts.slice(0, limit).map(p => ({ ...p, dueAt: p.dueAt.toISOString(), paidAt: p.paidAt?.toISOString() ?? null })),
+    payoutBatches: batches.slice(0, limit).map(b => ({ ...b, createdAt: b.createdAt.toISOString() })),
+    historyLimit: limit, historyOffset: offset, nextOffset: (bookings.length > limit || payouts.length > limit || batches.length > limit) && offset + limit <= 10_000 ? offset + limit : null,
+    historyTruncated: bookings.length > limit || payouts.length > limit || batches.length > limit,
+  });
+});
+
+router.post("/owner/artists/:profileId/account-status", requireOwner, async (req, res) => {
+  const profileId = param(req.params.profileId);
+  const status = req.body?.status;
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "";
+  if (status !== "active" && status !== "suspended") { res.status(400).json({ error: "Status must be active or suspended" }); return; }
+  if (!reason || reason.length > 500) { res.status(400).json({ error: "A non-empty reason of no more than 500 characters is required" }); return; }
+  const [profile] = await db.select({ userId: stylistProfilesTable.userId }).from(stylistProfilesTable).where(eq(stylistProfilesTable.id, profileId));
+  if (!profile) { res.status(404).json({ error: "Artist profile not found" }); return; }
+  const owner = (req as any).user;
+  if (profile.userId === owner.id) { res.status(403).json({ error: "The owner account cannot be changed" }); return; }
+  const [updated] = await db.update(usersTable).set({ accountStatus: status }).where(eq(usersTable.id, profile.userId)).returning({ accountStatus: usersTable.accountStatus });
+  if (status === "suspended") revokeUserStreams(profile.userId);
+  res.json({ accountStatus: updated.accountStatus, reason });
+});
 
 router.get("/owner/command-centre", requireOwner, async (_req, res) => {
   const [[artistMetrics], [appointmentMetrics], [ledgerMetrics]] = await Promise.all([
@@ -367,6 +442,7 @@ router.post("/owner/artists/:profileId/verify", requireOwner, async (req, res) =
     .from(stylistProfilesTable)
     .where(eq(stylistProfilesTable.id, profileId));
   if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  if (profile.verificationStatus !== "pending") { res.status(409).json({ error: "Only pending artists can be approved" }); return; }
 
   const [[artistUser], services, portfolio] = await Promise.all([
     db.select().from(usersTable).where(eq(usersTable.id, profile.userId)),
@@ -385,10 +461,9 @@ router.post("/owner/artists/:profileId/verify", requireOwner, async (req, res) =
     return;
   }
 
-  await db
-    .update(stylistProfilesTable)
-    .set({ verified: true, verificationStatus: "verified" })
-    .where(eq(stylistProfilesTable.id, profileId));
+  const [updated] = await db.update(stylistProfilesTable).set({ verified: true, verificationStatus: "verified" })
+    .where(and(eq(stylistProfilesTable.id, profileId), eq(stylistProfilesTable.verificationStatus, "pending"))).returning({ id: stylistProfilesTable.id });
+  if (!updated) { res.status(409).json({ error: "Artist verification state changed; reload and try again" }); return; }
 
   if (artistUser) {
     setImmediate(async () => {
@@ -420,12 +495,14 @@ router.post("/owner/artists/:profileId/reject", requireOwner, async (req, res) =
     .from(stylistProfilesTable)
     .where(eq(stylistProfilesTable.id, profileId));
   if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
+  const rejectionReason = typeof reason === "string" ? reason.trim().slice(0, 500) : "";
+  if (!rejectionReason) { res.status(400).json({ error: "A rejection reason is required (maximum 500 characters)" }); return; }
+  if (profile.verificationStatus !== "pending") { res.status(409).json({ error: "Only pending artists can be rejected" }); return; }
 
   // Reset to "none" so the artist can address the issues and submit again.
-  await db
-    .update(stylistProfilesTable)
-    .set({ verificationStatus: "none" })
-    .where(eq(stylistProfilesTable.id, profileId));
+  const [updated] = await db.update(stylistProfilesTable).set({ verified: false, verificationStatus: "none" })
+    .where(and(eq(stylistProfilesTable.id, profileId), eq(stylistProfilesTable.verificationStatus, "pending"))).returning({ id: stylistProfilesTable.id });
+  if (!updated) { res.status(409).json({ error: "Artist verification state changed; reload and try again" }); return; }
 
   const [artistUser] = await db
     .select()
@@ -438,7 +515,7 @@ router.post("/owner/artists/:profileId/reject", requireOwner, async (req, res) =
         await notify(
           { phone: artistUser.phone, email: artistUser.email, name: artistUser.name },
           "verification.rejected",
-          { artistName: profile.name, rejectionReason: reason, outstandingItems },
+          { artistName: profile.name, rejectionReason, outstandingItems },
         );
       } catch { /* non-fatal */ }
     });

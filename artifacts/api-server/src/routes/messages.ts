@@ -85,7 +85,7 @@ router.post("/messages/sse-ticket", requireAuth, async (req, res) => {
   res.json({ ticket: mintSseTicket(user.id) });
 });
 
-router.get("/messages/sse", (req, res) => {
+router.get("/messages/sse", async (req, res) => {
   const rawTicket = req.query.ticket;
   const ticket = typeof rawTicket === "string" ? rawTicket : null;
   if (!ticket) {
@@ -96,6 +96,11 @@ router.get("/messages/sse", (req, res) => {
   if (!userId) {
     res.status(401).json({ error: "Invalid or expired ticket" });
     return;
+  }
+  const [ticketUser] = await db.select({ accountStatus: usersTable.accountStatus, email: usersTable.email }).from(usersTable).where(eq(usersTable.id, userId));
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (!ticketUser || (ticketUser.accountStatus === "suspended" && (!ownerEmail || ticketUser.email.trim().toLowerCase() !== ownerEmail.trim().toLowerCase()))) {
+    res.status(403).json({ error: "Account suspended" }); return;
   }
 
   // SSE headers
@@ -112,11 +117,18 @@ router.get("/messages/sse", (req, res) => {
   res.write(`event: chat\ndata: ${JSON.stringify({ type: "ping" })}\n\n`);
 
   // Heartbeat every 25 s to prevent proxy timeouts
-  const heartbeat = setInterval(() => {
+  const heartbeat = setInterval(async () => {
     try {
+      const [liveUser] = await db.select({ accountStatus: usersTable.accountStatus, email: usersTable.email }).from(usersTable).where(eq(usersTable.id, userId));
+      const stillOwner = !!ownerEmail && liveUser?.email.trim().toLowerCase() === ownerEmail.trim().toLowerCase();
+      if (!liveUser || (liveUser.accountStatus === "suspended" && !stillOwner)) {
+        res.end(); clearInterval(heartbeat); removeClient(userId, client); return;
+      }
       res.write(`event: chat\ndata: ${JSON.stringify({ type: "ping" })}\n\n`);
     } catch {
       clearInterval(heartbeat);
+      removeClient(userId, client);
+      res.end();
     }
   }, 25_000);
 
@@ -139,7 +151,11 @@ router.get("/messages/conversations", requireAuth, async (req, res) => {
     const [client] = await db.select().from(usersTable).where(eq(usersTable.id, c.clientId));
     const [stylistProfile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, c.stylistId));
     const [stylistUser] = await db.select().from(usersTable).where(eq(usersTable.id, c.stylistId));
-    return formatConv(c, user, client, stylistProfile, stylistUser);
+    const formatted = formatConv(c, user, client, stylistProfile, stylistUser);
+    const counterpartSuspended = user.id === c.clientId
+      ? stylistUser?.accountStatus === "suspended"
+      : client?.accountStatus === "suspended";
+    return counterpartSuspended ? { ...formatted, counterpartUnavailable: true } : formatted;
   }));
 
   res.json(result);
@@ -164,6 +180,9 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
   const conv = await requireParticipant(req, res, conversationId);
   if (!conv) return;
+  const recipientId = conv.clientId === user.id ? conv.stylistId : conv.clientId;
+  const [recipient] = await db.select({ accountStatus: usersTable.accountStatus }).from(usersTable).where(eq(usersTable.id, recipientId));
+  if (recipient?.accountStatus === "suspended") { res.status(403).json({ error: "This conversation participant is unavailable." }); return; }
 
   const messageType = (parsed.data as any).messageType ?? "text";
   const mediaUrl: string | null = (parsed.data as any).mediaUrl ?? null;
@@ -318,6 +337,8 @@ router.post("/messages/start", requireAuth, async (req, res) => {
     res.status(403).json({ error: "This artist is not yet verified on Bonisa." });
     return;
   }
+  const [artistUser] = await db.select({ accountStatus: usersTable.accountStatus }).from(usersTable).where(eq(usersTable.id, stylistId));
+  if (artistUser?.accountStatus === "suspended") { res.status(403).json({ error: "This artist account is suspended." }); return; }
 
   const [conv] = await db.insert(conversationsTable).values({
     id: randomUUID(),

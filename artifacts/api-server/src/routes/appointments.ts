@@ -89,6 +89,8 @@ router.post("/appointments", requireAuth, async (req, res) => {
   ));
 
   if (!profile || !service) { res.status(404).json({ error: "Stylist or service not found" }); return; }
+  const [artistUser] = await db.select({ accountStatus: usersTable.accountStatus }).from(usersTable).where(eq(usersTable.id, profile.userId));
+  if (artistUser?.accountStatus === "suspended") { res.status(403).json({ error: "This artist account is suspended and cannot accept bookings." }); return; }
   // Part c: block bookings with unverified artists server-side.
   if (!profile.verified) { res.status(403).json({ error: "This artist is not yet verified on Bonisa and cannot accept bookings." }); return; }
 

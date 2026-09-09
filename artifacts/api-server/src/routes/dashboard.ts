@@ -7,6 +7,7 @@ import {
   stylistProfilesTable,
   servicesTable,
   portfolioItemsTable,
+  usersTable,
 } from "@workspace/db";
 import { eq, and, gte, or, sql, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -164,10 +165,9 @@ router.get("/dashboard/client", requireAuth, async (req, res) => {
   // Show all appointments so clients can confirm work on past ones
   const upcoming = appts.slice(0, 30).map(fmtClientAppt);
 
-  const allStylists = await db
-    .select()
-    .from(stylistProfilesTable)
-    .where(eq(stylistProfilesTable.verified, true))
+  const allStylists = await db.select({ id: stylistProfilesTable.id })
+    .from(stylistProfilesTable).innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId))
+    .where(and(eq(stylistProfilesTable.verified, true), eq(usersTable.accountStatus, "active")))
     .limit(4);
 
   const recommended = await Promise.all(

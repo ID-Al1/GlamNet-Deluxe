@@ -706,6 +706,39 @@ paths:
                 items:
                   $ref: "#/components/schemas/OwnerRegistryEntry"
 
+  /owner/artists:
+    get:
+      operationId: listOwnerArtists
+      tags: [owner]
+      summary: List owner artist management summaries
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: status, in: query, schema: { type: string, enum: [active, suspended] } }
+      responses:
+        "200":
+          description: Artist summaries
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerArtistSummary" } } } }
+  /owner/artists/{profileId}/management:
+    get:
+      operationId: getOwnerArtistManagement
+      tags: [owner]
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 10000, default: 0 } }
+      responses:
+        "200": { description: Artist management detail, content: { application/json: { schema: { $ref: "#/components/schemas/OwnerArtistManagement" } } } }
+  /owner/artists/{profileId}/account-status:
+    post:
+      operationId: updateOwnerArtistAccountStatus
+      tags: [owner]
+      parameters: [{ name: profileId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/OwnerArtistAccountStatusInput" } } }
+      responses:
+        "200": { description: Updated account status, content: { application/json: { schema: { $ref: "#/components/schemas/OwnerArtistAccountStatusResult" } } } }
+
   /owner/payouts:
     get:
       operationId: getOwnerPayouts
@@ -1475,6 +1508,91 @@ components:
         joinedAt:
           type: string
           format: date-time
+
+    OwnerArtistSummary:
+      type: object
+      required: [profileId, userId, name, specialty, location, rating, reviewCount, verified, verificationStatus, accountStatus, joinedAt, completedBookings, totalBookings, cancelledBookings, cancellationRate, totalEarnings, complaintCount, disputeCount]
+      properties:
+        profileId: { type: string }
+        userId: { type: string }
+        name: { type: string }
+        specialty: { type: string }
+        location: { type: string }
+        rating: { type: number }
+        reviewCount: { type: integer }
+        verified: { type: boolean }
+        verificationStatus: { type: string }
+        accountStatus: { type: string, enum: [active, suspended] }
+        joinedAt: { type: string, format: date-time }
+        completedBookings: { type: integer }
+        totalBookings: { type: integer }
+        cancelledBookings: { type: integer }
+        cancellationRate: { type: number }
+        totalEarnings: { type: number }
+        complaintCount: { type: integer }
+        disputeCount: { type: integer }
+
+    OwnerArtistAccountStatusInput:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [active, suspended] }
+        reason: { type: string, minLength: 1, maxLength: 500 }
+
+    OwnerArtistAccountStatusResult:
+      type: object
+      required: [accountStatus, reason]
+      additionalProperties: false
+      properties:
+        accountStatus: { type: string, enum: [active, suspended] }
+        reason: { type: string, minLength: 1, maxLength: 500 }
+
+    OwnerArtistManagement:
+      allOf:
+        - $ref: "#/components/schemas/OwnerArtistSummary"
+        - type: object
+          required: [bookings, payouts, payoutBatches, historyLimit, historyOffset, nextOffset, historyTruncated]
+          properties:
+            bookings:
+              type: array
+              items:
+                type: object
+                required: [id, clientName, serviceName, date, status, price, payoutStatus]
+                properties:
+                  id: { type: string }
+                  clientName: { type: string }
+                  serviceName: { type: string }
+                  date: { type: string }
+                  status: { type: string }
+                  price: { type: number }
+                  payoutStatus: { type: string }
+            payouts:
+              type: array
+              items:
+                type: object
+                required: [id, appointmentId, amount, status, dueAt, paidAt]
+                properties:
+                  id: { type: string }
+                  appointmentId: { type: string }
+                  amount: { type: number }
+                  status: { type: string }
+                  dueAt: { type: string, format: date-time }
+                  paidAt: { type: ["string", "null"], format: date-time }
+            payoutBatches:
+              type: array
+              items:
+                type: object
+                required: [id, totalAmount, lineCount, reference, createdAt]
+                properties:
+                  id: { type: string }
+                  totalAmount: { type: number }
+                  lineCount: { type: integer }
+                  reference: { type: string }
+                  createdAt: { type: string, format: date-time }
+            historyLimit: { type: integer, minimum: 1, maximum: 100 }
+            historyOffset: { type: integer, minimum: 0 }
+            nextOffset: { type: ["integer", "null"] }
+            historyTruncated: { type: boolean }
 
     OwnerRegistryService:
       type: object

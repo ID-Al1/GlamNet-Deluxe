@@ -168,6 +168,10 @@ router.post("/auth/login", async (req, res) => {
     res.status(401).json({ error: "Invalid credentials" });
     return;
   }
+  const isOwner = !!process.env.OWNER_EMAIL && user.email.trim().toLowerCase() === process.env.OWNER_EMAIL.trim().toLowerCase();
+  if (user.accountStatus === "suspended" && !isOwner) {
+    res.status(403).json({ error: "Account suspended" }); return;
+  }
   const token = signToken(user.id);
   res.json({ user: formatUser(user), token });
 });
@@ -181,6 +185,11 @@ router.patch("/auth/me", async (req, res) => {
   if (!auth?.startsWith("Bearer ")) { res.status(401).json({ error: "Not authenticated" }); return; }
   const userId = verifyToken(auth.slice(7));
   if (!userId) { res.status(401).json({ error: "Invalid token" }); return; }
+  const [current] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (current?.accountStatus === "suspended" && (!ownerEmail || current.email.trim().toLowerCase() !== ownerEmail.trim().toLowerCase())) {
+    res.status(403).json({ error: "Account suspended" }); return;
+  }
   const { name, phone, businessName, avatarUrl } = req.body as Record<string, string | undefined>;
   const normalizedPhone = phone === undefined || phone === "" ? null : normalizePhone(phone);
   if (normalizedPhone !== null && normalizedPhone.length < 7) {
@@ -222,6 +231,10 @@ router.get("/auth/me", async (req, res) => {
   if (!user) {
     res.status(401).json({ error: "User not found" });
     return;
+  }
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (user.accountStatus === "suspended" && (!ownerEmail || user.email.trim().toLowerCase() !== ownerEmail.trim().toLowerCase())) {
+    res.status(403).json({ error: "Account suspended" }); return;
   }
   res.json(formatUser(user));
 });

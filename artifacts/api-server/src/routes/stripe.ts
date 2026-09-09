@@ -69,6 +69,8 @@ router.post("/stripe/checkout", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Stylist or service not found" });
     return;
   }
+  const [artistUser] = await db.select({ accountStatus: usersTable.accountStatus }).from(usersTable).where(eq(usersTable.id, profile.userId));
+  if (artistUser?.accountStatus === "suspended") { res.status(403).json({ error: "This artist account is suspended and cannot accept bookings." }); return; }
   if (!profile.verified) {
     res.status(403).json({ error: "This artist is not yet verified on Bonisa and cannot accept bookings." });
     return;
@@ -353,7 +355,6 @@ router.post("/stripe/refund", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Appointment not found" });
     return;
   }
-
   // Only the client or the lead stylist can request refunds
   const isStylist = appt.stylistId === user.id;
   const isClient = appt.clientId === user.id;
@@ -580,6 +581,9 @@ router.post("/stripe/retry-checkout", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Appointment not found" });
     return;
   }
+  const [retryArtist] = await db.select({ accountStatus: usersTable.accountStatus }).from(stylistProfilesTable)
+    .innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId)).where(eq(stylistProfilesTable.id, appt.stylistId));
+  if (retryArtist?.accountStatus === "suspended") { res.status(403).json({ error: "This artist account is suspended and cannot accept payment." }); return; }
 
   if (appt.paymentMode === "pay_at_appointment") {
     res.status(400).json({ error: "Pay-at-appointment bookings do not require a Stripe payment retry" });

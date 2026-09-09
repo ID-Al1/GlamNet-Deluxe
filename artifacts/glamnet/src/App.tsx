@@ -32,6 +32,8 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const OwnerPortal = lazy(() => import("@/pages/owner/index"));
 const OwnerRegistry = lazy(() => import("@/pages/owner/registry/index"));
 const OwnerRegistryProfile = lazy(() => import("@/pages/owner/registry/[userId]"));
+const OwnerArtists = lazy(() => import("@/pages/owner/artists"));
+const OwnerArtistDetail = lazy(() => import("@/pages/owner/artists/[profileId]"));
 const OwnerVerifications = lazy(() => import("@/pages/owner/verifications"));
 const OwnerPayouts = lazy(() => import("@/pages/owner/payouts/index"));
 const OwnerPaymentsOverview = lazy(() => import("@/pages/owner/payments-overview/index"));
@@ -128,6 +130,12 @@ function Router() {
                       </Suspense>
                     </OwnerLayout>
                   </RequireOwner>
+                </Route>
+                <Route path="/owner/artists">
+                  <RequireOwner><OwnerLayout><Suspense fallback={<PageLoader />}><OwnerArtists /></Suspense></OwnerLayout></RequireOwner>
+                </Route>
+                <Route path="/owner/artists/:profileId">
+                  <RequireOwner><OwnerLayout><Suspense fallback={<PageLoader />}><OwnerArtistDetail /></Suspense></OwnerLayout></RequireOwner>
                 </Route>
                 <Route path="/owner/registry/:userId">
                   <RequireOwner>

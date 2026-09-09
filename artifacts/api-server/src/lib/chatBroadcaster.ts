@@ -80,6 +80,15 @@ export function removeClient(userId: string, client: SseClient): void {
   if (set.size === 0) clients.delete(userId);
 }
 
+export function revokeUserStreams(userId: string): void {
+  const set = clients.get(userId);
+  if (!set) return;
+  clients.delete(userId);
+  for (const client of set) {
+    try { client.res.end(); } catch { /* already closed */ }
+  }
+}
+
 export function broadcast(userId: string, event: ChatEvent): void {
   const set = clients.get(userId);
   if (!set || set.size === 0) return;

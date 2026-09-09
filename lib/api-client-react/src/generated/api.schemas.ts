@@ -453,6 +453,113 @@ export interface OwnerRegistryEntry {
   joinedAt: string;
 }
 
+export type OwnerArtistSummaryAccountStatus = typeof OwnerArtistSummaryAccountStatus[keyof typeof OwnerArtistSummaryAccountStatus];
+
+
+export const OwnerArtistSummaryAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface OwnerArtistSummary {
+  profileId: string;
+  userId: string;
+  name: string;
+  specialty: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  verified: boolean;
+  verificationStatus: string;
+  accountStatus: OwnerArtistSummaryAccountStatus;
+  joinedAt: string;
+  completedBookings: number;
+  totalBookings: number;
+  cancelledBookings: number;
+  cancellationRate: number;
+  totalEarnings: number;
+  complaintCount: number;
+  disputeCount: number;
+}
+
+export type OwnerArtistAccountStatusInputStatus = typeof OwnerArtistAccountStatusInputStatus[keyof typeof OwnerArtistAccountStatusInputStatus];
+
+
+export const OwnerArtistAccountStatusInputStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface OwnerArtistAccountStatusInput {
+  status: OwnerArtistAccountStatusInputStatus;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type OwnerArtistAccountStatusResultAccountStatus = typeof OwnerArtistAccountStatusResultAccountStatus[keyof typeof OwnerArtistAccountStatusResultAccountStatus];
+
+
+export const OwnerArtistAccountStatusResultAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface OwnerArtistAccountStatusResult {
+  accountStatus: OwnerArtistAccountStatusResultAccountStatus;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type OwnerArtistManagementBookingsItem = {
+  id: string;
+  clientName: string;
+  serviceName: string;
+  date: string;
+  status: string;
+  price: number;
+  payoutStatus: string;
+};
+
+export type OwnerArtistManagementPayoutsItem = {
+  id: string;
+  appointmentId: string;
+  amount: number;
+  status: string;
+  dueAt: string;
+  /** @nullable */
+  paidAt: string | null;
+};
+
+export type OwnerArtistManagementPayoutBatchesItem = {
+  id: string;
+  totalAmount: number;
+  lineCount: number;
+  reference: string;
+  createdAt: string;
+};
+
+export type OwnerArtistManagement = OwnerArtistSummary & ({
+  bookings: OwnerArtistManagementBookingsItem[];
+  payouts: OwnerArtistManagementPayoutsItem[];
+  payoutBatches: OwnerArtistManagementPayoutBatchesItem[];
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  historyLimit: number;
+  /** @minimum 0 */
+  historyOffset: number;
+  /** @nullable */
+  nextOffset: number | null;
+  historyTruncated: boolean;
+});
+
 export interface OwnerRegistryService {
   id: string;
   name: string;
@@ -1006,6 +1113,35 @@ export type SearchOwnerRegistryParams = {
  * @maxLength 100
  */
 q?: string;
+};
+
+export type ListOwnerArtistsParams = {
+/**
+ * @maxLength 80
+ */
+q?: string;
+status?: ListOwnerArtistsStatus;
+};
+
+export type ListOwnerArtistsStatus = typeof ListOwnerArtistsStatus[keyof typeof ListOwnerArtistsStatus];
+
+
+export const ListOwnerArtistsStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export type GetOwnerArtistManagementParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ * @maximum 10000
+ */
+offset?: number;
 };
 
 export type GetOwnerPayoutsParams = {

@@ -15,3 +15,4 @@
 - [Private identity verification](bonisa-private-identity-verification.md) — identity data uses a dedicated private upload and owner-gated review flow; never place it in public DTOs or storage paths.
 - [Bonisa complaint adjudication](bonisa-complaint-adjudication.md) — complaint evidence and owner notes stay private; money actions must atomically update escrow, ledger, and both audit trails.
 - [Bonisa bank-detail privacy](bonisa-bank-detail-privacy.md) — normal reads stay masked; verified reveals are audited, short-lived, race-safe, and payout verification is revision-checked.
+- [Bonisa account suspension](bonisa-account-suspension.md) — suspension revokes access and live streams, hides artists, and blocks booking/payment/chat entry points without blocking refunds.

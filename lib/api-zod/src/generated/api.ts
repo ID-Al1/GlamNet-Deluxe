@@ -819,6 +819,139 @@ export const SearchOwnerRegistryResponse = zod.array(SearchOwnerRegistryResponse
 
 
 /**
+ * @summary List owner artist management summaries
+ */
+export const listOwnerArtistsQueryQMax = 80;
+
+
+
+export const ListOwnerArtistsQueryParams = zod.object({
+  "q": zod.coerce.string().max(listOwnerArtistsQueryQMax).optional(),
+  "status": zod.enum(['active', 'suspended']).optional()
+})
+
+export const ListOwnerArtistsResponseItem = zod.object({
+  "profileId": zod.string(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "location": zod.string(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "verified": zod.boolean(),
+  "verificationStatus": zod.string(),
+  "accountStatus": zod.enum(['active', 'suspended']),
+  "joinedAt": zod.coerce.date(),
+  "completedBookings": zod.number(),
+  "totalBookings": zod.number(),
+  "cancelledBookings": zod.number(),
+  "cancellationRate": zod.number(),
+  "totalEarnings": zod.number(),
+  "complaintCount": zod.number(),
+  "disputeCount": zod.number()
+})
+export const ListOwnerArtistsResponse = zod.array(ListOwnerArtistsResponseItem)
+
+
+export const GetOwnerArtistManagementParamsSchema = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const getOwnerArtistManagementQueryLimitDefault = 25;
+export const getOwnerArtistManagementQueryLimitMax = 100;
+
+export const getOwnerArtistManagementQueryOffsetDefault = 0;
+export const getOwnerArtistManagementQueryOffsetMin = 0;
+export const getOwnerArtistManagementQueryOffsetMax = 10000;
+
+
+
+export const GetOwnerArtistManagementQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(getOwnerArtistManagementQueryLimitMax).default(getOwnerArtistManagementQueryLimitDefault),
+  "offset": zod.coerce.number().min(getOwnerArtistManagementQueryOffsetMin).max(getOwnerArtistManagementQueryOffsetMax).default(getOwnerArtistManagementQueryOffsetDefault)
+})
+
+export const getOwnerArtistManagementResponseTwoHistoryLimitMax = 100;
+
+export const getOwnerArtistManagementResponseTwoHistoryOffsetMin = 0;
+
+
+
+export const GetOwnerArtistManagementResponse = zod.object({
+  "profileId": zod.string(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "location": zod.string(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "verified": zod.boolean(),
+  "verificationStatus": zod.string(),
+  "accountStatus": zod.enum(['active', 'suspended']),
+  "joinedAt": zod.coerce.date(),
+  "completedBookings": zod.number(),
+  "totalBookings": zod.number(),
+  "cancelledBookings": zod.number(),
+  "cancellationRate": zod.number(),
+  "totalEarnings": zod.number(),
+  "complaintCount": zod.number(),
+  "disputeCount": zod.number()
+}).and(zod.object({
+  "bookings": zod.array(zod.object({
+  "id": zod.string(),
+  "clientName": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "status": zod.string(),
+  "price": zod.number(),
+  "payoutStatus": zod.string()
+})),
+  "payouts": zod.array(zod.object({
+  "id": zod.string(),
+  "appointmentId": zod.string(),
+  "amount": zod.number(),
+  "status": zod.string(),
+  "dueAt": zod.coerce.date(),
+  "paidAt": zod.coerce.date().nullable()
+})),
+  "payoutBatches": zod.array(zod.object({
+  "id": zod.string(),
+  "totalAmount": zod.number(),
+  "lineCount": zod.number(),
+  "reference": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "historyLimit": zod.number().min(1).max(getOwnerArtistManagementResponseTwoHistoryLimitMax),
+  "historyOffset": zod.number().min(getOwnerArtistManagementResponseTwoHistoryOffsetMin),
+  "nextOffset": zod.number().nullable(),
+  "historyTruncated": zod.boolean()
+}))
+
+
+export const UpdateOwnerArtistAccountStatusParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const updateOwnerArtistAccountStatusBodyReasonMax = 500;
+
+
+
+export const UpdateOwnerArtistAccountStatusBody = zod.object({
+  "status": zod.enum(['active', 'suspended']),
+  "reason": zod.string().min(1).max(updateOwnerArtistAccountStatusBodyReasonMax)
+})
+
+export const updateOwnerArtistAccountStatusResponseReasonMax = 500;
+
+
+
+export const UpdateOwnerArtistAccountStatusResponse = zod.object({
+  "accountStatus": zod.enum(['active', 'suspended']),
+  "reason": zod.string().min(1).max(updateOwnerArtistAccountStatusResponseReasonMax)
+})
+
+
+/**
  * @summary List unpaid payouts grouped by artist
  */
 export const GetOwnerPayoutsQueryParams = zod.object({
