@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { BonisaSplash } from "@/components/bonisa-splash";
 import { Loader2 } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 // Lazy-load all page components for automatic code splitting
 const Home = lazy(() => import("@/pages/home"));
@@ -74,17 +75,19 @@ function PageLoader() {
 
 function Router() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Switch>
-        <Route path="/profile/setup">
-          <AppLayout>
-            <ProfileSetup />
-          </AppLayout>
-        </Route>
-        <Route>
-          <AppLayout>
-            <Suspense fallback={<PageLoader />}>
-              <Switch>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/profile/setup">
+            <AppLayout>
+              <ProfileSetup />
+            </AppLayout>
+          </Route>
+          <Route>
+            <AppLayout>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <Switch>
                 <Route path="/" component={Home} />
                 <Route path="/login" component={Login} />
                 <Route path="/signup" component={Signup} />
@@ -185,13 +188,15 @@ function Router() {
                     </OwnerLayout>
                   </RequireOwner>
                 </Route>
-                <Route component={NotFound} />
-              </Switch>
-            </Suspense>
-          </AppLayout>
-        </Route>
-      </Switch>
-    </Suspense>
+                    <Route component={NotFound} />
+                  </Switch>
+                </Suspense>
+              </ErrorBoundary>
+            </AppLayout>
+          </Route>
+        </Switch>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

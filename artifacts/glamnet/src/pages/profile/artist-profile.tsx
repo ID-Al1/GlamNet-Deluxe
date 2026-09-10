@@ -110,11 +110,70 @@ export function ArtistProfile() {
     qc.invalidateQueries({ queryKey: ["my-stylist-profile"] });
   };
 
+  // EVERY hook must be called above the early returns below. These three used to
+  // sit under the loading guard, which changed the hook count between renders and
+  // crashed the whole app to a blank page for every artist. Do not move them back.
+  const addSvc = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/services`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: newSvc.name, price: parseFloat(newSvc.price), duration: parseInt(newSvc.duration) }),
+      });
+      if (!res.ok) throw new Error("Failed to save service");
+      return res.json();
+    },
+    onSuccess: () => {
+      setNewSvc({ name: "", price: "", duration: "60" });
+      toast.success("Service saved!");
+      refreshAll();
+    },
+    onError: () => toast.error("Failed to add service"),
+  });
+
+  const updateSvc = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/services/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: editSvc.name, price: parseFloat(editSvc.price), duration: parseInt(editSvc.duration) }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => { setEditingSvcId(null); toast.success("Service updated!"); refreshAll(); },
+    onError: () => toast.error("Failed to update service"),
+  });
+
+  const deleteSvc = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/services/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed");
+    },
+    onSuccess: () => { toast.success("Service removed"); refreshAll(); },
+  });
+
+  // --- Early returns start here. No hooks below this line. ---
   if (profileLoading || checklistLoading || bankLoading) {
     return <Skeleton className="w-full h-96 rounded-xl" />;
   }
 
-  if (!myProfile || !checklist) return null;
+  if (!myProfile || !checklist) {
+    return (
+      <Card className="border-border/50 bg-card">
+        <CardContent className="pt-6 space-y-4 text-center">
+          <User className="h-9 w-9 mx-auto text-muted-foreground/50" strokeWidth={1.9} />
+          <div>
+            <p className="font-medium">Your artist profile isn't set up yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Finish the short setup wizard and your profile page will appear here.
+            </p>
+          </div>
+          <Link href="/profile/setup">
+            <Button>Start setup</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Compute Missing
   const hasIdentity = identityStatus?.idNumberProvided && identityStatus?.idDocumentProvided;
@@ -203,44 +262,6 @@ export function ArtistProfile() {
       setSubmittingVerification(false);
     }
   };
-
-  const addSvc = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/services`, {
-        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: newSvc.name, price: parseFloat(newSvc.price), duration: parseInt(newSvc.duration) }),
-      });
-      if (!res.ok) throw new Error("Failed to save service");
-      return res.json();
-    },
-    onSuccess: () => {
-      setNewSvc({ name: "", price: "", duration: "60" });
-      toast.success("Service saved!");
-      refreshAll();
-    },
-    onError: () => toast.error("Failed to add service"),
-  });
-
-  const updateSvc = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/services/${id}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: editSvc.name, price: parseFloat(editSvc.price), duration: parseInt(editSvc.duration) }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-    onSuccess: () => { setEditingSvcId(null); toast.success("Service updated!"); refreshAll(); },
-    onError: () => toast.error("Failed to update service"),
-  });
-
-  const deleteSvc = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/stylists/me/services/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error("Failed");
-    },
-    onSuccess: () => { toast.success("Service removed"); refreshAll(); },
-  });
 
   const saveAvailability = async () => {
     setSavingAvail(true);
