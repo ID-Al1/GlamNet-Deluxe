@@ -16,3 +16,4 @@
 - [Bonisa complaint adjudication](bonisa-complaint-adjudication.md) — complaint evidence and owner notes stay private; money actions must atomically update escrow, ledger, and both audit trails.
 - [Bonisa bank-detail privacy](bonisa-bank-detail-privacy.md) — normal reads stay masked; verified reveals are audited, short-lived, race-safe, and payout verification is revision-checked.
 - [Bonisa account suspension](bonisa-account-suspension.md) — suspension revokes access and live streams, hides artists, and blocks booking/payment/chat entry points without blocking refunds.
+- [GitHub push authentication](github-push-auth.md) — the Git remote can retain an invalid PAT after a GitHub App is attached; verify the remote SHA through the connector API.
