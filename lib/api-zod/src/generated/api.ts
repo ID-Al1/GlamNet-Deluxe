@@ -853,7 +853,19 @@ export const ListOwnerArtistsResponseItem = zod.object({
 export const ListOwnerArtistsResponse = zod.array(ListOwnerArtistsResponseItem)
 
 
-export const GetOwnerArtistManagementParamsSchema = zod.object({
+/**
+ * @summary List artists who have not submitted for verification and their outstanding requirements
+ */
+export const ListOwnerArtistsNotSubmittedResponseItem = zod.object({
+  "profileId": zod.string(),
+  "name": zod.string(),
+  "joinedAt": zod.coerce.date(),
+  "outstanding": zod.array(zod.enum(['ID number', 'ID document', 'Bank details', 'Bio', 'Services', 'Portfolio']))
+})
+export const ListOwnerArtistsNotSubmittedResponse = zod.array(ListOwnerArtistsNotSubmittedResponseItem)
+
+
+export const GetOwnerArtistManagementParams = zod.object({
   "profileId": zod.coerce.string()
 })
 

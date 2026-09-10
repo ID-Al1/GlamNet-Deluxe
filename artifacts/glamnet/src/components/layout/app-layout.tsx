@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { BonisaLogo } from "@/components/bonisa-logo";
+import { ArtistVerificationBanner } from "@/components/artist-verification-banner";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -329,6 +330,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
       )}
+
+      <ArtistVerificationBanner />
 
       <main id="main-content" className="flex-1 flex flex-col relative">
         {children}

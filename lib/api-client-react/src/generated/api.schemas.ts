@@ -482,6 +482,25 @@ export interface OwnerArtistSummary {
   disputeCount: number;
 }
 
+export type OwnerArtistNotSubmittedOutstandingItem = typeof OwnerArtistNotSubmittedOutstandingItem[keyof typeof OwnerArtistNotSubmittedOutstandingItem];
+
+
+export const OwnerArtistNotSubmittedOutstandingItem = {
+  ID_number: 'ID number',
+  ID_document: 'ID document',
+  Bank_details: 'Bank details',
+  Bio: 'Bio',
+  Services: 'Services',
+  Portfolio: 'Portfolio',
+} as const;
+
+export interface OwnerArtistNotSubmitted {
+  profileId: string;
+  name: string;
+  joinedAt: string;
+  outstanding: OwnerArtistNotSubmittedOutstandingItem[];
+}
+
 export type OwnerArtistAccountStatusInputStatus = typeof OwnerArtistAccountStatusInputStatus[keyof typeof OwnerArtistAccountStatusInputStatus];
 
 

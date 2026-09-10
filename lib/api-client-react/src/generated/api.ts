@@ -65,6 +65,7 @@ import type {
   OwnerArtistAccountStatusInput,
   OwnerArtistAccountStatusResult,
   OwnerArtistManagement,
+  OwnerArtistNotSubmitted,
   OwnerArtistSummary,
   OwnerCommandCentreMetrics,
   OwnerComplaint,
@@ -2684,6 +2685,83 @@ export function useListOwnerArtists<TData = Awaited<ReturnType<typeof listOwnerA
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListOwnerArtistsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOwnerArtistsNotSubmittedUrl = () => {
+
+
+
+
+  return `/api/owner/artists/not-submitted`
+}
+
+/**
+ * @summary List artists who have not submitted for verification and their outstanding requirements
+ */
+export const listOwnerArtistsNotSubmitted = async ( options?: RequestInit): Promise<OwnerArtistNotSubmitted[]> => {
+
+  return customFetch<OwnerArtistNotSubmitted[]>(getListOwnerArtistsNotSubmittedUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerArtistsNotSubmittedQueryKey = () => {
+    return [
+    `/api/owner/artists/not-submitted`
+    ] as const;
+    }
+
+
+export const getListOwnerArtistsNotSubmittedQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerArtistsNotSubmittedQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>> = ({ signal }) => listOwnerArtistsNotSubmitted({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerArtistsNotSubmittedQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>>
+export type ListOwnerArtistsNotSubmittedQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List artists who have not submitted for verification and their outstanding requirements
+ */
+
+export function useListOwnerArtistsNotSubmitted<TData = Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistsNotSubmitted>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerArtistsNotSubmittedQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -76,7 +76,11 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-        <Route path="/profile/setup" component={ProfileSetup} />
+        <Route path="/profile/setup">
+          <AppLayout>
+            <ProfileSetup />
+          </AppLayout>
+        </Route>
         <Route>
           <AppLayout>
             <Suspense fallback={<PageLoader />}>

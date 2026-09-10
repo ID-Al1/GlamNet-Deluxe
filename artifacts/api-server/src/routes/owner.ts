@@ -5,6 +5,7 @@
  *
  * Verification flow:
  *   GET  /owner/artists/pending          — list artists awaiting review
+ *   GET  /owner/artists/not-submitted    — list artists who have not submitted
  *   POST /owner/artists/:profileId/verify — approve and notify
  *   POST /owner/artists/:profileId/reject — reject with reason and notify
  */
@@ -55,6 +56,39 @@ router.get("/owner/artists", requireOwner, async (req, res) => {
   const rows = await (conditions.length ? query.where(and(...conditions)) : query)
     .orderBy(desc(usersTable.createdAt)).limit(100);
   res.json(rows.map(row => ({ ...row, joinedAt: row.joinedAt.toISOString(), cancellationRate: row.totalBookings ? row.cancelledBookings / row.totalBookings : 0 })));
+});
+
+router.get("/owner/artists/not-submitted", requireOwner, async (_req, res) => {
+  const rows = await db.select({
+    profileId: stylistProfilesTable.id,
+    name: stylistProfilesTable.name,
+    joinedAt: usersTable.createdAt,
+    hasIdNumber: sql<boolean>`${stylistProfilesTable.idNumber} is not null and btrim(${stylistProfilesTable.idNumber}) <> ''`,
+    hasIdDocument: sql<boolean>`${stylistProfilesTable.idDocumentUrl} is not null and btrim(${stylistProfilesTable.idDocumentUrl}) <> ''`,
+    hasBankDetails: sql<boolean>`exists (select 1 from bank_accounts ba where ba.stylist_profile_id = ${stylistProfilesTable.id})`,
+    hasBio: sql<boolean>`${stylistProfilesTable.bio} is not null and length(btrim(${stylistProfilesTable.bio})) >= 40`,
+    hasServices: sql<boolean>`exists (select 1 from services s where s.stylist_id = ${stylistProfilesTable.id})`,
+    hasPortfolio: sql<boolean>`exists (select 1 from portfolio_items pi where pi.stylist_id = ${stylistProfilesTable.id})`,
+  }).from(stylistProfilesTable)
+    .innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId))
+    .where(eq(stylistProfilesTable.verificationStatus, "none"))
+    .orderBy(asc(usersTable.createdAt));
+
+  res.json(rows.map((row) => {
+    const outstanding: string[] = [];
+    if (!row.hasIdNumber) outstanding.push("ID number");
+    if (!row.hasIdDocument) outstanding.push("ID document");
+    if (!row.hasBankDetails) outstanding.push("Bank details");
+    if (!row.hasBio) outstanding.push("Bio");
+    if (!row.hasServices) outstanding.push("Services");
+    if (!row.hasPortfolio) outstanding.push("Portfolio");
+    return {
+      profileId: row.profileId,
+      name: row.name,
+      joinedAt: row.joinedAt.toISOString(),
+      outstanding,
+    };
+  }));
 });
 
 router.get("/owner/artists/:profileId/management", requireOwner, async (req, res) => {

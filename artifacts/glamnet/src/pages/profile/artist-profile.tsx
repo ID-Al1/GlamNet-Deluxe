@@ -10,7 +10,8 @@ import {
   useDeletePortfolioItem,
   getGetVerificationChecklistQueryKey,
   getGetMyStylistProfileQueryKey,
-  getGetMyBankDetailsQueryKey
+  getGetMyBankDetailsQueryKey,
+  getGetMyIdentityVerificationQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -105,6 +106,7 @@ export function ArtistProfile() {
     qc.invalidateQueries({ queryKey: getGetMyStylistProfileQueryKey() });
     qc.invalidateQueries({ queryKey: getGetVerificationChecklistQueryKey() });
     qc.invalidateQueries({ queryKey: getGetMyBankDetailsQueryKey() });
+    qc.invalidateQueries({ queryKey: getGetMyIdentityVerificationQueryKey() });
     qc.invalidateQueries({ queryKey: ["my-stylist-profile"] });
   };
 

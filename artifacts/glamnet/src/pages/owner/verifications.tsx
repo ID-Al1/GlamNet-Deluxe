@@ -39,6 +39,13 @@ interface PendingArtist {
   joinedAt: string;
 }
 
+interface NotSubmittedArtist {
+  profileId: string;
+  name: string;
+  joinedAt: string;
+  outstanding: Array<"ID number" | "ID document" | "Bank details" | "Bio" | "Services" | "Portfolio">;
+}
+
 function authHeaders(): HeadersInit {
   try {
     const stored = localStorage.getItem("glamnet_auth");
@@ -77,6 +84,7 @@ function ArtistCardSkeleton() {
 export default function OwnerVerifications() {
   const { user } = useAuth();
   const [artists, setArtists] = useState<PendingArtist[] | null>(null);
+  const [notSubmitted, setNotSubmitted] = useState<NotSubmittedArtist[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -110,14 +118,25 @@ export default function OwnerVerifications() {
   const load = useCallback(async () => {
     setLoadError(null);
     try {
-      const res = await fetch("/api/owner/artists/pending", { headers: authHeaders() });
-      if (res.status === 403 || res.status === 401) {
+      const [pendingResponse, notSubmittedResponse] = await Promise.all([
+        fetch("/api/owner/artists/pending", { headers: authHeaders() }),
+        fetch("/api/owner/artists/not-submitted", { headers: authHeaders() }),
+      ]);
+      if ([pendingResponse.status, notSubmittedResponse.status].some((status) => status === 403 || status === 401)) {
         setForbidden(true);
         setArtists([]);
+        setNotSubmitted([]);
         return;
       }
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      setArtists(await res.json());
+      if (!pendingResponse.ok || !notSubmittedResponse.ok) {
+        throw new Error(`Server returned ${pendingResponse.status}/${notSubmittedResponse.status}`);
+      }
+      const [pendingArtists, notSubmittedArtists] = await Promise.all([
+        pendingResponse.json() as Promise<PendingArtist[]>,
+        notSubmittedResponse.json() as Promise<NotSubmittedArtist[]>,
+      ]);
+      setArtists(pendingArtists);
+      setNotSubmitted(notSubmittedArtists);
       setForbidden(false);
     } catch {
       setLoadError("Could not load the verification queue. Check you are online and try again.");
@@ -203,7 +222,16 @@ export default function OwnerVerifications() {
         </p>
       </div>
 
-      {artists === null && !loadError && (
+      <section className="space-y-4" aria-labelledby="waiting-for-you-heading">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 id="waiting-for-you-heading" className="font-serif text-2xl">Waiting for you</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Artists who submitted their details and need your decision.</p>
+          </div>
+          {artists && <Badge variant="secondary">{artists.length}</Badge>}
+        </div>
+
+      {(artists === null || notSubmitted === null) && !loadError && (
         <div className="space-y-4">
           <ArtistCardSkeleton />
           <ArtistCardSkeleton />
@@ -320,6 +348,59 @@ export default function OwnerVerifications() {
           })}
         </div>
       )}
+      </section>
+
+      <section className="mt-10 space-y-4" aria-labelledby="not-submitted-heading">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 id="not-submitted-heading" className="font-serif text-2xl">Not submitted yet</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Artists who still need to finish and submit their verification details.</p>
+          </div>
+          {notSubmitted && <Badge variant="secondary">{notSubmitted.length}</Badge>}
+        </div>
+
+        {notSubmitted !== null && !loadError && notSubmitted.length === 0 && (
+          <Card className="bg-card border-border/50">
+            <CardContent className="py-10 text-center">
+              <ShieldCheck className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" strokeWidth={1.9} />
+              <p className="font-medium">Everyone has submitted</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {notSubmitted !== null && !loadError && notSubmitted.length > 0 && (
+          <div className="space-y-4">
+            {notSubmitted.map((artist) => {
+              const waiting = daysWaiting(artist.joinedAt);
+              return (
+                <Card key={artist.profileId} className="bg-card border-border/50" data-testid={`not-submitted-${artist.profileId}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle className="font-serif text-xl">{artist.name}</CardTitle>
+                      <Badge variant={waiting >= 3 ? "destructive" : "secondary"} className="shrink-0">
+                        <Clock className="h-3 w-3 mr-1" strokeWidth={1.9} />
+                        {waiting} {waiting === 1 ? "day" : "days"} since signup
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Outstanding</p>
+                    {artist.outstanding.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {artist.outstanding.map((item) => (
+                          <Badge key={item} variant="outline">{item}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-muted-foreground">Nothing is missing. This artist only needs to submit.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <Dialog open={rejecting !== null} onOpenChange={(o) => !o && setRejecting(null)}>
         <DialogContent>

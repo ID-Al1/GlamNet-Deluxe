@@ -718,6 +718,24 @@ paths:
         "200":
           description: Artist summaries
           content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerArtistSummary" } } } }
+
+  /owner/artists/not-submitted:
+    get:
+      operationId: listOwnerArtistsNotSubmitted
+      tags: [owner]
+      summary: List artists who have not submitted for verification and their outstanding requirements
+      responses:
+        "200":
+          description: Artists with verification status none
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnerArtistNotSubmitted"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /owner/artists/{profileId}/management:
     get:
       operationId: getOwnerArtistManagement
@@ -1531,6 +1549,23 @@ components:
         totalEarnings: { type: number }
         complaintCount: { type: integer }
         disputeCount: { type: integer }
+
+    OwnerArtistNotSubmitted:
+      type: object
+      required: [profileId, name, joinedAt, outstanding]
+      properties:
+        profileId:
+          type: string
+        name:
+          type: string
+        joinedAt:
+          type: string
+          format: date-time
+        outstanding:
+          type: array
+          items:
+            type: string
+            enum: [ID number, ID document, Bank details, Bio, Services, Portfolio]
 
     OwnerArtistAccountStatusInput:
       type: object

@@ -78,6 +78,8 @@ export * from './ownerArtistManagement';
 export * from './ownerArtistManagementBookingsItem';
 export * from './ownerArtistManagementPayoutBatchesItem';
 export * from './ownerArtistManagementPayoutsItem';
+export * from './ownerArtistNotSubmitted';
+export * from './ownerArtistNotSubmittedOutstandingItem';
 export * from './ownerArtistSummary';
 export * from './ownerArtistSummaryAccountStatus';
 export * from './ownerCommandCentreMetrics';
