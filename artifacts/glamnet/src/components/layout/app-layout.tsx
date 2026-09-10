@@ -5,7 +5,7 @@ import { BonisaLogo } from "@/components/bonisa-logo";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, ShieldCheck } from "lucide-react";
+import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye } from "lucide-react";
 
 const NAV_PUBLIC = [
   { href: "/stylists", label: "Find Artists", icon: Users },
@@ -32,10 +32,26 @@ const NAV_AUTH_BRAND = [
   { href: "/casting", label: "Casting Calls", icon: Star },
 ];
 
+const NAV_AUTH_OWNER = [
+  { href: "/dashboard", label: "Portal", icon: LayoutDashboard },
+  { href: "/owner/registry", label: "Registry", icon: Users },
+  { href: "/owner/artists", label: "Artists", icon: Search },
+  { href: "/messages", label: "Messages", icon: MessageCircle },
+  { href: "/profile/setup", label: "Profile", icon: User },
+];
+
 const BOTTOM_TAB_NAV = [
   { href: "/dashboard", label: "Home", icon: Home, matchPattern: /^\/(dashboard)?$/ },
   { href: "/stylists", label: "Artists", icon: Search, matchPattern: /^\/stylists/ },
   { href: "/payments", label: "Bookings", icon: Calendar, matchPattern: /^\/(payments|appointments)/ },
+  { href: "/messages", label: "Messages", icon: MessageCircle, matchPattern: /^\/messages/ },
+  { href: "/profile/setup", label: "Profile", icon: User, matchPattern: /^\/profile/ },
+];
+
+const BOTTOM_TAB_NAV_OWNER = [
+  { href: "/dashboard", label: "Portal", icon: Home, matchPattern: /^\/dashboard$/ },
+  { href: "/owner/registry", label: "Registry", icon: Users, matchPattern: /^\/owner\/registry/ },
+  { href: "/owner/artists", label: "Artists", icon: Search, matchPattern: /^\/owner\/artists/ },
   { href: "/messages", label: "Messages", icon: MessageCircle, matchPattern: /^\/messages/ },
   { href: "/profile/setup", label: "Profile", icon: User, matchPattern: /^\/profile/ },
 ];
@@ -55,11 +71,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = !user
     ? NAV_PUBLIC
+    : user.isOwner
+    ? NAV_AUTH_OWNER
     : user.role === "stylist"
     ? NAV_AUTH_STYLIST
     : user.role === "brand"
     ? NAV_AUTH_BRAND
     : NAV_AUTH_CLIENT;
+  const bottomTabItems = user?.isOwner ? BOTTOM_TAB_NAV_OWNER : BOTTOM_TAB_NAV;
+  const roleLabel = user?.isOwner
+    ? "Owner"
+    : user?.role === "stylist"
+    ? "Artist / Barber"
+    : user?.role;
     
   // Don't use a transparent header on mobile when logged in because the layout is app-like
   const isHome = location === "/" && (!isMobile || !user);
@@ -103,7 +127,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <div className="px-6 py-4 border-b border-border/60 bg-muted/40">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Signed in as</p>
                     <p className="font-semibold text-sm">{user?.name}</p>
-                    <p className="text-xs text-primary capitalize">{user?.role === "stylist" ? "Artist / Barber" : user?.role}</p>
+                    <p className="text-xs text-primary capitalize">{roleLabel}</p>
                   </div>
                   <nav aria-label="Mobile navigation" className="flex-1 px-4 py-4 space-y-1">
                     {navItems.map(({ href, label, icon: Icon }) => (
@@ -119,14 +143,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       </Link>
                     ))}
                     {user?.isOwner && (
-                      <Link href="/owner" onClick={() => setOpen(false)} aria-current={location === "/owner" ? "page" : undefined}>
-                        <div className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
-                          location === "/owner"
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}>
-                          <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={1.9} aria-hidden="true" />
-                          Owner
+                      <Link href="/dashboard/artist" onClick={() => setOpen(false)}>
+                        <div className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                          <Eye className="h-4 w-4 shrink-0" strokeWidth={1.9} aria-hidden="true" />
+                          View artist side
                         </div>
                       </Link>
                     )}
@@ -182,19 +202,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </span>
                 </Link>
               ))}
-              {user?.isOwner && (
-                <Link href="/owner" aria-current={location === "/owner" ? "page" : undefined}>
-                  <span className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                    isHome
-                      ? "text-white/80 hover:text-white"
-                      : location === "/owner"
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                  }`}>
-                    Owner
-                  </span>
-                </Link>
-              )}
             </nav>
 
             {/* Right side */}
@@ -248,7 +255,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       <div className="px-6 py-4 border-b border-border/60 bg-muted/40">
                         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Signed in as</p>
                         <p className="font-medium text-sm">{user.name}</p>
-                        <p className="text-xs text-primary capitalize">{user.role === "stylist" ? "Artist / Barber" : user.role}</p>
+                        <p className="text-xs text-primary capitalize">{roleLabel}</p>
                       </div>
                     )}
 
@@ -266,14 +273,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         </Link>
                       ))}
                       {user?.isOwner && (
-                        <Link href="/owner" onClick={() => setOpen(false)} aria-current={location === "/owner" ? "page" : undefined}>
-                          <div className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
-                            location === "/owner"
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}>
-                            <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={1.9} aria-hidden="true" />
-                            Owner
+                        <Link href="/dashboard/artist" onClick={() => setOpen(false)}>
+                          <div className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                            <Eye className="h-4 w-4 shrink-0" strokeWidth={1.9} aria-hidden="true" />
+                            View artist side
                           </div>
                         </Link>
                       )}
@@ -365,7 +368,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Bottom Tab Navigation for Mobile Authenticated Users */}
       {showBottomTabs && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border/60 pb-safe pt-2 px-6 flex justify-between items-center shadow-[0_-4px_24px_rgba(0,0,0,0.04)] h-[72px]">
-          {BOTTOM_TAB_NAV.map(({ href, label, icon: Icon, matchPattern }) => {
+          {bottomTabItems.map(({ href, label, icon: Icon, matchPattern }) => {
             const isActive = matchPattern.test(location);
             return (
               <Link key={href} href={href}>

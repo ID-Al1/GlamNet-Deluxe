@@ -15,6 +15,7 @@ const Home = lazy(() => import("@/pages/home"));
 const Login = lazy(() => import("@/pages/auth/login"));
 const Signup = lazy(() => import("@/pages/auth/signup"));
 const DashboardRouter = lazy(() => import("@/pages/dashboard"));
+const StylistDashboard = lazy(() => import("@/pages/dashboards/stylist-dashboard"));
 const StylistsList = lazy(() => import("@/pages/stylists/index"));
 const StylistProfile = lazy(() => import("@/pages/stylists/[id]"));
 const BookStylist = lazy(() => import("@/pages/book/[stylistId]"));
@@ -82,6 +83,11 @@ function Router() {
                 <Route path="/" component={Home} />
                 <Route path="/login" component={Login} />
                 <Route path="/signup" component={Signup} />
+                <Route path="/dashboard/artist">
+                  <RequireOwner>
+                    <StylistDashboard />
+                  </RequireOwner>
+                </Route>
                 <Route path="/dashboard" component={DashboardRouter} />
                 <Route path="/stylists" component={StylistsList} />
                 <Route path="/stylists/:id" component={StylistProfile} />
