@@ -23,6 +23,7 @@ const MyAppointment = lazy(() => import("@/pages/appointments/[id]"));
 const BookingSuccess = lazy(() => import("@/pages/booking/success"));
 const Messages = lazy(() => import("@/pages/messages/index"));
 const CastingCalls = lazy(() => import("@/pages/casting/index"));
+const Profile = lazy(() => import("@/pages/profile/index"));
 const ProfileSetup = lazy(() => import("@/pages/profile/setup"));
 const LeaveReview = lazy(() => import("@/pages/reviews/[appointmentId]"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
@@ -83,6 +84,7 @@ function Router() {
                 <Route path="/" component={Home} />
                 <Route path="/login" component={Login} />
                 <Route path="/signup" component={Signup} />
+                <Route path="/profile" component={Profile} />
                 <Route path="/dashboard/artist">
                   <RequireOwner>
                     <StylistDashboard />

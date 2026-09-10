@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { useUpdateMyStylistProfile } from "@workspace/api-client-react";
+import { getGetMyStylistProfileQueryKey, useUpdateMyStylistProfile } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ export default function ProfileSetup() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const updateProfile = useUpdateMyStylistProfile();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -84,8 +86,12 @@ export default function ProfileSetup() {
           ...(form.website ? { website: form.website } : {}),
         },
       });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMyStylistProfileQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: ["my-stylist-profile"] }),
+      ]);
       toast.success("Profile saved! You're all set.");
-      setLocation("/dashboard");
+      setLocation("/profile");
     } catch {
       toast.error("Could not save your profile. Please try again.");
     }
@@ -96,7 +102,7 @@ export default function ProfileSetup() {
   // Redirect non-stylist users safely inside an effect, never during render
   useEffect(() => {
     if (!isArtist) {
-      setLocation("/dashboard");
+      setLocation("/profile");
     }
   }, [isArtist, setLocation]);
 
@@ -299,7 +305,7 @@ export default function ProfileSetup() {
           {step < STEPS.length && (
             <button
               type="button"
-              onClick={() => setLocation("/dashboard")}
+              onClick={() => setLocation("/profile")}
               className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Skip for now — I'll set up my profile later

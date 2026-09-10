@@ -17,12 +17,14 @@ const NAV_AUTH_CLIENT = [
   { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/stylists", label: "Find Artists", icon: Users },
   { href: "/casting", label: "Casting Calls", icon: Star },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 const NAV_AUTH_STYLIST = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/casting", label: "Casting Calls", icon: Star },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 const NAV_AUTH_BRAND = [
@@ -30,6 +32,7 @@ const NAV_AUTH_BRAND = [
   { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/stylists", label: "Find Artists", icon: Users },
   { href: "/casting", label: "Casting Calls", icon: Star },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 const NAV_AUTH_OWNER = [
@@ -37,7 +40,7 @@ const NAV_AUTH_OWNER = [
   { href: "/owner/registry", label: "Registry", icon: Users },
   { href: "/owner/artists", label: "Artists", icon: Search },
   { href: "/messages", label: "Messages", icon: MessageCircle },
-  { href: "/profile/setup", label: "Profile", icon: User },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 const BOTTOM_TAB_NAV = [
@@ -45,7 +48,7 @@ const BOTTOM_TAB_NAV = [
   { href: "/stylists", label: "Artists", icon: Search, matchPattern: /^\/stylists/ },
   { href: "/payments", label: "Bookings", icon: Calendar, matchPattern: /^\/(payments|appointments)/ },
   { href: "/messages", label: "Messages", icon: MessageCircle, matchPattern: /^\/messages/ },
-  { href: "/profile/setup", label: "Profile", icon: User, matchPattern: /^\/profile/ },
+  { href: "/profile", label: "Profile", icon: User, matchPattern: /^\/profile/ },
 ];
 
 const BOTTOM_TAB_NAV_OWNER = [
@@ -53,7 +56,7 @@ const BOTTOM_TAB_NAV_OWNER = [
   { href: "/owner/registry", label: "Registry", icon: Users, matchPattern: /^\/owner\/registry/ },
   { href: "/owner/artists", label: "Artists", icon: Search, matchPattern: /^\/owner\/artists/ },
   { href: "/messages", label: "Messages", icon: MessageCircle, matchPattern: /^\/messages/ },
-  { href: "/profile/setup", label: "Profile", icon: User, matchPattern: /^\/profile/ },
+  { href: "/profile", label: "Profile", icon: User, matchPattern: /^\/profile/ },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
