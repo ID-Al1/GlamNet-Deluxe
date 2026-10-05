@@ -38,6 +38,7 @@
  */
 
 import { logger } from "./logger";
+import { renderEmail } from "./email-templates";
 
 export type NotificationEvent =
   // ── Bookings ──────────────────────────────────────────────────────────────
@@ -68,7 +69,8 @@ export type NotificationEvent =
 
   // ── Owner updates: one-to-many messages from Bonisa ───────────────────────
   | "artist.update"             // → artist
-  | "artist.reminder";          // → artist or waitlist contact (automatic nudge)
+  | "artist.reminder"           // → artist or waitlist contact (automatic nudge)
+  | "artist.email";             // → artist or contact (branded email the owner chose)
 
 /**
  * Which channel each event uses.
@@ -99,6 +101,7 @@ const CHANNEL_POLICY: Record<NotificationEvent, "whatsapp" | "both"> = {
   "tier.changed": "both",
   "artist.update": "both",
   "artist.reminder": "both",
+  "artist.email": "both",
 };
 
 export interface NotificationData {
@@ -278,40 +281,21 @@ function formatMessage(event: NotificationEvent, data: NotificationData): string
 // Plain, warm, no marketing tone. These are records she may come back to.
 // ---------------------------------------------------------------------------
 
-function formatEmail(event: NotificationEvent, data: NotificationData): { subject: string; body: string } | null {
+function formatEmail(event: NotificationEvent, data: NotificationData): { subject: string; body: string; html?: string } | null {
   const who = data.artistName ?? data.stylistName ?? "there";
   const sign = `\n\n— The Bonisa team\nbonisa.co.za`;
 
   switch (event) {
-    case "verification.submitted":
-      return {
-        subject: "We've received your Bonisa profile",
-        body:
-          `Hi ${who},\n\n` +
-          `Thanks for submitting your profile for verification.\n\n` +
-          `We review new artists within 72 hours, and we'll email you either way. ` +
-          `If anything is missing we'll tell you exactly what, so you can fix it and submit again.` +
-          sign,
-      };
+    // Branded templates, see email-templates.ts.
+    case "verification.submitted": {
+      const email = renderEmail("verification_received", { name: who, email: null, stage: "waiting_review", missing: [], fromWaitlist: false });
+      return { subject: email.subject, body: email.text, html: email.html };
+    }
 
-    case "verification.approved":
-      return {
-        subject: "You're verified on Bonisa",
-        body:
-          `Hi ${who},\n\n` +
-          `Your profile has been verified. You're live on Bonisa.\n\n` +
-          `What that means:\n` +
-          `  •  Clients can find you in search and book you directly\n` +
-          `  •  You can apply to paid brand campaigns\n` +
-          `  •  Your verified badge appears on your profile\n\n` +
-          `Only verified artists appear on Bonisa, so this badge is the thing that ` +
-          `sets you apart from a listings site. It stays with your profile.\n\n` +
-          `Two things worth doing now: check your availability is current, and add ` +
-          `a few more pieces to your portfolio. Artists with fuller portfolios get ` +
-          `noticeably more profile views.\n\n` +
-          `Welcome in.` +
-          sign,
-      };
+    case "verification.approved": {
+      const email = renderEmail("profile_activated", { name: who, email: null, stage: "live", missing: [], fromWaitlist: false });
+      return { subject: email.subject, body: email.text, html: email.html };
+    }
 
     case "verification.rejected":
       return {
@@ -480,6 +464,7 @@ async function sendEmail(
   event: NotificationEvent,
   subject: string,
   body: string,
+  html?: string,
 ): Promise<boolean> {
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["EMAIL_FROM"];
@@ -496,7 +481,7 @@ async function sendEmail(
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to: [toEmail], subject, text: body }),
+      body: JSON.stringify({ from, to: [toEmail], subject, text: body, ...(html ? { html } : {}) }),
     });
 
     if (!res.ok) {
@@ -537,7 +522,7 @@ export async function notify(
   if (policy === "both") {
     // Email always. This is a record she may need again.
     if (to.email && emailContent) {
-      if (await sendEmail(to.email, event, emailContent.subject, emailContent.body)) delivered.push("email");
+      if (await sendEmail(to.email, event, emailContent.subject, emailContent.body, emailContent.html)) delivered.push("email");
     }
     if (to.phone) {
       if (await sendWhatsApp(to.phone, event, waBody)) delivered.push("whatsapp");
@@ -555,9 +540,14 @@ export async function notify(
   if (to.email) {
     const subject = emailContent?.subject ?? "You have an update on Bonisa";
     const body = emailContent?.body ?? waBody.replace(/\*/g, "");
-    if (await sendEmail(to.email, event, subject, body)) delivered.push("email");
+    if (await sendEmail(to.email, event, subject, body, emailContent?.html)) delivered.push("email");
   }
   return delivered;
+}
+
+/** Send one already-rendered branded email. Never throws; true when delivered. */
+export async function sendBrandedEmail(toEmail: string, email: { subject: string; text: string; html: string }): Promise<boolean> {
+  return sendEmail(toEmail, "artist.email", email.subject, email.text, email.html);
 }
 
 /**

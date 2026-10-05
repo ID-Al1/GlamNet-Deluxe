@@ -4,6 +4,7 @@ import {
   getGetArtistContactSettingsQueryKey,
   getListArtistContactsQueryKey,
   useCreateArtistContact,
+  useEmailArtistContacts,
   useGetArtistContactSettings,
   useImportArtistContacts,
   useListArtistContacts,
@@ -31,9 +32,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, AlertTriangle, BellRing, Mail, Phone, RefreshCw, Search, Upload, UserPlus, Users } from "lucide-react";
+import { AlertCircle, AlertTriangle, BellRing, Mail, Send, Phone, RefreshCw, Search, Upload, UserPlus, Users } from "lucide-react";
 import { parseCsv } from "./csv";
 import { ContactDetail, SOURCE_LABELS, STAGE_LABELS, reminderLine } from "./contact-detail";
+import { EmailComposer, TEMPLATES, type EmailDraft } from "./email-composer";
 
 /**
  * Bonisa owner portal: Artist contacts.
@@ -73,6 +75,7 @@ export default function OwnerArtistContacts() {
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
   const [confirmRemind, setConfirmRemind] = useState(false);
+  const [emailing, setEmailing] = useState(false);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -207,6 +210,9 @@ export default function OwnerArtistContacts() {
           <Button variant="outline" size="sm" className="gap-2" onClick={() => setImporting(true)}>
             <Upload className="h-4 w-4" strokeWidth={1.9} /> Import
           </Button>
+          <Button variant="outline" size="sm" className="gap-2" disabled={shown.length === 0} onClick={() => setEmailing(true)}>
+            <Send className="h-4 w-4" strokeWidth={1.9} /> Email these {shown.length}
+          </Button>
           <Button size="sm" className="gap-2" disabled={dueNow === 0 || remindDue.isPending} onClick={() => setConfirmRemind(true)}>
             <BellRing className="h-4 w-4" strokeWidth={1.9} />
             {remindDue.isPending ? "Sending..." : `Remind ${dueNow} now`}
@@ -292,6 +298,7 @@ export default function OwnerArtistContacts() {
       <ContactDetail contact={open} onClose={() => setOpenId(null)} />
       <AddContactDialog open={adding} onClose={() => setAdding(false)} onAdded={(id) => { setAdding(false); setOpenId(id); }} />
       <ImportDialog open={importing} onClose={() => setImporting(false)} />
+      <BulkEmailDialog open={emailing} people={shown} onClose={() => setEmailing(false)} />
 
       <AlertDialog open={confirmRemind} onOpenChange={setConfirmRemind}>
         <AlertDialogContent>
@@ -444,6 +451,73 @@ function ImportDialog({ open, onClose }: { open: boolean; onClose: () => void })
             <Button variant="outline" onClick={() => { reset(); onClose(); }}>Cancel</Button>
             <Button disabled={!rows?.length || busy} onClick={() => void run()}>{busy ? "Importing..." : `Import ${rows?.length ?? 0} rows`}</Button>
           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BulkEmailDialog({ open, people, onClose }: { open: boolean; people: ArtistContact[]; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const send = useEmailArtistContacts();
+  const [draft, setDraft] = useState<EmailDraft>({ template: "checking_in", subject: "", body: "" });
+
+  const template = TEMPLATES.find((t) => t.id === draft.template)!;
+  const fits = people.filter((p) => p.email && template.stages.includes(p.stage));
+  const left = people.length - fits.length;
+
+  async function run() {
+    try {
+      const result = await send.mutateAsync({
+        data: { template: draft.template, subject: draft.subject, body: draft.body, contactIds: fits.map((p) => p.id) },
+      });
+      toast({
+        title: `${result.sent} ${result.sent === 1 ? "email" : "emails"} sent`,
+        description: result.notDelivered
+          ? `${result.notDelivered} could not be delivered${result.sent === 0 ? " because email is not set up on the server yet" : ""}. They are logged on each person.`
+          : undefined,
+      });
+      await queryClient.invalidateQueries({ queryKey: getListArtistContactsQueryKey() });
+      onClose();
+    } catch (error) {
+      toast({ title: "Emails not sent", description: errorMessage(error, "Try again."), variant: "destructive" });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-serif">Email {people.length} {people.length === 1 ? "person" : "people"}</DialogTitle>
+          <DialogDescription>
+            These are the people in the list right now. Use the boxes and filters on the page to narrow it down first.
+            Each email is personalised with her name and what she is missing.
+          </DialogDescription>
+        </DialogHeader>
+        <EmailComposer
+          templates={TEMPLATES}
+          draft={draft}
+          onChange={setDraft}
+          previewContactId={fits[0]?.id ?? null}
+          previewName={fits[0]?.name || undefined}
+        />
+        <div className="rounded-md bg-muted/30 p-3 text-sm">
+          <span className="font-semibold">{fits.length}</span> will get this email.
+          {left > 0 && (
+            <span className="text-muted-foreground">
+              {" "}{left} {left === 1 ? "is" : "are"} left out because this email does not fit their step, or there is no email address.
+            </span>
+          )}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            disabled={fits.length === 0 || send.isPending || (draft.template === "custom" && !draft.body.trim())}
+            onClick={() => void run()}
+          >
+            {send.isPending ? "Sending..." : `Send ${fits.length} ${fits.length === 1 ? "email" : "emails"}`}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

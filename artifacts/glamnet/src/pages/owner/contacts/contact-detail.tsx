@@ -5,6 +5,7 @@ import {
   getGetArtistContactTimelineQueryKey,
   getListArtistContactsQueryKey,
   useGetArtistContactTimeline,
+  useEmailArtistContact,
   useRemindArtistContact,
   useUpdateArtistContact,
   type ArtistContact,
@@ -18,7 +19,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { BellRing, ExternalLink } from "lucide-react";
+import { BellRing, ExternalLink, Mail } from "lucide-react";
+import { EmailComposer, templatesFor, type EmailDraft } from "./email-composer";
 
 export const STAGE_LABELS: Record<ArtistContact["stage"], string> = {
   not_on_app: "Not on Bonisa yet",
@@ -38,6 +40,7 @@ export const SOURCE_LABELS: Record<ArtistContact["sources"][number], string> = {
 const KIND_LABELS: Record<string, string> = {
   auto_reminder: "Automatic reminder",
   manual_reminder: "Reminder you sent",
+  email: "Email",
   update: "Artist update",
 };
 
@@ -66,6 +69,9 @@ export function ContactDetail({ contact, onClose }: { contact: ArtistContact | n
   const { toast } = useToast();
   const update = useUpdateArtistContact();
   const remind = useRemindArtistContact();
+  const sendEmail = useEmailArtistContact();
+  const [composing, setComposing] = useState(false);
+  const [draft, setDraft] = useState<EmailDraft>({ template: "custom", subject: "", body: "" });
   const { data: timeline, isLoading } = useGetArtistContactTimeline(contact?.id ?? "", {
     query: { queryKey: getGetArtistContactTimelineQueryKey(contact?.id ?? ""), enabled: !!contact },
   });
@@ -82,6 +88,8 @@ export function ContactDetail({ contact, onClose }: { contact: ArtistContact | n
       instagram: contact.instagram ?? "",
       notes: contact.notes ?? "",
     });
+    setComposing(false);
+    setDraft({ template: templatesFor(contact.stage)[0]?.id ?? "custom", subject: "", body: "" });
   }, [contact?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!contact) return <Sheet open={false} />;
@@ -115,6 +123,22 @@ export function ContactDetail({ contact, onClose }: { contact: ArtistContact | n
         : { title: "Reminder logged but not delivered", description: "Email and WhatsApp are not set up on the server yet.", variant: "destructive" });
     } catch (error: any) {
       toast({ title: "Reminder not sent", description: error?.data?.error ?? "Try again.", variant: "destructive" });
+    }
+  }
+
+  async function emailNow() {
+    try {
+      const message = await sendEmail.mutateAsync({
+        contactId: contact!.id,
+        data: { template: draft.template, subject: draft.subject, body: draft.body },
+      });
+      await refresh();
+      setComposing(false);
+      toast(message.channels.length
+        ? { title: `Email sent to ${contact!.email}` }
+        : { title: "Email logged but not delivered", description: "Email is not set up on the server yet.", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Email not sent", description: error?.data?.error ?? "Try again.", variant: "destructive" });
     }
   }
 
@@ -191,6 +215,40 @@ export function ContactDetail({ contact, onClose }: { contact: ArtistContact | n
             )}
           </section>
 
+          {/* Email */}
+          <section className="space-y-3 rounded-lg border border-border/60 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Send an email</h3>
+              {!composing && (
+                <Button size="sm" variant="outline" className="gap-2" disabled={!contact.email} onClick={() => setComposing(true)}>
+                  <Mail className="h-4 w-4" strokeWidth={1.9} /> Write email
+                </Button>
+              )}
+            </div>
+            {!contact.email && <p className="text-xs text-muted-foreground">Add her email address under Details to send her an email.</p>}
+            {composing && contact.email && (
+              <>
+                <EmailComposer
+                  templates={templatesFor(contact.stage)}
+                  draft={draft}
+                  onChange={setDraft}
+                  previewContactId={contact.id}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    disabled={sendEmail.isPending || (draft.template === "custom" && !draft.body.trim())}
+                    onClick={() => void emailNow()}
+                  >
+                    <Mail className="h-4 w-4" strokeWidth={1.9} /> {sendEmail.isPending ? "Sending..." : `Send to ${contact.email}`}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setComposing(false)}>Cancel</Button>
+                </div>
+              </>
+            )}
+          </section>
+
           {/* Details */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Details</h3>
@@ -240,7 +298,7 @@ export function ContactDetail({ contact, onClose }: { contact: ArtistContact | n
                     <p className="mt-1 text-xs">
                       {m.channels.length
                         ? `Sent by ${m.channels.map((c) => CHANNEL_LABELS[c] ?? c).join(", ")}`
-                        : <span className="text-destructive">Not delivered (email and WhatsApp not set up)</span>}
+                        : <span className="text-destructive">Not delivered ({m.kind === "email" ? "email is" : "email and WhatsApp are"} not set up)</span>}
                     </p>
                     <details className="mt-2 text-sm">
                       <summary className="cursor-pointer">{m.subject}</summary>

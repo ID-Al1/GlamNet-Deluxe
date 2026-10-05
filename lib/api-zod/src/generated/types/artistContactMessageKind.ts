@@ -13,4 +13,5 @@ export const ArtistContactMessageKind = {
   auto_reminder: 'auto_reminder',
   manual_reminder: 'manual_reminder',
   update: 'update',
+  email: 'email',
 } as const;

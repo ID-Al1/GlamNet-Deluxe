@@ -1421,6 +1421,87 @@ export const UpdateArtistContactResponse = zod.object({
 })
 
 
+/**
+ * @summary Send a branded email to several contacts, each personalised
+ */
+export const emailArtistContactsBodyContactIdsMax = 2000;
+
+export const emailArtistContactsBodySubjectMax = 150;
+
+export const emailArtistContactsBodyBodyMax = 5000;
+
+
+
+export const EmailArtistContactsBody = zod.object({
+  "template": zod.enum(['verification_received', 'profile_activated', 'checking_in', 'custom']),
+  "contactIds": zod.array(zod.string()).min(1).max(emailArtistContactsBodyContactIdsMax),
+  "subject": zod.string().max(emailArtistContactsBodySubjectMax).optional(),
+  "body": zod.string().max(emailArtistContactsBodyBodyMax).optional()
+})
+
+export const EmailArtistContactsResponse = zod.object({
+  "sent": zod.number(),
+  "notDelivered": zod.number(),
+  "skipped": zod.number()
+})
+
+
+/**
+ * @summary Show exactly what a branded email would look like for this person
+ */
+export const PreviewArtistContactEmailParams = zod.object({
+  "contactId": zod.coerce.string()
+})
+
+export const previewArtistContactEmailBodySubjectMax = 150;
+
+export const previewArtistContactEmailBodyBodyMax = 5000;
+
+
+
+export const PreviewArtistContactEmailBody = zod.object({
+  "template": zod.enum(['verification_received', 'profile_activated', 'checking_in', 'custom']),
+  "subject": zod.string().max(previewArtistContactEmailBodySubjectMax).optional(),
+  "body": zod.string().max(previewArtistContactEmailBodyBodyMax).optional()
+})
+
+export const PreviewArtistContactEmailResponse = zod.object({
+  "subject": zod.string(),
+  "html": zod.string(),
+  "text": zod.string()
+})
+
+
+/**
+ * @summary Send this person a branded email
+ */
+export const EmailArtistContactParams = zod.object({
+  "contactId": zod.coerce.string()
+})
+
+export const emailArtistContactBodySubjectMax = 150;
+
+export const emailArtistContactBodyBodyMax = 5000;
+
+
+
+export const EmailArtistContactBody = zod.object({
+  "template": zod.enum(['verification_received', 'profile_activated', 'checking_in', 'custom']),
+  "subject": zod.string().max(emailArtistContactBodySubjectMax).optional(),
+  "body": zod.string().max(emailArtistContactBodyBodyMax).optional()
+})
+
+export const EmailArtistContactResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update', 'email']),
+  "reason": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "channels": zod.array(zod.string()),
+  "createdAt": zod.coerce.date()
+})
+
+
 export const GetArtistContactTimelineParams = zod.object({
   "contactId": zod.coerce.string()
 })
@@ -1428,7 +1509,7 @@ export const GetArtistContactTimelineParams = zod.object({
 export const GetArtistContactTimelineResponse = zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update']),
+  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update', 'email']),
   "reason": zod.string(),
   "subject": zod.string(),
   "body": zod.string(),
@@ -1452,7 +1533,7 @@ export const RemindArtistContactParams = zod.object({
 
 export const RemindArtistContactResponse = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update']),
+  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update', 'email']),
   "reason": zod.string(),
   "subject": zod.string(),
   "body": zod.string(),

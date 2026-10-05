@@ -11,6 +11,9 @@
  *   PATCH /owner/contacts/:contactId        — edit details or pause reminders
  *   GET   /owner/contacts/:contactId/timeline — every message she has been sent, and the next one
  *   POST  /owner/contacts/:contactId/remind — send her reminder now
+ *   POST  /owner/contacts/:contactId/email/preview — what a branded email would look like for her
+ *   POST  /owner/contacts/:contactId/email  — send her a branded email
+ *   POST  /owner/contacts/email-bulk        — send a branded email to several people
  *
  * Integration:
  *   POST  /integrations/waitlist            — Supabase database webhook from the Vercel waitlist
@@ -18,7 +21,7 @@
  * The rules themselves live in lib/artist-contacts.ts.
  */
 import { Router } from "express";
-import { timingSafeEqual } from "crypto";
+import { randomUUID, timingSafeEqual } from "crypto";
 import { and, desc, eq, ne } from "drizzle-orm";
 import {
   artistContactMessagesTable,
@@ -30,6 +33,8 @@ import {
 } from "@workspace/db";
 import {
   CreateArtistContactBody,
+  EmailArtistContactBody,
+  EmailArtistContactsBody,
   ImportArtistContactsBody,
   UpdateArtistContactBody,
   UpdateArtistContactSettingsBody,
@@ -37,6 +42,8 @@ import {
 import { requireOwner } from "../lib/auth";
 import { param } from "../lib/params";
 import { logger } from "../lib/logger";
+import { sendBrandedEmail } from "../lib/notifications";
+import { EMAIL_TEMPLATES, renderEmail, templateAllowed, type EmailTemplateId } from "../lib/email-templates";
 import {
   MAX_REMINDERS_PER_STAGE,
   REMINDER_INTERVAL_DAYS,
@@ -257,6 +264,92 @@ router.post("/owner/contacts/:contactId/remind", requireOwner, async (req, res) 
   if (!buildReminder(contact, status)) { res.status(409).json({ error: "She has nothing left to do, so there is nothing to remind her about." }); return; }
   const message = await sendReminder(contact, status, "manual_reminder", owner.id);
   if (!message) { res.status(409).json({ error: "A reminder was just sent. Refresh and try again." }); return; }
+  res.json({ ...message, createdAt: message.createdAt.toISOString() });
+});
+
+// ---------------------------------------------------------------------------
+// Branded emails (see lib/email-templates.ts)
+// ---------------------------------------------------------------------------
+
+function emailFor(contact: ArtistContact, artists: Artists, template: EmailTemplateId, subject?: string, body?: string) {
+  const status = contactStatus(contact, artists);
+  if (!templateAllowed(template, status.stage)) {
+    return { error: `"${EMAIL_TEMPLATES[template].label}" does not fit someone who is ${status.stage.replace(/_/g, " ")}.` } as const;
+  }
+  if (template === "custom" && !body?.trim()) return { error: "Write the message first." } as const;
+  const email = renderEmail(template, {
+    name: contact.name,
+    email: contact.email,
+    stage: status.stage,
+    missing: status.missing,
+    fromWaitlist: contact.sources.includes("vercel_waitlist"),
+    customSubject: subject,
+    customBody: body,
+  });
+  return { email } as const;
+}
+
+async function sendAndLog(contact: ArtistContact, template: EmailTemplateId, email: ReturnType<typeof renderEmail>, sentByUserId: string) {
+  const delivered = contact.email ? await sendBrandedEmail(contact.email, email) : false;
+  const [message] = await db.insert(artistContactMessagesTable).values({
+    id: randomUUID(),
+    contactId: contact.id,
+    kind: "email",
+    reason: `Email: ${EMAIL_TEMPLATES[template].label}`,
+    subject: email.subject,
+    body: email.text,
+    channels: delivered ? ["email"] : [],
+    sentByUserId,
+  }).returning();
+  return message!;
+}
+
+router.post("/owner/contacts/email-bulk", requireOwner, async (req, res) => {
+  const owner = (req as any).user;
+  const parsed = EmailArtistContactsBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Choose an email and at least one person." }); return; }
+  if (parsed.data.template === "custom" && !parsed.data.body?.trim()) { res.status(400).json({ error: "Write the message first." }); return; }
+  const { artists, contacts } = await refreshContacts();
+  const wanted = new Set(parsed.data.contactIds);
+  const result = { sent: 0, notDelivered: 0, skipped: 0 };
+  for (const contact of contacts.filter((c) => wanted.has(c.id))) {
+    const built = emailFor(contact, artists, parsed.data.template, parsed.data.subject, parsed.data.body);
+    if ("error" in built || !contact.email) { result.skipped++; continue; }
+    try {
+      const message = await sendAndLog(contact, parsed.data.template, built.email, owner.id);
+      if (message.channels.length) result.sent++;
+      else result.notDelivered++;
+    } catch (err) {
+      logger.warn({ err, contactId: contact.id }, "Branded email failed");
+      result.notDelivered++;
+    }
+  }
+  result.skipped += wanted.size - contacts.filter((c) => wanted.has(c.id)).length;
+  res.json(result);
+});
+
+router.post("/owner/contacts/:contactId/email/preview", requireOwner, async (req, res) => {
+  const parsed = EmailArtistContactBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Choose an email." }); return; }
+  const { artists, contacts } = await refreshContacts();
+  const contact = contacts.find((c) => c.id === param(req.params.contactId));
+  if (!contact) { res.status(404).json({ error: "Contact not found" }); return; }
+  const built = emailFor(contact, artists, parsed.data.template, parsed.data.subject, parsed.data.body);
+  if ("error" in built) { res.status(400).json({ error: built.error }); return; }
+  res.json(built.email);
+});
+
+router.post("/owner/contacts/:contactId/email", requireOwner, async (req, res) => {
+  const owner = (req as any).user;
+  const parsed = EmailArtistContactBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Choose an email." }); return; }
+  const { artists, contacts } = await refreshContacts();
+  const contact = contacts.find((c) => c.id === param(req.params.contactId));
+  if (!contact) { res.status(404).json({ error: "Contact not found" }); return; }
+  if (!contact.email) { res.status(409).json({ error: "There is no email address for her yet. Add one under Details." }); return; }
+  const built = emailFor(contact, artists, parsed.data.template, parsed.data.subject, parsed.data.body);
+  if ("error" in built) { res.status(400).json({ error: built.error }); return; }
+  const message = await sendAndLog(contact, parsed.data.template, built.email, owner.id);
   res.json({ ...message, createdAt: message.createdAt.toISOString() });
 });
 

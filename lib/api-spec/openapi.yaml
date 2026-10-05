@@ -1051,6 +1051,53 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /owner/contacts/email-bulk:
+    post:
+      operationId: emailArtistContacts
+      tags: [owner]
+      summary: Send a branded email to several contacts, each personalised
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactBulkEmailInput" } } }
+      responses:
+        "200": { description: Result, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactBulkEmailResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/contacts/{contactId}/email/preview:
+    post:
+      operationId: previewArtistContactEmail
+      tags: [owner]
+      summary: Show exactly what a branded email would look like for this person
+      parameters: [{ name: contactId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactEmailInput" } } }
+      responses:
+        "200": { description: Preview, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactEmailPreview" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /owner/contacts/{contactId}/email:
+    post:
+      operationId: emailArtistContact
+      tags: [owner]
+      summary: Send this person a branded email
+      parameters: [{ name: contactId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactEmailInput" } } }
+      responses:
+        "200": { description: Email sent and logged, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactMessage" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /owner/contacts/{contactId}/timeline:
     get:
       operationId: getArtistContactTimeline
@@ -1888,7 +1935,7 @@ components:
       required: [id, kind, reason, subject, body, channels, createdAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [auto_reminder, manual_reminder, update] }
+        kind: { type: string, enum: [auto_reminder, manual_reminder, update, email] }
         reason: { type: string }
         subject: { type: string }
         body: { type: string }
@@ -1919,6 +1966,43 @@ components:
         waitlistWebhookConfigured: { type: boolean }
         emailConfigured: { type: boolean }
         whatsappConfigured: { type: boolean }
+
+    ArtistContactEmailInput:
+      type: object
+      required: [template]
+      properties:
+        template: { type: string, enum: [verification_received, profile_activated, checking_in, custom] }
+        subject: { type: string, maxLength: 150 }
+        body: { type: string, maxLength: 5000 }
+
+    ArtistContactBulkEmailInput:
+      type: object
+      required: [template, contactIds]
+      properties:
+        template: { type: string, enum: [verification_received, profile_activated, checking_in, custom] }
+        contactIds:
+          type: array
+          minItems: 1
+          maxItems: 2000
+          items: { type: string }
+        subject: { type: string, maxLength: 150 }
+        body: { type: string, maxLength: 5000 }
+
+    ArtistContactBulkEmailResult:
+      type: object
+      required: [sent, notDelivered, skipped]
+      properties:
+        sent: { type: integer }
+        notDelivered: { type: integer }
+        skipped: { type: integer }
+
+    ArtistContactEmailPreview:
+      type: object
+      required: [subject, html, text]
+      properties:
+        subject: { type: string }
+        html: { type: string }
+        text: { type: string }
 
     WaitlistSignupPayload:
       type: object

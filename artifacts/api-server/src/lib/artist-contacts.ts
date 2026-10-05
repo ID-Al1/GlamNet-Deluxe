@@ -27,6 +27,7 @@ import {
   type ArtistContact,
 } from "@workspace/db";
 import { normalisePhone, notify } from "./notifications";
+import { ITEM_HINTS, appUrl } from "./email-templates";
 import { logger } from "./logger";
 
 export const REMINDER_INTERVAL_DAYS = 3;
@@ -357,22 +358,6 @@ export async function refreshContacts() {
 // ---------------------------------------------------------------------------
 // Reminder wording
 // ---------------------------------------------------------------------------
-
-function appUrl() {
-  const configured = process.env["PUBLIC_APP_URL"]?.trim().replace(/\/$/, "");
-  if (configured) return configured;
-  const replit = process.env["REPLIT_DOMAINS"]?.split(",")[0]?.trim();
-  return replit ? `https://${replit}` : "https://bonisa.co.za";
-}
-
-const ITEM_HINTS: Record<string, string> = {
-  "ID number": "your South African ID number",
-  "ID document": "a clear photo of your ID",
-  "Bank details": "the bank account we pay your earnings into",
-  "Bio": "a few sentences about you and your work",
-  "Services": "at least one service with its price",
-  "Portfolio": "a few photos of your best work",
-};
 
 export function buildReminder(contact: ArtistContact, status: ContactStatus): { subject: string; body: string; reason: string } | null {
   const first = contact.name.trim().split(/\s+/)[0] || "there";

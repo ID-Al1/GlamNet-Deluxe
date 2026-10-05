@@ -687,6 +687,7 @@ export const ArtistContactMessageKind = {
   auto_reminder: 'auto_reminder',
   manual_reminder: 'manual_reminder',
   update: 'update',
+  email: 'email',
 } as const;
 
 export interface ArtistContactMessage {
@@ -717,6 +718,59 @@ export interface ArtistContactSettings {
   waitlistWebhookConfigured: boolean;
   emailConfigured: boolean;
   whatsappConfigured: boolean;
+}
+
+export type ArtistContactEmailInputTemplate = typeof ArtistContactEmailInputTemplate[keyof typeof ArtistContactEmailInputTemplate];
+
+
+export const ArtistContactEmailInputTemplate = {
+  verification_received: 'verification_received',
+  profile_activated: 'profile_activated',
+  checking_in: 'checking_in',
+  custom: 'custom',
+} as const;
+
+export interface ArtistContactEmailInput {
+  template: ArtistContactEmailInputTemplate;
+  /** @maxLength 150 */
+  subject?: string;
+  /** @maxLength 5000 */
+  body?: string;
+}
+
+export type ArtistContactBulkEmailInputTemplate = typeof ArtistContactBulkEmailInputTemplate[keyof typeof ArtistContactBulkEmailInputTemplate];
+
+
+export const ArtistContactBulkEmailInputTemplate = {
+  verification_received: 'verification_received',
+  profile_activated: 'profile_activated',
+  checking_in: 'checking_in',
+  custom: 'custom',
+} as const;
+
+export interface ArtistContactBulkEmailInput {
+  template: ArtistContactBulkEmailInputTemplate;
+  /**
+     * @minItems 1
+     * @maxItems 2000
+     */
+  contactIds: string[];
+  /** @maxLength 150 */
+  subject?: string;
+  /** @maxLength 5000 */
+  body?: string;
+}
+
+export interface ArtistContactBulkEmailResult {
+  sent: number;
+  notDelivered: number;
+  skipped: number;
+}
+
+export interface ArtistContactEmailPreview {
+  subject: string;
+  html: string;
+  text: string;
 }
 
 export interface WaitlistSignupPayload { [key: string]: unknown }

@@ -25,6 +25,10 @@ import type {
   AppointmentInput,
   AppointmentUpdate,
   ArtistContact,
+  ArtistContactBulkEmailInput,
+  ArtistContactBulkEmailResult,
+  ArtistContactEmailInput,
+  ArtistContactEmailPreview,
   ArtistContactImportInput,
   ArtistContactImportResult,
   ArtistContactInput,
@@ -4387,6 +4391,218 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpdateArtistContactMutationOptions(options));
+    }
+
+export const getEmailArtistContactsUrl = () => {
+
+
+
+
+  return `/api/owner/contacts/email-bulk`
+}
+
+/**
+ * @summary Send a branded email to several contacts, each personalised
+ */
+export const emailArtistContacts = async (artistContactBulkEmailInput: ArtistContactBulkEmailInput, options?: RequestInit): Promise<ArtistContactBulkEmailResult> => {
+
+  return customFetch<ArtistContactBulkEmailResult>(getEmailArtistContactsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactBulkEmailInput)
+  }
+);}
+
+
+
+
+export const getEmailArtistContactsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailArtistContacts>>, TError,{data: BodyType<ArtistContactBulkEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof emailArtistContacts>>, TError,{data: BodyType<ArtistContactBulkEmailInput>}, TContext> => {
+
+const mutationKey = ['emailArtistContacts'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emailArtistContacts>>, {data: BodyType<ArtistContactBulkEmailInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  emailArtistContacts(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmailArtistContactsMutationResult = NonNullable<Awaited<ReturnType<typeof emailArtistContacts>>>
+    export type EmailArtistContactsMutationBody = BodyType<ArtistContactBulkEmailInput>
+    export type EmailArtistContactsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Send a branded email to several contacts, each personalised
+ */
+export const useEmailArtistContacts = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailArtistContacts>>, TError,{data: BodyType<ArtistContactBulkEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof emailArtistContacts>>,
+        TError,
+        {data: BodyType<ArtistContactBulkEmailInput>},
+        TContext
+      > => {
+      return useMutation(getEmailArtistContactsMutationOptions(options));
+    }
+
+export const getPreviewArtistContactEmailUrl = (contactId: string,) => {
+
+
+
+
+  return `/api/owner/contacts/${contactId}/email/preview`
+}
+
+/**
+ * @summary Show exactly what a branded email would look like for this person
+ */
+export const previewArtistContactEmail = async (contactId: string,
+    artistContactEmailInput: ArtistContactEmailInput, options?: RequestInit): Promise<ArtistContactEmailPreview> => {
+
+  return customFetch<ArtistContactEmailPreview>(getPreviewArtistContactEmailUrl(contactId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactEmailInput)
+  }
+);}
+
+
+
+
+export const getPreviewArtistContactEmailMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewArtistContactEmail>>, TError,{contactId: string;data: BodyType<ArtistContactEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewArtistContactEmail>>, TError,{contactId: string;data: BodyType<ArtistContactEmailInput>}, TContext> => {
+
+const mutationKey = ['previewArtistContactEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewArtistContactEmail>>, {contactId: string;data: BodyType<ArtistContactEmailInput>}> = (props) => {
+          const {contactId,data} = props ?? {};
+
+          return  previewArtistContactEmail(contactId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewArtistContactEmailMutationResult = NonNullable<Awaited<ReturnType<typeof previewArtistContactEmail>>>
+    export type PreviewArtistContactEmailMutationBody = BodyType<ArtistContactEmailInput>
+    export type PreviewArtistContactEmailMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Show exactly what a branded email would look like for this person
+ */
+export const usePreviewArtistContactEmail = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewArtistContactEmail>>, TError,{contactId: string;data: BodyType<ArtistContactEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewArtistContactEmail>>,
+        TError,
+        {contactId: string;data: BodyType<ArtistContactEmailInput>},
+        TContext
+      > => {
+      return useMutation(getPreviewArtistContactEmailMutationOptions(options));
+    }
+
+export const getEmailArtistContactUrl = (contactId: string,) => {
+
+
+
+
+  return `/api/owner/contacts/${contactId}/email`
+}
+
+/**
+ * @summary Send this person a branded email
+ */
+export const emailArtistContact = async (contactId: string,
+    artistContactEmailInput: ArtistContactEmailInput, options?: RequestInit): Promise<ArtistContactMessage> => {
+
+  return customFetch<ArtistContactMessage>(getEmailArtistContactUrl(contactId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactEmailInput)
+  }
+);}
+
+
+
+
+export const getEmailArtistContactMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailArtistContact>>, TError,{contactId: string;data: BodyType<ArtistContactEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof emailArtistContact>>, TError,{contactId: string;data: BodyType<ArtistContactEmailInput>}, TContext> => {
+
+const mutationKey = ['emailArtistContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emailArtistContact>>, {contactId: string;data: BodyType<ArtistContactEmailInput>}> = (props) => {
+          const {contactId,data} = props ?? {};
+
+          return  emailArtistContact(contactId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmailArtistContactMutationResult = NonNullable<Awaited<ReturnType<typeof emailArtistContact>>>
+    export type EmailArtistContactMutationBody = BodyType<ArtistContactEmailInput>
+    export type EmailArtistContactMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Send this person a branded email
+ */
+export const useEmailArtistContact = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emailArtistContact>>, TError,{contactId: string;data: BodyType<ArtistContactEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof emailArtistContact>>,
+        TError,
+        {contactId: string;data: BodyType<ArtistContactEmailInput>},
+        TContext
+      > => {
+      return useMutation(getEmailArtistContactMutationOptions(options));
     }
 
 export const getGetArtistContactTimelineUrl = (contactId: string,) => {
