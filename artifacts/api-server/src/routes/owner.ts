@@ -72,7 +72,7 @@ router.get("/owner/artists/not-submitted", requireOwner, async (_req, res) => {
   }).from(stylistProfilesTable)
     .innerJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId))
     .where(eq(stylistProfilesTable.verificationStatus, "none"))
-    .orderBy(asc(usersTable.createdAt));
+    .orderBy(asc(usersTable.createdAt), asc(stylistProfilesTable.id));
 
   res.json(rows.map((row) => {
     const outstanding: string[] = [];
@@ -406,32 +406,27 @@ router.post("/owner/artists/:profileId/bank/reveal", requireOwner, async (req, r
 // List pending artists
 // ---------------------------------------------------------------------------
 router.get("/owner/artists/pending", requireOwner, async (req, res) => {
-  const profiles = await db
-    .select()
+  // Longest-waiting first, so the queue reads top to bottom in the order the
+  // owner should answer it. Without an explicit order Postgres returns rows in
+  // whatever order it likes, which scatters the queue between visits.
+  const rows = await db
+    .select({ profile: stylistProfilesTable, email: usersTable.email, phone: usersTable.phone })
     .from(stylistProfilesTable)
-    .where(eq(stylistProfilesTable.verificationStatus, "pending"));
+    .leftJoin(usersTable, eq(usersTable.id, stylistProfilesTable.userId))
+    .where(eq(stylistProfilesTable.verificationStatus, "pending"))
+    .orderBy(asc(stylistProfilesTable.createdAt), asc(stylistProfilesTable.id));
 
-  const result = await Promise.all(
-    profiles.map(async (p) => {
-      const [user] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.id, p.userId));
-      return {
-        profileId: p.id,
-        name: p.name,
-        specialty: p.specialty,
-        location: p.location,
-        bio: p.bio ?? null,
-        email: user?.email ?? null,
-        phone: user?.phone ?? null,
-        identityDocumentAvailable: !!p.idDocumentUrl,
-        joinedAt: p.createdAt.toISOString(),
-      };
-    }),
-  );
-
-  res.json(result);
+  res.json(rows.map(({ profile: p, email, phone }) => ({
+    profileId: p.id,
+    name: p.name,
+    specialty: p.specialty,
+    location: p.location,
+    bio: p.bio ?? null,
+    email: email ?? null,
+    phone: phone ?? null,
+    identityDocumentAvailable: !!p.idDocumentUrl,
+    joinedAt: p.createdAt.toISOString(),
+  })));
 });
 
 router.get("/owner/artists/:profileId/identity", requireOwner, async (req, res) => {
