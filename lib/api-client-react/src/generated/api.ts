@@ -24,6 +24,15 @@ import type {
   Appointment,
   AppointmentInput,
   AppointmentUpdate,
+  ArtistContact,
+  ArtistContactImportInput,
+  ArtistContactImportResult,
+  ArtistContactInput,
+  ArtistContactMessage,
+  ArtistContactSettings,
+  ArtistContactSettingsInput,
+  ArtistContactTimeline,
+  ArtistContactUpdate,
   AuthResult,
   BadRequestResponse,
   BankAccountInput,
@@ -84,6 +93,8 @@ import type {
   OwnerUpdateAudienceArtist,
   PortfolioItem,
   PortfolioItemInput,
+  ReceiveWaitlistSignup200,
+  RemindDueArtistContacts200,
   RevealArtistBankAccount200,
   SearchOwnerRegistryParams,
   Service,
@@ -96,7 +107,8 @@ import type {
   StylistProfileUpdate,
   UnauthorizedResponse,
   User,
-  VerificationChecklist
+  VerificationChecklist,
+  WaitlistSignupPayload
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -3888,6 +3900,705 @@ export const useMarkMyArtistUpdatesRead = <TError = ErrorType<UnauthorizedRespon
         TContext
       > => {
       return useMutation(getMarkMyArtistUpdatesReadMutationOptions(options));
+    }
+
+export const getListArtistContactsUrl = () => {
+
+
+
+
+  return `/api/owner/contacts`
+}
+
+/**
+ * @summary Every would-be artist from every source, with what she still needs to do
+ */
+export const listArtistContacts = async ( options?: RequestInit): Promise<ArtistContact[]> => {
+
+  return customFetch<ArtistContact[]>(getListArtistContactsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListArtistContactsQueryKey = () => {
+    return [
+    `/api/owner/contacts`
+    ] as const;
+    }
+
+
+export const getListArtistContactsQueryOptions = <TData = Awaited<ReturnType<typeof listArtistContacts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listArtistContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListArtistContactsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listArtistContacts>>> = ({ signal }) => listArtistContacts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listArtistContacts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListArtistContactsQueryResult = NonNullable<Awaited<ReturnType<typeof listArtistContacts>>>
+export type ListArtistContactsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Every would-be artist from every source, with what she still needs to do
+ */
+
+export function useListArtistContacts<TData = Awaited<ReturnType<typeof listArtistContacts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listArtistContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListArtistContactsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateArtistContactUrl = () => {
+
+
+
+
+  return `/api/owner/contacts`
+}
+
+/**
+ * @summary Add a person by hand (merged if her email or phone is already on the list)
+ */
+export const createArtistContact = async (artistContactInput: ArtistContactInput, options?: RequestInit): Promise<ArtistContact> => {
+
+  return customFetch<ArtistContact>(getCreateArtistContactUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactInput)
+  }
+);}
+
+
+
+
+export const getCreateArtistContactMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createArtistContact>>, TError,{data: BodyType<ArtistContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createArtistContact>>, TError,{data: BodyType<ArtistContactInput>}, TContext> => {
+
+const mutationKey = ['createArtistContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createArtistContact>>, {data: BodyType<ArtistContactInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createArtistContact(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateArtistContactMutationResult = NonNullable<Awaited<ReturnType<typeof createArtistContact>>>
+    export type CreateArtistContactMutationBody = BodyType<ArtistContactInput>
+    export type CreateArtistContactMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Add a person by hand (merged if her email or phone is already on the list)
+ */
+export const useCreateArtistContact = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createArtistContact>>, TError,{data: BodyType<ArtistContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createArtistContact>>,
+        TError,
+        {data: BodyType<ArtistContactInput>},
+        TContext
+      > => {
+      return useMutation(getCreateArtistContactMutationOptions(options));
+    }
+
+export const getImportArtistContactsUrl = () => {
+
+
+
+
+  return `/api/owner/contacts/import`
+}
+
+/**
+ * @summary Import rows from a waitlist export or spreadsheet
+ */
+export const importArtistContacts = async (artistContactImportInput: ArtistContactImportInput, options?: RequestInit): Promise<ArtistContactImportResult> => {
+
+  return customFetch<ArtistContactImportResult>(getImportArtistContactsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactImportInput)
+  }
+);}
+
+
+
+
+export const getImportArtistContactsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importArtistContacts>>, TError,{data: BodyType<ArtistContactImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importArtistContacts>>, TError,{data: BodyType<ArtistContactImportInput>}, TContext> => {
+
+const mutationKey = ['importArtistContacts'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importArtistContacts>>, {data: BodyType<ArtistContactImportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importArtistContacts(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportArtistContactsMutationResult = NonNullable<Awaited<ReturnType<typeof importArtistContacts>>>
+    export type ImportArtistContactsMutationBody = BodyType<ArtistContactImportInput>
+    export type ImportArtistContactsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Import rows from a waitlist export or spreadsheet
+ */
+export const useImportArtistContacts = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importArtistContacts>>, TError,{data: BodyType<ArtistContactImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importArtistContacts>>,
+        TError,
+        {data: BodyType<ArtistContactImportInput>},
+        TContext
+      > => {
+      return useMutation(getImportArtistContactsMutationOptions(options));
+    }
+
+export const getGetArtistContactSettingsUrl = () => {
+
+
+
+
+  return `/api/owner/contacts/settings`
+}
+
+export const getArtistContactSettings = async ( options?: RequestInit): Promise<ArtistContactSettings> => {
+
+  return customFetch<ArtistContactSettings>(getGetArtistContactSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArtistContactSettingsQueryKey = () => {
+    return [
+    `/api/owner/contacts/settings`
+    ] as const;
+    }
+
+
+export const getGetArtistContactSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getArtistContactSettings>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistContactSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArtistContactSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArtistContactSettings>>> = ({ signal }) => getArtistContactSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArtistContactSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArtistContactSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getArtistContactSettings>>>
+export type GetArtistContactSettingsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+
+export function useGetArtistContactSettings<TData = Awaited<ReturnType<typeof getArtistContactSettings>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistContactSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArtistContactSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateArtistContactSettingsUrl = () => {
+
+
+
+
+  return `/api/owner/contacts/settings`
+}
+
+export const updateArtistContactSettings = async (artistContactSettingsInput: ArtistContactSettingsInput, options?: RequestInit): Promise<ArtistContactSettings> => {
+
+  return customFetch<ArtistContactSettings>(getUpdateArtistContactSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactSettingsInput)
+  }
+);}
+
+
+
+
+export const getUpdateArtistContactSettingsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArtistContactSettings>>, TError,{data: BodyType<ArtistContactSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateArtistContactSettings>>, TError,{data: BodyType<ArtistContactSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateArtistContactSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateArtistContactSettings>>, {data: BodyType<ArtistContactSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateArtistContactSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateArtistContactSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateArtistContactSettings>>>
+    export type UpdateArtistContactSettingsMutationBody = BodyType<ArtistContactSettingsInput>
+    export type UpdateArtistContactSettingsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    export const useUpdateArtistContactSettings = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArtistContactSettings>>, TError,{data: BodyType<ArtistContactSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateArtistContactSettings>>,
+        TError,
+        {data: BodyType<ArtistContactSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateArtistContactSettingsMutationOptions(options));
+    }
+
+export const getRemindDueArtistContactsUrl = () => {
+
+
+
+
+  return `/api/owner/contacts/remind-due`
+}
+
+/**
+ * @summary Send a reminder now to everyone who still has something to do and has reminders left
+ */
+export const remindDueArtistContacts = async ( options?: RequestInit): Promise<RemindDueArtistContacts200> => {
+
+  return customFetch<RemindDueArtistContacts200>(getRemindDueArtistContactsUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRemindDueArtistContactsMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof remindDueArtistContacts>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof remindDueArtistContacts>>, TError,void, TContext> => {
+
+const mutationKey = ['remindDueArtistContacts'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof remindDueArtistContacts>>, void> = () => {
+
+
+          return  remindDueArtistContacts(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemindDueArtistContactsMutationResult = NonNullable<Awaited<ReturnType<typeof remindDueArtistContacts>>>
+
+    export type RemindDueArtistContactsMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Send a reminder now to everyone who still has something to do and has reminders left
+ */
+export const useRemindDueArtistContacts = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof remindDueArtistContacts>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof remindDueArtistContacts>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRemindDueArtistContactsMutationOptions(options));
+    }
+
+export const getUpdateArtistContactUrl = (contactId: string,) => {
+
+
+
+
+  return `/api/owner/contacts/${contactId}`
+}
+
+export const updateArtistContact = async (contactId: string,
+    artistContactUpdate: ArtistContactUpdate, options?: RequestInit): Promise<ArtistContact> => {
+
+  return customFetch<ArtistContact>(getUpdateArtistContactUrl(contactId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistContactUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateArtistContactMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArtistContact>>, TError,{contactId: string;data: BodyType<ArtistContactUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateArtistContact>>, TError,{contactId: string;data: BodyType<ArtistContactUpdate>}, TContext> => {
+
+const mutationKey = ['updateArtistContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateArtistContact>>, {contactId: string;data: BodyType<ArtistContactUpdate>}> = (props) => {
+          const {contactId,data} = props ?? {};
+
+          return  updateArtistContact(contactId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateArtistContactMutationResult = NonNullable<Awaited<ReturnType<typeof updateArtistContact>>>
+    export type UpdateArtistContactMutationBody = BodyType<ArtistContactUpdate>
+    export type UpdateArtistContactMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    export const useUpdateArtistContact = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArtistContact>>, TError,{contactId: string;data: BodyType<ArtistContactUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateArtistContact>>,
+        TError,
+        {contactId: string;data: BodyType<ArtistContactUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateArtistContactMutationOptions(options));
+    }
+
+export const getGetArtistContactTimelineUrl = (contactId: string,) => {
+
+
+
+
+  return `/api/owner/contacts/${contactId}/timeline`
+}
+
+export const getArtistContactTimeline = async (contactId: string, options?: RequestInit): Promise<ArtistContactTimeline> => {
+
+  return customFetch<ArtistContactTimeline>(getGetArtistContactTimelineUrl(contactId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArtistContactTimelineQueryKey = (contactId: string,) => {
+    return [
+    `/api/owner/contacts/${contactId}/timeline`
+    ] as const;
+    }
+
+
+export const getGetArtistContactTimelineQueryOptions = <TData = Awaited<ReturnType<typeof getArtistContactTimeline>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(contactId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistContactTimeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArtistContactTimelineQueryKey(contactId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArtistContactTimeline>>> = ({ signal }) => getArtistContactTimeline(contactId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: contactId !== null && contactId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArtistContactTimeline>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArtistContactTimelineQueryResult = NonNullable<Awaited<ReturnType<typeof getArtistContactTimeline>>>
+export type GetArtistContactTimelineQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetArtistContactTimeline<TData = Awaited<ReturnType<typeof getArtistContactTimeline>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ contactId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtistContactTimeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArtistContactTimelineQueryOptions(contactId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRemindArtistContactUrl = (contactId: string,) => {
+
+
+
+
+  return `/api/owner/contacts/${contactId}/remind`
+}
+
+/**
+ * @summary Send her the reminder for her current step now
+ */
+export const remindArtistContact = async (contactId: string, options?: RequestInit): Promise<ArtistContactMessage> => {
+
+  return customFetch<ArtistContactMessage>(getRemindArtistContactUrl(contactId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRemindArtistContactMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof remindArtistContact>>, TError,{contactId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof remindArtistContact>>, TError,{contactId: string}, TContext> => {
+
+const mutationKey = ['remindArtistContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof remindArtistContact>>, {contactId: string}> = (props) => {
+          const {contactId} = props ?? {};
+
+          return  remindArtistContact(contactId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemindArtistContactMutationResult = NonNullable<Awaited<ReturnType<typeof remindArtistContact>>>
+
+    export type RemindArtistContactMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Send her the reminder for her current step now
+ */
+export const useRemindArtistContact = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof remindArtistContact>>, TError,{contactId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof remindArtistContact>>,
+        TError,
+        {contactId: string},
+        TContext
+      > => {
+      return useMutation(getRemindArtistContactMutationOptions(options));
+    }
+
+export const getReceiveWaitlistSignupUrl = () => {
+
+
+
+
+  return `/api/integrations/waitlist`
+}
+
+/**
+ * Requires the x-bonisa-secret header (or a Bearer token) matching WAITLIST_WEBHOOK_SECRET. Accepts a Supabase webhook payload ({ type, record }) or a plain sign-up object.
+ * @summary Receive a waitlist sign-up from the Vercel site or a Supabase database webhook
+ */
+export const receiveWaitlistSignup = async (waitlistSignupPayload: WaitlistSignupPayload, options?: RequestInit): Promise<ReceiveWaitlistSignup200> => {
+
+  return customFetch<ReceiveWaitlistSignup200>(getReceiveWaitlistSignupUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(waitlistSignupPayload)
+  }
+);}
+
+
+
+
+export const getReceiveWaitlistSignupMutationOptions = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveWaitlistSignup>>, TError,{data: BodyType<WaitlistSignupPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveWaitlistSignup>>, TError,{data: BodyType<WaitlistSignupPayload>}, TContext> => {
+
+const mutationKey = ['receiveWaitlistSignup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveWaitlistSignup>>, {data: BodyType<WaitlistSignupPayload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveWaitlistSignup(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveWaitlistSignupMutationResult = NonNullable<Awaited<ReturnType<typeof receiveWaitlistSignup>>>
+    export type ReceiveWaitlistSignupMutationBody = BodyType<WaitlistSignupPayload>
+    export type ReceiveWaitlistSignupMutationError = ErrorType<UnauthorizedResponse>
+
+    /**
+ * @summary Receive a waitlist sign-up from the Vercel site or a Supabase database webhook
+ */
+export const useReceiveWaitlistSignup = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveWaitlistSignup>>, TError,{data: BodyType<WaitlistSignupPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveWaitlistSignup>>,
+        TError,
+        {data: BodyType<WaitlistSignupPayload>},
+        TContext
+      > => {
+      return useMutation(getReceiveWaitlistSignupMutationOptions(options));
     }
 
 export const getCreateComplaintUrl = () => {

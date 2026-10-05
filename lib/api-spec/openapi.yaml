@@ -969,6 +969,125 @@ paths:
           content: { application/json: { schema: { type: object, required: [marked], properties: { marked: { type: integer } } } } }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /owner/contacts:
+    get:
+      operationId: listArtistContacts
+      tags: [owner]
+      summary: Every would-be artist from every source, with what she still needs to do
+      responses:
+        "200": { description: Contacts, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/ArtistContact" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createArtistContact
+      tags: [owner]
+      summary: Add a person by hand (merged if her email or phone is already on the list)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactInput" } } }
+      responses:
+        "201": { description: Contact added or merged, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContact" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/contacts/import:
+    post:
+      operationId: importArtistContacts
+      tags: [owner]
+      summary: Import rows from a waitlist export or spreadsheet
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactImportInput" } } }
+      responses:
+        "200": { description: Import result, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactImportResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/contacts/settings:
+    get:
+      operationId: getArtistContactSettings
+      tags: [owner]
+      responses:
+        "200": { description: Reminder settings, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactSettings" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: updateArtistContactSettings
+      tags: [owner]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactSettingsInput" } } }
+      responses:
+        "200": { description: Reminder settings, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactSettings" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/contacts/remind-due:
+    post:
+      operationId: remindDueArtistContacts
+      tags: [owner]
+      summary: Send a reminder now to everyone who still has something to do and has reminders left
+      responses:
+        "200": { description: Number sent, content: { application/json: { schema: { type: object, required: [sent], properties: { sent: { type: integer } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/contacts/{contactId}:
+    patch:
+      operationId: updateArtistContact
+      tags: [owner]
+      parameters: [{ name: contactId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactUpdate" } } }
+      responses:
+        "200": { description: Updated contact, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContact" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/contacts/{contactId}/timeline:
+    get:
+      operationId: getArtistContactTimeline
+      tags: [owner]
+      parameters: [{ name: contactId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Messages sent and the next reminder, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactTimeline" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /owner/contacts/{contactId}/remind:
+    post:
+      operationId: remindArtistContact
+      tags: [owner]
+      summary: Send her the reminder for her current step now
+      parameters: [{ name: contactId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Reminder sent, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistContactMessage" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /integrations/waitlist:
+    post:
+      operationId: receiveWaitlistSignup
+      tags: [integrations]
+      summary: Receive a waitlist sign-up from the Vercel site or a Supabase database webhook
+      description: Requires the x-bonisa-secret header (or a Bearer token) matching WAITLIST_WEBHOOK_SECRET. Accepts a Supabase webhook payload ({ type, record }) or a plain sign-up object.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/WaitlistSignupPayload" } } }
+      responses:
+        "200": { description: Stored, content: { application/json: { schema: { type: object, required: [outcome], properties: { outcome: { type: string, enum: [created, merged, skipped, ignored] } } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /complaints:
     post:
       operationId: createComplaint
@@ -1696,6 +1815,120 @@ components:
         body: { type: string }
         createdAt: { type: string, format: date-time }
         readAt: { type: string, format: date-time, nullable: true }
+
+    ArtistContact:
+      type: object
+      required: [id, name, email, phone, specialty, location, instagram, notes, sources, stage, missing, reachable, remindersPaused, remindersSent, lastRemindedAt, nextReminderAt, needsPersonalFollowUp, profileId, waitlistJoinedAt, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        specialty: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        instagram: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        sources: { type: array, items: { type: string, enum: [bonisa_app, vercel_waitlist, manual, import] } }
+        stage: { type: string, enum: [not_on_app, finishing_profile, waiting_review, live, suspended] }
+        missing: { type: array, items: { type: string } }
+        reachable: { type: boolean }
+        remindersPaused: { type: boolean }
+        remindersSent: { type: integer }
+        lastRemindedAt: { type: string, format: date-time, nullable: true }
+        nextReminderAt: { type: string, format: date-time, nullable: true }
+        needsPersonalFollowUp: { type: boolean }
+        profileId: { type: string, nullable: true }
+        waitlistJoinedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    ArtistContactInput:
+      type: object
+      properties:
+        name: { type: string, maxLength: 200, nullable: true }
+        email: { type: string, maxLength: 200, nullable: true }
+        phone: { type: string, maxLength: 40, nullable: true }
+        specialty: { type: string, maxLength: 200, nullable: true }
+        location: { type: string, maxLength: 200, nullable: true }
+        instagram: { type: string, maxLength: 200, nullable: true }
+        notes: { type: string, maxLength: 2000, nullable: true }
+
+    ArtistContactUpdate:
+      type: object
+      properties:
+        name: { type: string, maxLength: 200 }
+        email: { type: string, maxLength: 200, nullable: true }
+        phone: { type: string, maxLength: 40, nullable: true }
+        specialty: { type: string, maxLength: 200, nullable: true }
+        location: { type: string, maxLength: 200, nullable: true }
+        instagram: { type: string, maxLength: 200, nullable: true }
+        notes: { type: string, maxLength: 2000, nullable: true }
+        remindersPaused: { type: boolean }
+
+    ArtistContactImportInput:
+      type: object
+      required: [source, rows]
+      properties:
+        source: { type: string, enum: [vercel_waitlist, import] }
+        rows:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { type: object, additionalProperties: true }
+
+    ArtistContactImportResult:
+      type: object
+      required: [created, merged, skipped]
+      properties:
+        created: { type: integer }
+        merged: { type: integer }
+        skipped: { type: integer }
+
+    ArtistContactMessage:
+      type: object
+      required: [id, kind, reason, subject, body, channels, createdAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [auto_reminder, manual_reminder, update] }
+        reason: { type: string }
+        subject: { type: string }
+        body: { type: string }
+        channels: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+
+    ArtistContactTimeline:
+      type: object
+      required: [messages, nextReminder]
+      properties:
+        messages: { type: array, items: { $ref: "#/components/schemas/ArtistContactMessage" } }
+        nextReminder:
+          type: object
+          nullable: true
+          required: [reason, subject, body]
+          properties:
+            reason: { type: string }
+            subject: { type: string }
+            body: { type: string }
+
+    ArtistContactSettings:
+      type: object
+      required: [autoRemindersEnabled, reminderIntervalDays, maxRemindersPerStage, waitlistWebhookConfigured, emailConfigured, whatsappConfigured]
+      properties:
+        autoRemindersEnabled: { type: boolean }
+        reminderIntervalDays: { type: integer }
+        maxRemindersPerStage: { type: integer }
+        waitlistWebhookConfigured: { type: boolean }
+        emailConfigured: { type: boolean }
+        whatsappConfigured: { type: boolean }
+
+    WaitlistSignupPayload:
+      type: object
+      additionalProperties: true
+
+    ArtistContactSettingsInput:
+      type: object
+      required: [autoRemindersEnabled]
+      properties:
+        autoRemindersEnabled: { type: boolean }
 
     OwnerArtistAccountStatusInput:
       type: object

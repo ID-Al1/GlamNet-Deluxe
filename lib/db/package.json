@@ -12,7 +12,8 @@
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
     ,"migrate:complaints:dev": "node ./scripts/migrate-complaints-phase3.mjs",
     "migrate:bank-details:dev": "node ./scripts/migrate-bank-details-phase4.mjs",
-    "migrate:artist-updates:dev": "node ./scripts/add-artist-updates.mjs"
+    "migrate:artist-updates:dev": "node ./scripts/add-artist-updates.mjs",
+    "migrate:artist-contacts:dev": "node ./scripts/add-artist-contacts.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

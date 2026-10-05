@@ -14,6 +14,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec (run after any change to openapi.yaml)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only; see gotchas)
 - Required env: `DATABASE_URL` (Postgres), Stripe credentials via the Replit connector
+- Optional env for artist contacts: `WAITLIST_WEBHOOK_SECRET` (Vercel waitlist webhook, see docs/WAITLIST_CONNECTION.md), `PUBLIC_APP_URL` (links in reminders)
 
 ## Stack
 
@@ -40,6 +41,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 | Design tokens | `artifacts/glamnet/src/index.css` |
 | Shared category icons | `artifacts/glamnet/src/lib/categories.tsx` |
 | Agent memory | `.agents/memory/` |
+| Artist contacts and automatic reminders | `artifacts/api-server/src/lib/artist-contacts.ts`, owner page `pages/owner/contacts/` |
 
 ## Architecture decisions
 

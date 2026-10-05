@@ -576,6 +576,155 @@ export interface MyArtistUpdate {
   readAt: string | null;
 }
 
+export type ArtistContactSourcesItem = typeof ArtistContactSourcesItem[keyof typeof ArtistContactSourcesItem];
+
+
+export const ArtistContactSourcesItem = {
+  bonisa_app: 'bonisa_app',
+  vercel_waitlist: 'vercel_waitlist',
+  manual: 'manual',
+  import: 'import',
+} as const;
+
+export type ArtistContactStage = typeof ArtistContactStage[keyof typeof ArtistContactStage];
+
+
+export const ArtistContactStage = {
+  not_on_app: 'not_on_app',
+  finishing_profile: 'finishing_profile',
+  waiting_review: 'waiting_review',
+  live: 'live',
+  suspended: 'suspended',
+} as const;
+
+export interface ArtistContact {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  specialty: string | null;
+  location: string | null;
+  instagram: string | null;
+  notes: string | null;
+  sources: ArtistContactSourcesItem[];
+  stage: ArtistContactStage;
+  missing: string[];
+  reachable: boolean;
+  remindersPaused: boolean;
+  remindersSent: number;
+  lastRemindedAt: string | null;
+  nextReminderAt: string | null;
+  needsPersonalFollowUp: boolean;
+  profileId: string | null;
+  waitlistJoinedAt: string | null;
+  createdAt: string;
+}
+
+export interface ArtistContactInput {
+  /** @maxLength 200 */
+  name?: string | null;
+  /** @maxLength 200 */
+  email?: string | null;
+  /** @maxLength 40 */
+  phone?: string | null;
+  /** @maxLength 200 */
+  specialty?: string | null;
+  /** @maxLength 200 */
+  location?: string | null;
+  /** @maxLength 200 */
+  instagram?: string | null;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
+export interface ArtistContactUpdate {
+  /** @maxLength 200 */
+  name?: string;
+  /** @maxLength 200 */
+  email?: string | null;
+  /** @maxLength 40 */
+  phone?: string | null;
+  /** @maxLength 200 */
+  specialty?: string | null;
+  /** @maxLength 200 */
+  location?: string | null;
+  /** @maxLength 200 */
+  instagram?: string | null;
+  /** @maxLength 2000 */
+  notes?: string | null;
+  remindersPaused?: boolean;
+}
+
+export type ArtistContactImportInputSource = typeof ArtistContactImportInputSource[keyof typeof ArtistContactImportInputSource];
+
+
+export const ArtistContactImportInputSource = {
+  vercel_waitlist: 'vercel_waitlist',
+  import: 'import',
+} as const;
+
+export type ArtistContactImportInputRowsItem = { [key: string]: unknown };
+
+export interface ArtistContactImportInput {
+  source: ArtistContactImportInputSource;
+  /**
+     * @minItems 1
+     * @maxItems 500
+     */
+  rows: ArtistContactImportInputRowsItem[];
+}
+
+export interface ArtistContactImportResult {
+  created: number;
+  merged: number;
+  skipped: number;
+}
+
+export type ArtistContactMessageKind = typeof ArtistContactMessageKind[keyof typeof ArtistContactMessageKind];
+
+
+export const ArtistContactMessageKind = {
+  auto_reminder: 'auto_reminder',
+  manual_reminder: 'manual_reminder',
+  update: 'update',
+} as const;
+
+export interface ArtistContactMessage {
+  id: string;
+  kind: ArtistContactMessageKind;
+  reason: string;
+  subject: string;
+  body: string;
+  channels: string[];
+  createdAt: string;
+}
+
+export type ArtistContactTimelineNextReminder = {
+  reason: string;
+  subject: string;
+  body: string;
+} | null;
+
+export interface ArtistContactTimeline {
+  messages: ArtistContactMessage[];
+  nextReminder: ArtistContactTimelineNextReminder;
+}
+
+export interface ArtistContactSettings {
+  autoRemindersEnabled: boolean;
+  reminderIntervalDays: number;
+  maxRemindersPerStage: number;
+  waitlistWebhookConfigured: boolean;
+  emailConfigured: boolean;
+  whatsappConfigured: boolean;
+}
+
+export interface WaitlistSignupPayload { [key: string]: unknown }
+
+export interface ArtistContactSettingsInput {
+  autoRemindersEnabled: boolean;
+}
+
 export type OwnerArtistAccountStatusInputStatus = typeof OwnerArtistAccountStatusInputStatus[keyof typeof OwnerArtistAccountStatusInputStatus];
 
 
@@ -1258,6 +1407,24 @@ export type RevealArtistBankAccount200 = {
 
 export type MarkMyArtistUpdatesRead200 = {
   marked: number;
+};
+
+export type RemindDueArtistContacts200 = {
+  sent: number;
+};
+
+export type ReceiveWaitlistSignup200Outcome = typeof ReceiveWaitlistSignup200Outcome[keyof typeof ReceiveWaitlistSignup200Outcome];
+
+
+export const ReceiveWaitlistSignup200Outcome = {
+  created: 'created',
+  merged: 'merged',
+  skipped: 'skipped',
+  ignored: 'ignored',
+} as const;
+
+export type ReceiveWaitlistSignup200 = {
+  outcome: ReceiveWaitlistSignup200Outcome;
 };
 
 export type ListOwnerComplaintsParams = {

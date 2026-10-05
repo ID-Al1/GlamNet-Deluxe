@@ -67,7 +67,8 @@ export type NotificationEvent =
   | "tier.changed"              // → artist
 
   // ── Owner updates: one-to-many messages from Bonisa ───────────────────────
-  | "artist.update";            // → artist
+  | "artist.update"             // → artist
+  | "artist.reminder";          // → artist or waitlist contact (automatic nudge)
 
 /**
  * Which channel each event uses.
@@ -97,6 +98,7 @@ const CHANNEL_POLICY: Record<NotificationEvent, "whatsapp" | "both"> = {
   "casting.declined": "both",
   "tier.changed": "both",
   "artist.update": "both",
+  "artist.reminder": "both",
 };
 
 export interface NotificationData {
@@ -262,6 +264,9 @@ function formatMessage(event: NotificationEvent, data: NotificationData): string
         `Open Bonisa to see all your updates.`
       );
 
+    case "artist.reminder":
+      return `*${data.updateSubject ?? "A reminder from Bonisa"}*\n\n${data.updateBody ?? ""}`;
+
     default:
       return "You have a new notification on Bonisa.";
   }
@@ -407,6 +412,12 @@ function formatEmail(event: NotificationEvent, data: NotificationData): { subjec
           sign,
       };
 
+    case "artist.reminder":
+      return {
+        subject: data.updateSubject ?? "A reminder from Bonisa",
+        body: `${data.updateBody ?? ""}` + sign,
+      };
+
     default:
       // Booking-flow events are WhatsApp-first. No email version needed unless
       // there is no phone on file, in which case the WhatsApp copy is reused.
@@ -423,7 +434,7 @@ function formatEmail(event: NotificationEvent, data: NotificationData): { subjec
  * Accepts: +27 821234567, 0821234567, 27821234567
  * South African default prefix is +27 if no country code is detected.
  */
-function normalisePhone(raw: string): string | null {
+export function normalisePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return null;
   if (raw.startsWith("+")) return "+" + digits;
@@ -512,39 +523,41 @@ export async function notify(
   to: Recipient,
   event: NotificationEvent,
   data: NotificationData = {},
-): Promise<void> {
+): Promise<Array<"email" | "whatsapp">> {
+  const delivered: Array<"email" | "whatsapp"> = [];
   const policy = CHANNEL_POLICY[event] ?? "whatsapp";
   const waBody = formatMessage(event, data);
   const emailContent = formatEmail(event, data);
 
   if (!to.phone && !to.email) {
     logger.info({ event, data }, "Notification skipped — recipient has no phone or email on file");
-    return;
+    return delivered;
   }
 
   if (policy === "both") {
     // Email always. This is a record she may need again.
     if (to.email && emailContent) {
-      await sendEmail(to.email, event, emailContent.subject, emailContent.body);
+      if (await sendEmail(to.email, event, emailContent.subject, emailContent.body)) delivered.push("email");
     }
     if (to.phone) {
-      await sendWhatsApp(to.phone, event, waBody);
+      if (await sendWhatsApp(to.phone, event, waBody)) delivered.push("whatsapp");
     }
-    return;
+    return delivered;
   }
 
   // policy === "whatsapp": one channel, with email as a fallback so nothing is
   // silently dropped for an artist who never gave us a phone number.
   if (to.phone) {
     const sent = await sendWhatsApp(to.phone, event, waBody);
-    if (sent) return;
+    if (sent) return ["whatsapp"];
   }
 
   if (to.email) {
     const subject = emailContent?.subject ?? "You have an update on Bonisa";
     const body = emailContent?.body ?? waBody.replace(/\*/g, "");
-    await sendEmail(to.email, event, subject, body);
+    if (await sendEmail(to.email, event, subject, body)) delivered.push("email");
   }
+  return delivered;
 }
 
 /**
@@ -556,7 +569,7 @@ export async function sendNotification(
   event: NotificationEvent,
   data: NotificationData,
 ): Promise<void> {
-  return notify({ phone: toPhone ?? null }, event, data);
+  await notify({ phone: toPhone ?? null }, event, data);
 }
 
 /**

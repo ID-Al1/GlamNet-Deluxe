@@ -1235,6 +1235,244 @@ export const MarkMyArtistUpdatesReadResponse = zod.object({
 
 
 /**
+ * @summary Every would-be artist from every source, with what she still needs to do
+ */
+export const ListArtistContactsResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "specialty": zod.string().nullable(),
+  "location": zod.string().nullable(),
+  "instagram": zod.string().nullable(),
+  "notes": zod.string().nullable(),
+  "sources": zod.array(zod.enum(['bonisa_app', 'vercel_waitlist', 'manual', 'import'])),
+  "stage": zod.enum(['not_on_app', 'finishing_profile', 'waiting_review', 'live', 'suspended']),
+  "missing": zod.array(zod.string()),
+  "reachable": zod.boolean(),
+  "remindersPaused": zod.boolean(),
+  "remindersSent": zod.number(),
+  "lastRemindedAt": zod.coerce.date().nullable(),
+  "nextReminderAt": zod.coerce.date().nullable(),
+  "needsPersonalFollowUp": zod.boolean(),
+  "profileId": zod.string().nullable(),
+  "waitlistJoinedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
+})
+export const ListArtistContactsResponse = zod.array(ListArtistContactsResponseItem)
+
+
+/**
+ * @summary Add a person by hand (merged if her email or phone is already on the list)
+ */
+export const createArtistContactBodyNameMax = 200;
+
+export const createArtistContactBodyEmailMax = 200;
+
+export const createArtistContactBodyPhoneMax = 40;
+
+export const createArtistContactBodySpecialtyMax = 200;
+
+export const createArtistContactBodyLocationMax = 200;
+
+export const createArtistContactBodyInstagramMax = 200;
+
+export const createArtistContactBodyNotesMax = 2000;
+
+
+
+export const CreateArtistContactBody = zod.object({
+  "name": zod.string().max(createArtistContactBodyNameMax).nullish(),
+  "email": zod.string().max(createArtistContactBodyEmailMax).nullish(),
+  "phone": zod.string().max(createArtistContactBodyPhoneMax).nullish(),
+  "specialty": zod.string().max(createArtistContactBodySpecialtyMax).nullish(),
+  "location": zod.string().max(createArtistContactBodyLocationMax).nullish(),
+  "instagram": zod.string().max(createArtistContactBodyInstagramMax).nullish(),
+  "notes": zod.string().max(createArtistContactBodyNotesMax).nullish()
+})
+
+export const CreateArtistContactResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "specialty": zod.string().nullable(),
+  "location": zod.string().nullable(),
+  "instagram": zod.string().nullable(),
+  "notes": zod.string().nullable(),
+  "sources": zod.array(zod.enum(['bonisa_app', 'vercel_waitlist', 'manual', 'import'])),
+  "stage": zod.enum(['not_on_app', 'finishing_profile', 'waiting_review', 'live', 'suspended']),
+  "missing": zod.array(zod.string()),
+  "reachable": zod.boolean(),
+  "remindersPaused": zod.boolean(),
+  "remindersSent": zod.number(),
+  "lastRemindedAt": zod.coerce.date().nullable(),
+  "nextReminderAt": zod.coerce.date().nullable(),
+  "needsPersonalFollowUp": zod.boolean(),
+  "profileId": zod.string().nullable(),
+  "waitlistJoinedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Import rows from a waitlist export or spreadsheet
+ */
+export const importArtistContactsBodyRowsMax = 500;
+
+
+
+export const ImportArtistContactsBody = zod.object({
+  "source": zod.enum(['vercel_waitlist', 'import']),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown())).min(1).max(importArtistContactsBodyRowsMax)
+})
+
+export const ImportArtistContactsResponse = zod.object({
+  "created": zod.number(),
+  "merged": zod.number(),
+  "skipped": zod.number()
+})
+
+
+export const GetArtistContactSettingsResponse = zod.object({
+  "autoRemindersEnabled": zod.boolean(),
+  "reminderIntervalDays": zod.number(),
+  "maxRemindersPerStage": zod.number(),
+  "waitlistWebhookConfigured": zod.boolean(),
+  "emailConfigured": zod.boolean(),
+  "whatsappConfigured": zod.boolean()
+})
+
+
+export const UpdateArtistContactSettingsBody = zod.object({
+  "autoRemindersEnabled": zod.boolean()
+})
+
+export const UpdateArtistContactSettingsResponse = zod.object({
+  "autoRemindersEnabled": zod.boolean(),
+  "reminderIntervalDays": zod.number(),
+  "maxRemindersPerStage": zod.number(),
+  "waitlistWebhookConfigured": zod.boolean(),
+  "emailConfigured": zod.boolean(),
+  "whatsappConfigured": zod.boolean()
+})
+
+
+/**
+ * @summary Send a reminder now to everyone who still has something to do and has reminders left
+ */
+export const RemindDueArtistContactsResponse = zod.object({
+  "sent": zod.number()
+})
+
+
+export const UpdateArtistContactParams = zod.object({
+  "contactId": zod.coerce.string()
+})
+
+export const updateArtistContactBodyNameMax = 200;
+
+export const updateArtistContactBodyEmailMax = 200;
+
+export const updateArtistContactBodyPhoneMax = 40;
+
+export const updateArtistContactBodySpecialtyMax = 200;
+
+export const updateArtistContactBodyLocationMax = 200;
+
+export const updateArtistContactBodyInstagramMax = 200;
+
+export const updateArtistContactBodyNotesMax = 2000;
+
+
+
+export const UpdateArtistContactBody = zod.object({
+  "name": zod.string().max(updateArtistContactBodyNameMax).optional(),
+  "email": zod.string().max(updateArtistContactBodyEmailMax).nullish(),
+  "phone": zod.string().max(updateArtistContactBodyPhoneMax).nullish(),
+  "specialty": zod.string().max(updateArtistContactBodySpecialtyMax).nullish(),
+  "location": zod.string().max(updateArtistContactBodyLocationMax).nullish(),
+  "instagram": zod.string().max(updateArtistContactBodyInstagramMax).nullish(),
+  "notes": zod.string().max(updateArtistContactBodyNotesMax).nullish(),
+  "remindersPaused": zod.boolean().optional()
+})
+
+export const UpdateArtistContactResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "specialty": zod.string().nullable(),
+  "location": zod.string().nullable(),
+  "instagram": zod.string().nullable(),
+  "notes": zod.string().nullable(),
+  "sources": zod.array(zod.enum(['bonisa_app', 'vercel_waitlist', 'manual', 'import'])),
+  "stage": zod.enum(['not_on_app', 'finishing_profile', 'waiting_review', 'live', 'suspended']),
+  "missing": zod.array(zod.string()),
+  "reachable": zod.boolean(),
+  "remindersPaused": zod.boolean(),
+  "remindersSent": zod.number(),
+  "lastRemindedAt": zod.coerce.date().nullable(),
+  "nextReminderAt": zod.coerce.date().nullable(),
+  "needsPersonalFollowUp": zod.boolean(),
+  "profileId": zod.string().nullable(),
+  "waitlistJoinedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const GetArtistContactTimelineParams = zod.object({
+  "contactId": zod.coerce.string()
+})
+
+export const GetArtistContactTimelineResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update']),
+  "reason": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "channels": zod.array(zod.string()),
+  "createdAt": zod.coerce.date()
+})),
+  "nextReminder": zod.object({
+  "reason": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string()
+}).nullable()
+})
+
+
+/**
+ * @summary Send her the reminder for her current step now
+ */
+export const RemindArtistContactParams = zod.object({
+  "contactId": zod.coerce.string()
+})
+
+export const RemindArtistContactResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['auto_reminder', 'manual_reminder', 'update']),
+  "reason": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "channels": zod.array(zod.string()),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * Requires the x-bonisa-secret header (or a Bearer token) matching WAITLIST_WEBHOOK_SECRET. Accepts a Supabase webhook payload ({ type, record }) or a plain sign-up object.
+ * @summary Receive a waitlist sign-up from the Vercel site or a Supabase database webhook
+ */
+export const ReceiveWaitlistSignupBody = zod.record(zod.string(), zod.unknown())
+
+export const ReceiveWaitlistSignupResponse = zod.object({
+  "outcome": zod.enum(['created', 'merged', 'skipped', 'ignored'])
+})
+
+
+/**
  * @summary Submit a complaint
  */
 export const createComplaintBodyDescriptionMax = 10000;
