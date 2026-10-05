@@ -64,7 +64,10 @@ export type NotificationEvent =
   | "casting.declined"          // → artist
 
   // ── Progression ───────────────────────────────────────────────────────────
-  | "tier.changed";             // → artist
+  | "tier.changed"              // → artist
+
+  // ── Owner updates: one-to-many messages from Bonisa ───────────────────────
+  | "artist.update";            // → artist
 
 /**
  * Which channel each event uses.
@@ -93,6 +96,7 @@ const CHANNEL_POLICY: Record<NotificationEvent, "whatsapp" | "both"> = {
   "casting.accepted": "both",
   "casting.declined": "both",
   "tier.changed": "both",
+  "artist.update": "both",
 };
 
 export interface NotificationData {
@@ -121,6 +125,10 @@ export interface NotificationData {
   newTier?: string;
   previousTier?: string;
   nextGoal?: string | null;
+
+  // Owner updates (already personalised for this artist)
+  updateSubject?: string;
+  updateBody?: string;
 }
 
 export interface Recipient {
@@ -245,6 +253,13 @@ function formatMessage(event: NotificationEvent, data: NotificationData): string
         `🏅 *You're now ${data.newTier} on Bonisa*\n\n` +
         `Your reputation has moved you up from ${data.previousTier}.\n\n` +
         `${data.nextGoal ?? "Keep going."}`
+      );
+
+    case "artist.update":
+      return (
+        `*${data.updateSubject ?? "An update from Bonisa"}*\n\n` +
+        `${data.updateBody ?? ""}\n\n` +
+        `Open Bonisa to see all your updates.`
       );
 
     default:
@@ -380,6 +395,15 @@ function formatEmail(event: NotificationEvent, data: NotificationData): { subjec
           `we hand out, and it isn't something anyone can buy.\n\n` +
           (data.nextGoal ? `${data.nextGoal}\n\n` : "") +
           `Higher tiers unlock campaigns that are closed to lower ones.` +
+          sign,
+      };
+
+    case "artist.update":
+      return {
+        subject: data.updateSubject ?? "An update from Bonisa",
+        body:
+          `${data.updateBody ?? ""}\n\n` +
+          `You can find this and every other update from us under Updates in the Bonisa app.` +
           sign,
       };
 

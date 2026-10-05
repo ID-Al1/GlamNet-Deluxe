@@ -501,6 +501,81 @@ export interface OwnerArtistNotSubmitted {
   outstanding: OwnerArtistNotSubmittedOutstandingItem[];
 }
 
+export type OwnerUpdateAudienceArtistVerificationStatus = typeof OwnerUpdateAudienceArtistVerificationStatus[keyof typeof OwnerUpdateAudienceArtistVerificationStatus];
+
+
+export const OwnerUpdateAudienceArtistVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+export type OwnerUpdateAudienceArtistOutstandingItem = typeof OwnerUpdateAudienceArtistOutstandingItem[keyof typeof OwnerUpdateAudienceArtistOutstandingItem];
+
+
+export const OwnerUpdateAudienceArtistOutstandingItem = {
+  ID_number: 'ID number',
+  ID_document: 'ID document',
+  Bank_details: 'Bank details',
+  Bio: 'Bio',
+  Services: 'Services',
+  Portfolio: 'Portfolio',
+} as const;
+
+export interface OwnerUpdateAudienceArtist {
+  profileId: string;
+  name: string;
+  firstName: string;
+  specialty: string;
+  location: string;
+  verificationStatus: OwnerUpdateAudienceArtistVerificationStatus;
+  outstanding: OwnerUpdateAudienceArtistOutstandingItem[];
+  hasEmail: boolean;
+  hasPhone: boolean;
+  completedBookings: number;
+  joinedAt: string;
+}
+
+export interface OwnerArtistUpdateInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  subject: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  body: string;
+  /**
+     * @minItems 1
+     * @maxItems 2000
+     */
+  profileIds: string[];
+  /** @maxLength 300 */
+  audienceSummary: string;
+  sendExternally: boolean;
+}
+
+export interface OwnerArtistUpdate {
+  id: string;
+  subject: string;
+  body: string;
+  audienceSummary: string;
+  sendExternally: boolean;
+  recipientCount: number;
+  readCount: number;
+  createdAt: string;
+}
+
+export interface MyArtistUpdate {
+  id: string;
+  subject: string;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
 export type OwnerArtistAccountStatusInputStatus = typeof OwnerArtistAccountStatusInputStatus[keyof typeof OwnerArtistAccountStatusInputStatus];
 
 
@@ -1179,6 +1254,10 @@ export const GetOwnerPayoutsFilter = {
 
 export type RevealArtistBankAccount200 = {
   accountNumber: string;
+};
+
+export type MarkMyArtistUpdatesRead200 = {
+  marked: number;
 };
 
 export type ListOwnerComplaintsParams = {

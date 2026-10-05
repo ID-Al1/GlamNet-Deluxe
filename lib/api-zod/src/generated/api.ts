@@ -1146,6 +1146,95 @@ export const GetArtistIdentityDocumentForOwnerResponse = zod.unknown()
 
 
 /**
+ * @summary Every active artist, with the profile details used to target an update
+ */
+export const ListOwnerArtistUpdateAudienceResponseItem = zod.object({
+  "profileId": zod.string(),
+  "name": zod.string(),
+  "firstName": zod.string(),
+  "specialty": zod.string(),
+  "location": zod.string(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "outstanding": zod.array(zod.enum(['ID number', 'ID document', 'Bank details', 'Bio', 'Services', 'Portfolio'])),
+  "hasEmail": zod.boolean(),
+  "hasPhone": zod.boolean(),
+  "completedBookings": zod.number(),
+  "joinedAt": zod.coerce.date()
+})
+export const ListOwnerArtistUpdateAudienceResponse = zod.array(ListOwnerArtistUpdateAudienceResponseItem)
+
+
+/**
+ * @summary Updates the owner has sent, newest first
+ */
+export const ListOwnerArtistUpdatesResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "audienceSummary": zod.string(),
+  "sendExternally": zod.boolean(),
+  "recipientCount": zod.number(),
+  "readCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListOwnerArtistUpdatesResponse = zod.array(ListOwnerArtistUpdatesResponseItem)
+
+
+/**
+ * @summary Send a personalised update to chosen artists
+ */
+export const sendOwnerArtistUpdateBodySubjectMax = 120;
+
+export const sendOwnerArtistUpdateBodyBodyMax = 2000;
+
+export const sendOwnerArtistUpdateBodyProfileIdsMax = 2000;
+
+export const sendOwnerArtistUpdateBodyAudienceSummaryMax = 300;
+
+
+
+export const SendOwnerArtistUpdateBody = zod.object({
+  "subject": zod.string().min(1).max(sendOwnerArtistUpdateBodySubjectMax),
+  "body": zod.string().min(1).max(sendOwnerArtistUpdateBodyBodyMax),
+  "profileIds": zod.array(zod.string()).min(1).max(sendOwnerArtistUpdateBodyProfileIdsMax),
+  "audienceSummary": zod.string().max(sendOwnerArtistUpdateBodyAudienceSummaryMax),
+  "sendExternally": zod.boolean()
+})
+
+export const SendOwnerArtistUpdateResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "audienceSummary": zod.string(),
+  "sendExternally": zod.boolean(),
+  "recipientCount": zod.number(),
+  "readCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Updates Bonisa has sent to the signed-in artist, newest first
+ */
+export const ListMyArtistUpdatesResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullable()
+})
+export const ListMyArtistUpdatesResponse = zod.array(ListMyArtistUpdatesResponseItem)
+
+
+/**
+ * @summary Mark every update for the signed-in artist as read
+ */
+export const MarkMyArtistUpdatesReadResponse = zod.object({
+  "marked": zod.number()
+})
+
+
+/**
  * @summary Submit a complaint
  */
 export const createComplaintBodyDescriptionMax = 10000;

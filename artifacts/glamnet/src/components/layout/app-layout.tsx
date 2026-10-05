@@ -3,10 +3,11 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { BonisaLogo } from "@/components/bonisa-logo";
 import { ArtistVerificationBanner } from "@/components/artist-verification-banner";
+import { ArtistUpdatesBanner } from "@/components/artist-updates-banner";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye } from "lucide-react";
+import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye, Bell } from "lucide-react";
 
 const NAV_PUBLIC = [
   { href: "/stylists", label: "Find Artists", icon: Users },
@@ -24,6 +25,7 @@ const NAV_AUTH_CLIENT = [
 const NAV_AUTH_STYLIST = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/messages", label: "Messages", icon: MessageCircle },
+  { href: "/updates", label: "Updates", icon: Bell },
   { href: "/casting", label: "Casting Calls", icon: Star },
   { href: "/profile", label: "Profile", icon: User },
 ];
@@ -332,6 +334,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       <ArtistVerificationBanner />
+      <ArtistUpdatesBanner />
 
       <main id="main-content" className="flex-1 flex flex-col relative">
         {children}

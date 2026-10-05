@@ -13,6 +13,7 @@ import reviewsRouter from "./reviews";
 import storageRouter from "./storage";
 import ownerRouter from "./owner";
 import complaintsRouter from "./complaints";
+import artistUpdatesRouter from "./artist-updates";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(reviewsRouter);
 router.use(storageRouter);
 router.use(ownerRouter);
 router.use(complaintsRouter);
+router.use(artistUpdatesRouter);
 
 export default router;

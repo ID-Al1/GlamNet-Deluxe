@@ -38,6 +38,8 @@ const OwnerRegistryProfile = lazy(() => import("@/pages/owner/registry/[userId]"
 const OwnerArtists = lazy(() => import("@/pages/owner/artists"));
 const OwnerArtistDetail = lazy(() => import("@/pages/owner/artists/[profileId]"));
 const OwnerVerifications = lazy(() => import("@/pages/owner/verifications"));
+const OwnerArtistUpdates = lazy(() => import("@/pages/owner/artist-updates"));
+const ArtistUpdatesInbox = lazy(() => import("@/pages/updates/index"));
 const OwnerPayouts = lazy(() => import("@/pages/owner/payouts/index"));
 const OwnerPaymentsOverview = lazy(() => import("@/pages/owner/payments-overview/index"));
 const OwnerComplaints = lazy(() => import("@/pages/owner/complaints/index"));
@@ -107,6 +109,7 @@ function Router() {
                 <Route path="/casting" component={CastingCalls} />
                 <Route path="/reviews/:appointmentId" component={LeaveReview} />
                 <Route path="/payments" component={PaymentHistory} />
+                <Route path="/updates" component={ArtistUpdatesInbox} />
                 <Route path="/complaints" component={ComplaintsList} />
                 <Route path="/complaints/new" component={NewComplaint} />
                 <Route path="/complaints/:id" component={ComplaintDetail} />
@@ -166,6 +169,15 @@ function Router() {
                     <OwnerLayout>
                       <Suspense fallback={<PageLoader />}>
                         <OwnerVerifications />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/updates">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerArtistUpdates />
                       </Suspense>
                     </OwnerLayout>
                   </RequireOwner>

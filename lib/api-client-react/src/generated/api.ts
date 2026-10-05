@@ -54,12 +54,14 @@ import type {
   ListOwnerComplaintsParams,
   ListStylistsParams,
   LoginInput,
+  MarkMyArtistUpdatesRead200,
   MarkOwnerPayoutInput,
   MediaUploadUrlRequest,
   MediaUploadUrlResponse,
   Message,
   MessageInput,
   MessageResponse,
+  MyArtistUpdate,
   MyStylistProfile,
   NotFoundResponse,
   OwnerArtistAccountStatusInput,
@@ -67,6 +69,8 @@ import type {
   OwnerArtistManagement,
   OwnerArtistNotSubmitted,
   OwnerArtistSummary,
+  OwnerArtistUpdate,
+  OwnerArtistUpdateInput,
   OwnerCommandCentreMetrics,
   OwnerComplaint,
   OwnerComplaintAction,
@@ -77,6 +81,7 @@ import type {
   OwnerPayoutGroup,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
+  OwnerUpdateAudienceArtist,
   PortfolioItem,
   PortfolioItemInput,
   RevealArtistBankAccount200,
@@ -3513,6 +3518,377 @@ export function useGetArtistIdentityDocumentForOwner<TData = Awaited<ReturnType<
 
 
 
+
+export const getListOwnerArtistUpdateAudienceUrl = () => {
+
+
+
+
+  return `/api/owner/artist-updates/audience`
+}
+
+/**
+ * @summary Every active artist, with the profile details used to target an update
+ */
+export const listOwnerArtistUpdateAudience = async ( options?: RequestInit): Promise<OwnerUpdateAudienceArtist[]> => {
+
+  return customFetch<OwnerUpdateAudienceArtist[]>(getListOwnerArtistUpdateAudienceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerArtistUpdateAudienceQueryKey = () => {
+    return [
+    `/api/owner/artist-updates/audience`
+    ] as const;
+    }
+
+
+export const getListOwnerArtistUpdateAudienceQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerArtistUpdateAudienceQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>> = ({ signal }) => listOwnerArtistUpdateAudience({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerArtistUpdateAudienceQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>>
+export type ListOwnerArtistUpdateAudienceQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Every active artist, with the profile details used to target an update
+ */
+
+export function useListOwnerArtistUpdateAudience<TData = Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistUpdateAudience>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerArtistUpdateAudienceQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOwnerArtistUpdatesUrl = () => {
+
+
+
+
+  return `/api/owner/artist-updates`
+}
+
+/**
+ * @summary Updates the owner has sent, newest first
+ */
+export const listOwnerArtistUpdates = async ( options?: RequestInit): Promise<OwnerArtistUpdate[]> => {
+
+  return customFetch<OwnerArtistUpdate[]>(getListOwnerArtistUpdatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerArtistUpdatesQueryKey = () => {
+    return [
+    `/api/owner/artist-updates`
+    ] as const;
+    }
+
+
+export const getListOwnerArtistUpdatesQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerArtistUpdates>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistUpdates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerArtistUpdatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerArtistUpdates>>> = ({ signal }) => listOwnerArtistUpdates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistUpdates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerArtistUpdatesQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerArtistUpdates>>>
+export type ListOwnerArtistUpdatesQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Updates the owner has sent, newest first
+ */
+
+export function useListOwnerArtistUpdates<TData = Awaited<ReturnType<typeof listOwnerArtistUpdates>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerArtistUpdates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerArtistUpdatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendOwnerArtistUpdateUrl = () => {
+
+
+
+
+  return `/api/owner/artist-updates`
+}
+
+/**
+ * @summary Send a personalised update to chosen artists
+ */
+export const sendOwnerArtistUpdate = async (ownerArtistUpdateInput: OwnerArtistUpdateInput, options?: RequestInit): Promise<OwnerArtistUpdate> => {
+
+  return customFetch<OwnerArtistUpdate>(getSendOwnerArtistUpdateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(ownerArtistUpdateInput)
+  }
+);}
+
+
+
+
+export const getSendOwnerArtistUpdateMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendOwnerArtistUpdate>>, TError,{data: BodyType<OwnerArtistUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendOwnerArtistUpdate>>, TError,{data: BodyType<OwnerArtistUpdateInput>}, TContext> => {
+
+const mutationKey = ['sendOwnerArtistUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendOwnerArtistUpdate>>, {data: BodyType<OwnerArtistUpdateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendOwnerArtistUpdate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendOwnerArtistUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof sendOwnerArtistUpdate>>>
+    export type SendOwnerArtistUpdateMutationBody = BodyType<OwnerArtistUpdateInput>
+    export type SendOwnerArtistUpdateMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Send a personalised update to chosen artists
+ */
+export const useSendOwnerArtistUpdate = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendOwnerArtistUpdate>>, TError,{data: BodyType<OwnerArtistUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendOwnerArtistUpdate>>,
+        TError,
+        {data: BodyType<OwnerArtistUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getSendOwnerArtistUpdateMutationOptions(options));
+    }
+
+export const getListMyArtistUpdatesUrl = () => {
+
+
+
+
+  return `/api/artist-updates/mine`
+}
+
+/**
+ * @summary Updates Bonisa has sent to the signed-in artist, newest first
+ */
+export const listMyArtistUpdates = async ( options?: RequestInit): Promise<MyArtistUpdate[]> => {
+
+  return customFetch<MyArtistUpdate[]>(getListMyArtistUpdatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyArtistUpdatesQueryKey = () => {
+    return [
+    `/api/artist-updates/mine`
+    ] as const;
+    }
+
+
+export const getListMyArtistUpdatesQueryOptions = <TData = Awaited<ReturnType<typeof listMyArtistUpdates>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyArtistUpdates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyArtistUpdatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyArtistUpdates>>> = ({ signal }) => listMyArtistUpdates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyArtistUpdates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyArtistUpdatesQueryResult = NonNullable<Awaited<ReturnType<typeof listMyArtistUpdates>>>
+export type ListMyArtistUpdatesQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Updates Bonisa has sent to the signed-in artist, newest first
+ */
+
+export function useListMyArtistUpdates<TData = Awaited<ReturnType<typeof listMyArtistUpdates>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyArtistUpdates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyArtistUpdatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMarkMyArtistUpdatesReadUrl = () => {
+
+
+
+
+  return `/api/artist-updates/mine/read`
+}
+
+/**
+ * @summary Mark every update for the signed-in artist as read
+ */
+export const markMyArtistUpdatesRead = async ( options?: RequestInit): Promise<MarkMyArtistUpdatesRead200> => {
+
+  return customFetch<MarkMyArtistUpdatesRead200>(getMarkMyArtistUpdatesReadUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getMarkMyArtistUpdatesReadMutationOptions = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markMyArtistUpdatesRead>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markMyArtistUpdatesRead>>, TError,void, TContext> => {
+
+const mutationKey = ['markMyArtistUpdatesRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markMyArtistUpdatesRead>>, void> = () => {
+
+
+          return  markMyArtistUpdatesRead(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkMyArtistUpdatesReadMutationResult = NonNullable<Awaited<ReturnType<typeof markMyArtistUpdatesRead>>>
+
+    export type MarkMyArtistUpdatesReadMutationError = ErrorType<UnauthorizedResponse>
+
+    /**
+ * @summary Mark every update for the signed-in artist as read
+ */
+export const useMarkMyArtistUpdatesRead = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markMyArtistUpdatesRead>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markMyArtistUpdatesRead>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getMarkMyArtistUpdatesReadMutationOptions(options));
+    }
 
 export const getCreateComplaintUrl = () => {
 
