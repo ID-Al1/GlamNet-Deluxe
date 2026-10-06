@@ -180,6 +180,13 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
     return;
   }
 
+  // A campaign job is one seat in a team the brand has paid for. Cancelling or changing it on its
+  // own would strand that artist's money, so changes go through the campaign instead.
+  if (before.campaignId) {
+    res.status(409).json({ error: "This job is part of a brand campaign, so it cannot be changed here. Brands: contact Bonisa. Artists: tell the brand through Messages." });
+    return;
+  }
+
   if (isArtist) {
     if (data.date !== undefined || data.time !== undefined || data.notes !== undefined) {
       res.status(403).json({ error: "Only the client can edit booking details" });
