@@ -109,6 +109,30 @@ Rejection requires a written reason, which she receives word for word.
 
 ---
 
+### Brand campaigns
+
+A casting call is now a campaign with real numbers: how many artists, what each is paid, the date and the place. A brand posts it, invites artists or takes applications, picks its team and pays Bonisa.
+
+**Leads with:** the total the brand pays, in rand, with Bonisa's fee on its own line. Never a total without the fee shown.
+
+**The money rule, agreed with Alwande:** on a brand campaign **the artist keeps her full rate and the brand pays Bonisa's 18% on top.** A R3,000 artist costs the brand R3,540: R3,000 to her, R540 to Bonisa. Normal client bookings are unchanged (the client pays the price, Bonisa keeps 18%, the artist gets 82%). Each job records which rule applies (`fee_mode`: `commission` or `brand_on_top`), so nothing is ever recalculated from a guess.
+
+**When the brand pays:** half to confirm the team, half three days before the event. If the event is less than three days away the whole amount is paid at once. Artists see "confirmed and funded" once the first payment lands.
+
+**Escrow:** the brand's money is held by Bonisa. It is released to artists only when the brand has paid in full and both the brand and the artist have confirmed the work. Artists are then paid within 24 hours, exactly as on any other booking. A brand cannot confirm the work until it has paid in full; an artist can confirm early and her confirmation waits.
+
+**Brand verification is a gate:** an unverified brand cannot post a campaign, invite artists or pay. The owner verifies brands from the Campaigns tab. A rejection needs a written reason, which the brand receives word for word.
+
+**Artists:** every artist is told every outcome (shortlisted, accepted, passed over, cancelled). She sees her rate in full, and that the brand pays the fee on top.
+
+**Forbidden:** taking Bonisa's fee off a campaign artist's rate. Releasing any payout before the campaign is paid in full. Letting an unverified brand post or pay. Showing a brand a total that leaves out the fee.
+
+**Cancelling:** a brand can cancel freely until it has paid. After payment, cancelling or refunding goes through Bonisa support, because the money is shared between several artists. This is deliberate for Phase 1 and is a known gap (see replit.md).
+
+**Done when:** a verified brand can post, build a team, pay the deposit and balance, confirm the work, and every artist ends up paid her exact rate with Bonisa's fee recorded, with nothing paid twice however many times a button is pressed.
+
+---
+
 ## Part 3 — What we do not build
 
 Straight from the strategy red lights, restated so nobody has to go looking:

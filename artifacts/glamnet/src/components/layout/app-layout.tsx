@@ -31,10 +31,9 @@ const NAV_AUTH_STYLIST = [
 ];
 
 const NAV_AUTH_BRAND = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Campaigns", icon: Star },
   { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/stylists", label: "Find Artists", icon: Users },
-  { href: "/casting", label: "Casting Calls", icon: Star },
   { href: "/profile", label: "Profile", icon: User },
 ];
 

@@ -14,6 +14,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec (run after any change to openapi.yaml)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only; see gotchas)
 - Required env: `DATABASE_URL` (Postgres), Stripe credentials via the Replit connector
+- Brand campaigns need `PUBLIC_APP_URL` (the Stripe return link) and the Stripe connector. Run `pnpm --filter @workspace/db run migrate:brand-campaigns:dev` (or `db push`) before first use
 - Optional env for artist contacts: `WAITLIST_WEBHOOK_SECRET` (Vercel waitlist webhook, see docs/WAITLIST_CONNECTION.md), `PUBLIC_APP_URL` (links in reminders)
 
 ## Stack
@@ -49,12 +50,14 @@ South Africa's verified professional network for beauty artists. Artists build a
 - **Verification has two fields on purpose:** `verified` (boolean gate) and `verificationStatus` (`none`/`pending`/`verified`). Both must agree.
 - **Payment logic is quarantined** in `stripeClient.ts`, `routes/stripe.ts`, and the booking success page so the provider can be swapped without touching booking logic.
 - **The OpenAPI spec is the contract.** Change the spec, run codegen, then use generated types. Do not hand-write API types.
+- **Brand campaigns** are casting calls with real numbers (`casting_calls`). Each hired artist becomes one `appointments` row with `campaign_id` set and `fee_mode = 'brand_on_top'`, so earnings, payouts, disputes and messaging all work as before. One Stripe payment covers the whole team and is shared out by `campaign_payment_lines`. All the rules live in `artifacts/api-server/src/lib/money.ts`, `campaigns.ts` and `campaign-payments.ts`.
 - **Team bookings** split a job via `payoutPercentage` on team members — separate from and not to be confused with the platform's 18% commission.
 
 ## Non-negotiables (do not change without explicit instruction from Alwande)
 
 1. **Verification is a gate, not a badge.** An unverified artist must not appear in browse, must not be bookable, must not apply to casting calls.
 2. **Every booking records the money split.** 18% platform, 82% artist, stored on the appointment record, never recalculated on the fly.
+   - **Brand campaigns (agreed with Alwande, October 2026):** the artist keeps her full rate and the brand pays the 18% on top. The job's `fee_mode` is `brand_on_top` and the split is stored the same way. See the Brand campaigns section of docs/BONISA_BUILD_SPEC.md.
 3. **The word is "artist", never "stylist"** in any user-facing text, new code, or new DB fields. Legacy `stylist*` identifiers exist and are being migrated.
 4. **Client, Artist, and Brand flows stay completely separate.** Three roles, three dashboards.
 5. **Zero fake data. Ever.** No placeholder artists, invented ratings, prices, reviews, or stock photos substituting for missing data. Empty data = empty state.
@@ -91,6 +94,9 @@ South Africa's verified professional network for beauty artists. Artists build a
 - `lib/db` dist types go stale after schema changes; rebuild the package before using new types.
 
 ## Known gaps (do not treat as done)
+
+- Brand campaigns: cancelling or refunding after the brand has paid is handled by Bonisa support, not in the app. No VAT invoices or 30-day invoice terms for brands yet (card payment only)
+- Brand campaigns: an overdue balance is flagged to the owner and the brand is reminded, but nothing is released or cancelled automatically
 
 - Commission and payout fields missing from the appointments table
 - Verification does not gate browse, booking, or casting applications
