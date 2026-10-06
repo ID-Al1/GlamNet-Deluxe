@@ -5,9 +5,12 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { AppointmentFeeMode } from './appointmentFeeMode';
 import type { AppointmentStatus } from './appointmentStatus';
 
 export interface Appointment {
+  campaignId?: string | null;
+  feeMode?: AppointmentFeeMode;
   id: string;
   clientId: string;
   clientName?: string;

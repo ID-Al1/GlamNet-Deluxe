@@ -7,11 +7,36 @@
  */
 
 export interface CastingCallInput {
-  /** @minLength 3 */
+  /**
+     * @minLength 3
+     * @maxLength 120
+     */
   title: string;
-  /** @minLength 10 */
+  /**
+     * @minLength 10
+     * @maxLength 4000
+     */
   brief: string;
-  budget: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   deadline: string;
   specialty: string;
+  /**
+     * @minimum 1
+     * @maximum 50
+     */
+  artistsNeeded: number;
+  /**
+     * @minimum 1
+     * @maximum 1000000
+     */
+  ratePerArtist: number;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  eventDate: string;
+  /** @pattern ^\d{2}:\d{2}$ */
+  eventTime?: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  location: string;
 }

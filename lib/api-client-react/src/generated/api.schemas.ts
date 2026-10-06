@@ -1095,6 +1095,14 @@ export interface PortfolioItemInput {
   imageUrl?: string;
 }
 
+export type AppointmentFeeMode = typeof AppointmentFeeMode[keyof typeof AppointmentFeeMode];
+
+
+export const AppointmentFeeMode = {
+  commission: 'commission',
+  brand_on_top: 'brand_on_top',
+} as const;
+
 export type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 
@@ -1107,6 +1115,8 @@ export const AppointmentStatus = {
 } as const;
 
 export interface Appointment {
+  campaignId?: string | null;
+  feeMode?: AppointmentFeeMode;
   id: string;
   clientId: string;
   clientName?: string;
@@ -1226,6 +1236,32 @@ export interface StartConversationInput {
   stylistId: string;
 }
 
+export type CastingCallStatus = typeof CastingCallStatus[keyof typeof CastingCallStatus];
+
+
+export const CastingCallStatus = {
+  open: 'open',
+  deposit_paid: 'deposit_paid',
+  fully_paid: 'fully_paid',
+  cancelled: 'cancelled',
+} as const;
+
+/**
+ * Where the signed-in artist stands on this campaign.
+ */
+export type CastingCallMyStatus = typeof CastingCallMyStatus[keyof typeof CastingCallMyStatus];
+
+
+export const CastingCallMyStatus = {
+  none: 'none',
+  pending: 'pending',
+  shortlisted: 'shortlisted',
+  invited: 'invited',
+  accepted: 'accepted',
+  declined: 'declined',
+  passed: 'passed',
+} as const;
+
 export interface CastingCall {
   id: string;
   brandId: string;
@@ -1238,24 +1274,348 @@ export interface CastingCall {
   applicantCount: number;
   hasApplied?: boolean;
   createdAt: string;
+  artistsNeeded: number;
+  /** What each artist is paid, in rand. She keeps all of it. */
+  ratePerArtist: number;
+  eventDate: string | null;
+  eventTime: string;
+  location: string;
+  status: CastingCallStatus;
+  spotsFilled: number;
+  brandVerified: boolean;
+  /** Where the signed-in artist stands on this campaign. */
+  myStatus?: CastingCallMyStatus;
 }
 
 export interface CastingCallInput {
-  /** @minLength 3 */
+  /**
+     * @minLength 3
+     * @maxLength 120
+     */
   title: string;
-  /** @minLength 10 */
+  /**
+     * @minLength 10
+     * @maxLength 4000
+     */
   brief: string;
-  budget: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   deadline: string;
   specialty: string;
+  /**
+     * @minimum 1
+     * @maximum 50
+     */
+  artistsNeeded: number;
+  /**
+     * @minimum 1
+     * @maximum 1000000
+     */
+  ratePerArtist: number;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  eventDate: string;
+  /** @pattern ^\d{2}:\d{2}$ */
+  eventTime?: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  location: string;
 }
 
 export interface CastingCallUpdate {
+  /**
+     * @minLength 3
+     * @maxLength 120
+     */
   title?: string;
+  /**
+     * @minLength 10
+     * @maxLength 4000
+     */
   brief?: string;
-  budget?: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   deadline?: string;
   specialty?: string;
+  /**
+     * @minimum 1
+     * @maximum 50
+     */
+  artistsNeeded?: number;
+  /**
+     * @minimum 1
+     * @maximum 1000000
+     */
+  ratePerArtist?: number;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  eventDate?: string;
+  /** @pattern ^\d{2}:\d{2}$ */
+  eventTime?: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  location?: string;
+}
+
+export type BrandProfileVerificationStatus = typeof BrandProfileVerificationStatus[keyof typeof BrandProfileVerificationStatus];
+
+
+export const BrandProfileVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+export interface BrandProfile {
+  id: string;
+  userId: string;
+  companyName: string;
+  registrationNumber: string | null;
+  vatNumber: string | null;
+  website: string | null;
+  billingAddress: string | null;
+  verificationStatus: BrandProfileVerificationStatus;
+  rejectionReason: string | null;
+  submittedAt: string | null;
+  verifiedAt: string | null;
+  /** What is still needed before the profile can be submitted. */
+  missing: string[];
+  canSubmit: boolean;
+}
+
+export interface BrandProfileInput {
+  /** @maxLength 160 */
+  companyName?: string;
+  /** @maxLength 60 */
+  registrationNumber?: string | null;
+  /** @maxLength 40 */
+  vatNumber?: string | null;
+  /** @maxLength 200 */
+  website?: string | null;
+  /** @maxLength 400 */
+  billingAddress?: string | null;
+}
+
+export interface OwnerPendingBrand {
+  profileId: string;
+  userId: string;
+  companyName: string;
+  registrationNumber: string | null;
+  vatNumber: string | null;
+  website: string | null;
+  billingAddress: string | null;
+  contactName: string;
+  email: string;
+  phone: string | null;
+  submittedAt: string | null;
+}
+
+export interface RejectBrandInput {
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type CastingApplicantSource = typeof CastingApplicantSource[keyof typeof CastingApplicantSource];
+
+
+export const CastingApplicantSource = {
+  applied: 'applied',
+  invited: 'invited',
+} as const;
+
+export type CastingApplicantStatus = typeof CastingApplicantStatus[keyof typeof CastingApplicantStatus];
+
+
+export const CastingApplicantStatus = {
+  pending: 'pending',
+  shortlisted: 'shortlisted',
+  invited: 'invited',
+  accepted: 'accepted',
+  declined: 'declined',
+  passed: 'passed',
+} as const;
+
+export interface CastingApplicant {
+  applicationId: string;
+  stylistId: string;
+  name: string;
+  specialty: string;
+  location: string;
+  source: CastingApplicantSource;
+  status: CastingApplicantStatus;
+  jobsCompleted: number;
+  rating: number;
+  reviewCount: number;
+  appliedAt: string;
+}
+
+export type DecideCastingApplicantInputDecision = typeof DecideCastingApplicantInputDecision[keyof typeof DecideCastingApplicantInputDecision];
+
+
+export const DecideCastingApplicantInputDecision = {
+  shortlist: 'shortlist',
+  accept: 'accept',
+  pass: 'pass',
+} as const;
+
+export interface DecideCastingApplicantInput {
+  decision: DecideCastingApplicantInputDecision;
+}
+
+export interface InviteArtistInput {
+  stylistId: string;
+}
+
+export interface RespondInvitationInput {
+  accept: boolean;
+}
+
+export interface CampaignTeamMember {
+  applicationId: string;
+  stylistId: string;
+  name: string;
+  specialty: string;
+  rate: number;
+  fee: number;
+  total: number;
+  deposit: number;
+  balance: number;
+}
+
+export interface CampaignJob {
+  appointmentId: string;
+  stylistId: string;
+  name: string;
+  rate: number;
+  total: number;
+  collected: number;
+  status: string;
+  payoutStatus: string;
+  confirmedByBrand: boolean;
+  confirmedByArtist: boolean;
+}
+
+export type CampaignPaymentRecordKind = typeof CampaignPaymentRecordKind[keyof typeof CampaignPaymentRecordKind];
+
+
+export const CampaignPaymentRecordKind = {
+  deposit: 'deposit',
+  balance: 'balance',
+  full: 'full',
+} as const;
+
+export type CampaignPaymentRecordStatus = typeof CampaignPaymentRecordStatus[keyof typeof CampaignPaymentRecordStatus];
+
+
+export const CampaignPaymentRecordStatus = {
+  pending: 'pending',
+  paid: 'paid',
+  failed: 'failed',
+  expired: 'expired',
+} as const;
+
+export interface CampaignPaymentRecord {
+  id: string;
+  kind: CampaignPaymentRecordKind;
+  amount: number;
+  status: CampaignPaymentRecordStatus;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+export interface CampaignCost {
+  artists: number;
+  artistFees: number;
+  fee: number;
+  total: number;
+  deposit: number;
+  balance: number;
+}
+
+export type CampaignSummaryStage = typeof CampaignSummaryStage[keyof typeof CampaignSummaryStage];
+
+
+export const CampaignSummaryStage = {
+  open: 'open',
+  deposit_paid: 'deposit_paid',
+  fully_paid: 'fully_paid',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface CampaignSummary {
+  call: CastingCall;
+  stage: CampaignSummaryStage;
+  team: CampaignTeamMember[];
+  jobs: CampaignJob[];
+  payments: CampaignPaymentRecord[];
+  cost: CampaignCost;
+  paid: number;
+  outstanding: number;
+  balanceDueDate: string | null;
+  balanceOverdue: boolean;
+  depositAllowed: boolean;
+  canFund: boolean;
+  canPayBalance: boolean;
+  blockers: string[];
+}
+
+export type StartCampaignPaymentInputKind = typeof StartCampaignPaymentInputKind[keyof typeof StartCampaignPaymentInputKind];
+
+
+export const StartCampaignPaymentInputKind = {
+  deposit: 'deposit',
+  balance: 'balance',
+  full: 'full',
+} as const;
+
+export interface StartCampaignPaymentInput {
+  kind: StartCampaignPaymentInputKind;
+}
+
+export interface CampaignPaymentLink {
+  url: string;
+}
+
+export interface ConfirmCampaignPaymentInput {
+  sessionId: string;
+}
+
+export type OwnerCampaignStage = typeof OwnerCampaignStage[keyof typeof OwnerCampaignStage];
+
+
+export const OwnerCampaignStage = {
+  open: 'open',
+  deposit_paid: 'deposit_paid',
+  fully_paid: 'fully_paid',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface OwnerCampaign {
+  id: string;
+  title: string;
+  brandId: string;
+  brandName: string;
+  specialty: string;
+  eventDate: string | null;
+  stage: OwnerCampaignStage;
+  artistsFunded: number;
+  artistFees: number;
+  bonisaFee: number;
+  total: number;
+  paid: number;
+  outstanding: number;
+  balanceDueDate: string | null;
+  balanceOverdue: boolean;
+  heldInEscrow: number;
+  releasedToArtists: number;
+  jobsReleased: number;
+  jobsTotal: number;
+  createdAt: string;
 }
 
 export interface ActivityItem {

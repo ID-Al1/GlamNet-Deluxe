@@ -4,14 +4,16 @@ import {
   appointmentsTable,
   castingCallsTable,
   castingApplicationsTable,
+  campaignPaymentsTable,
   stylistProfilesTable,
   servicesTable,
   portfolioItemsTable,
   usersTable,
 } from "@workspace/db";
-import { eq, and, gte, or, sql, desc } from "drizzle-orm";
+import { eq, and, gte, or, sql, desc, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { splitAmount } from "../lib/money";
+import { formatCalls } from "../lib/campaigns";
 import buildStylistResponse from "./stylistHelper";
 import { ListStylistsResponse } from "@workspace/api-zod";
 
@@ -47,7 +49,7 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
   const availableEarnings = released.reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);
   const pendingEarnings = appts
     .filter((a) => a.payoutStatus === "held" && (a.status === "confirmed" || a.status === "completed"))
-    .reduce((sum, a) => sum + (a.artistPayoutAmount || splitAmount(a.price + a.tipAmount).artistShare), 0);
+    .reduce((sum, a) => sum + (a.artistPayoutAmount || splitAmount(a.price + a.tipAmount, a.feeMode).artistShare), 0);
   const thisMonthEarnings = released
     .filter((a) => new Date(a.date) >= monthStart)
     .reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);
@@ -199,11 +201,17 @@ router.get("/dashboard/brand", requireAuth, async (req, res) => {
 
   const myCallIds = new Set(calls.map((c) => c.id));
   const myApps = allApps.filter((a) => myCallIds.has(a.castingId));
+  const [spend] = myCallIds.size
+    ? await db.select({ total: sql<number>`coalesce(sum(${campaignPaymentsTable.amount}), 0)::float8` })
+        .from(campaignPaymentsTable)
+        .where(and(inArray(campaignPaymentsTable.castingId, [...myCallIds]), eq(campaignPaymentsTable.status, "paid")))
+    : [{ total: 0 }];
+  const topCalls = await formatCalls(calls.slice(0, 3), user);
 
   res.json({
-    activeCastingCalls: calls.length,
+    activeCastingCalls: calls.filter((c) => c.status !== "cancelled").length,
     totalApplications: calls.reduce((sum, c) => sum + c.applicantCount, 0),
-    totalSpend: 0,
+    totalSpend: spend?.total ?? 0,
     teamSize: 1,
     recentApplications: myApps.slice(-5).reverse().map((a) => ({
       id: a.id,
@@ -214,19 +222,7 @@ router.get("/dashboard/brand", requireAuth, async (req, res) => {
       appliedAt: a.appliedAt.toISOString(),
       status: a.status,
     })),
-    topCastingCalls: calls.slice(0, 3).map((c) => ({
-      id: c.id,
-      brandId: c.brandId,
-      brandName: c.brandName,
-      title: c.title,
-      brief: c.brief,
-      budget: c.budget,
-      deadline: c.deadline,
-      specialty: c.specialty,
-      applicantCount: c.applicantCount,
-      hasApplied: false,
-      createdAt: c.createdAt.toISOString(),
-    })),
+    topCastingCalls: topCalls,
   });
 });
 

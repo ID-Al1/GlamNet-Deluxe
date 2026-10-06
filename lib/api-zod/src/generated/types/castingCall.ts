@@ -5,6 +5,8 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { CastingCallMyStatus } from './castingCallMyStatus';
+import type { CastingCallStatus } from './castingCallStatus';
 
 export interface CastingCall {
   id: string;
@@ -18,4 +20,15 @@ export interface CastingCall {
   applicantCount: number;
   hasApplied?: boolean;
   createdAt: string;
+  artistsNeeded: number;
+  /** What each artist is paid, in rand. She keeps all of it. */
+  ratePerArtist: number;
+  eventDate: string | null;
+  eventTime: string;
+  location: string;
+  status: CastingCallStatus;
+  spotsFilled: number;
+  brandVerified: boolean;
+  /** Where the signed-in artist stands on this campaign. */
+  myStatus?: CastingCallMyStatus;
 }

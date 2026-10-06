@@ -7,7 +7,7 @@ import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod
 import { sendNotification, notify } from "../lib/notifications";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
-import { recordPayoutEvent, splitAmount, transitionToDisputed } from "../lib/escrow";
+import { campaignJobTotal, isCampaignJob, recordPayoutEvent, resolveCampaignCollected, splitAmount, transitionToDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
 import { createPayoutLedgerLines } from "../lib/payout-ledger";
 
@@ -42,6 +42,8 @@ function formatAppt(a: typeof appointmentsTable.$inferSelect) {
     payoutStatus: a.payoutStatus,
     artistPayoutAmount: a.artistPayoutAmount,
     platformFeeAmount: a.platformFeeAmount,
+    campaignId: a.campaignId ?? null,
+    feeMode: a.feeMode as "commission" | "brand_on_top",
   };
 }
 
@@ -339,6 +341,17 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
     res.status(409).json({ error: "Payout already released for this appointment." }); return;
   }
 
+  // On a campaign the brand pays in two parts, so it cannot say "work done" until it has paid in full.
+  // That keeps a half-paid campaign from ever being marked complete. The artist can confirm early;
+  // her confirmation simply waits for the brand.
+  if (isClient && isCampaignJob(appt)) {
+    const collectedSoFar = await resolveCampaignCollected(db, appointmentId);
+    if (Math.round(collectedSoFar * 100) < Math.round(campaignJobTotal(appt) * 100)) {
+      res.status(409).json({ error: "Please pay the remaining campaign balance first. Your artists are paid once the campaign is paid in full." });
+      return;
+    }
+  }
+
   // Record this party's confirmation with a conditional update so concurrent
   // retries can't double-confirm: the WHERE clause only matches while the flag
   // is still false and funds are still held.
@@ -369,11 +382,23 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
   // that previously confirmed both sides but failed to release gets retried
   // here instead of being stuck. The conditional WHERE makes release atomic —
   // exactly one caller wins; everyone else matches zero rows.
-  const actualCollected = paymentRow?.amount
-    ?? (appt.paymentMode === "deposit" && appt.depositAmount > 0
-      ? appt.depositAmount + appt.tipAmount
-      : appt.price + appt.tipAmount);
-  const { artistShare: artistPayout, platformShare: platformFee } = splitAmount(actualCollected);
+  // A campaign job is paid in two parts, so what has been collected is the sum
+  // of every payment, and the artist is only paid out once the brand has paid in full.
+  const campaignJob = isCampaignJob(appt);
+  const actualCollected = campaignJob
+    ? await resolveCampaignCollected(db, appointmentId)
+    : paymentRow?.amount
+      ?? (appt.paymentMode === "deposit" && appt.depositAmount > 0
+        ? appt.depositAmount + appt.tipAmount
+        : appt.price + appt.tipAmount);
+  if (campaignJob && Math.round(actualCollected * 100) < Math.round(campaignJobTotal(appt) * 100)) {
+    // The artist has confirmed, but the brand has not paid in full yet. Her confirmation is saved
+    // and the payout waits, exactly like waiting for the other side.
+    const [current] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, appointmentId));
+    res.json(formatAppt(current ?? appt));
+    return;
+  }
+  const { artistShare: artistPayout, platformShare: platformFee } = splitAmount(actualCollected, appt.feeMode);
 
   const releasedRows = await db.transaction(async (tx) => {
     const rows = await tx.update(appointmentsTable)

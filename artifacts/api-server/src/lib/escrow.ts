@@ -3,12 +3,35 @@ import { db, appointmentsTable, payoutEventsTable, paymentsTable } from "@worksp
 import { and, desc, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 
-import { ARTIST_SHARE, PLATFORM_SHARE, splitAmount } from "./money";
+import { ARTIST_SHARE, PLATFORM_SHARE, splitAmount, campaignArtistCost } from "./money";
 import { createPayoutLedgerLines } from "./payout-ledger";
 import { payoutDueAt } from "./money";
 export { ARTIST_SHARE, PLATFORM_SHARE, splitAmount };
 
+/** Is this job part of a brand campaign (the brand paid the artist's rate plus the fee on top)? */
+export const isCampaignJob = (appointment: { feeMode?: string | null }) => appointment.feeMode === "brand_on_top";
+
+/**
+ * What a campaign job is expected to collect in total: the artist's rate plus Bonisa's fee.
+ * The job's price is the artist's rate.
+ */
+export const campaignJobTotal = (appointment: { price: number }) => campaignArtistCost(appointment.price).total;
+
+/**
+ * Money actually collected for a campaign job so far: every payment the brand
+ * made towards it (deposit, then balance), less anything refunded.
+ */
+export async function resolveCampaignCollected(tx: any, appointmentId: string): Promise<number> {
+  const rows = await tx.select().from(paymentsTable)
+    .where(and(eq(paymentsTable.appointmentId, appointmentId),
+      sql`${paymentsTable.status} in ('succeeded', 'partial_refunded', 'refunded')`));
+  const cents = rows.reduce((sum: number, p: any) =>
+    sum + Math.round(p.amount * 100) - Math.round((p.refundedAmount ?? 0) * 100), 0);
+  return Math.max(0, cents) / 100;
+}
+
 export async function resolveCollectedAmount(tx: any, appointment: any): Promise<number> {
+  if (isCampaignJob(appointment)) return resolveCampaignCollected(tx, appointment.id);
   const [payment] = await tx.select().from(paymentsTable)
     .where(and(eq(paymentsTable.appointmentId, appointment.id),
       // A refunded payment remains the authoritative payment record. Never
@@ -28,7 +51,7 @@ export async function resolveCollectedAmount(tx: any, appointment: any): Promise
 export async function transitionToDisputed(tx: any, appointment: any, actorUserId: string, note: string) {
   const amount = await resolveCollectedAmount(tx, appointment);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("Cannot dispute without a positive remaining collected amount");
-  const shares = splitAmount(amount);
+  const shares = splitAmount(amount, appointment.feeMode);
   const [updated] = await tx.update(appointmentsTable).set({ payoutStatus: "disputed" })
     .where(and(eq(appointmentsTable.id, appointment.id), eq(appointmentsTable.payoutStatus, "held"))).returning();
   if (!updated) return { updated: false, alreadyDisputed: appointment.payoutStatus === "disputed", amount, ...shares, appointment: null };
@@ -43,7 +66,7 @@ export async function transitionToDisputed(tx: any, appointment: any, actorUserI
 export async function transitionFromDisputed(tx: any, appointment: any, actorUserId: string, note: string) {
   const amount = await resolveCollectedAmount(tx, appointment);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("Cannot release without a positive collected amount");
-  const shares = splitAmount(amount);
+  const shares = splitAmount(amount, appointment.feeMode);
   const [updated] = await tx.update(appointmentsTable).set({
     payoutStatus: "released", status: "completed",
     artistPayoutAmount: shares.artistShare, platformFeeAmount: shares.platformShare,
@@ -99,4 +122,32 @@ export async function holdEscrow(appointmentId: string, amountCollected: number,
     note: "Payment received — funds held in escrow pending completion confirmation",
   });
   return { artistShare, platformShare };
+}
+
+/**
+ * Called when a brand's first payment for a campaign job lands (the deposit, or
+ * the whole amount). Unlike a normal booking, the split is fixed by the
+ * agreement and not by what has been collected so far: the artist is owed her
+ * full rate and Bonisa her fee, both recorded now. Release only happens once
+ * the job is fully paid, so the recorded split is what gets paid out.
+ */
+export async function holdCampaignEscrow(tx: any, appointment: { id: string; price: number }, collectedNow: number, actorUserId?: string | null) {
+  const cost = campaignArtistCost(appointment.price);
+  await tx.update(appointmentsTable)
+    .set({ payoutStatus: "held", artistPayoutAmount: cost.rate, platformFeeAmount: cost.fee })
+    .where(eq(appointmentsTable.id, appointment.id));
+  await tx.insert(payoutEventsTable).values({
+    id: randomUUID(), appointmentId: appointment.id, type: "held", actorUserId: actorUserId ?? null,
+    amount: collectedNow, artistShare: cost.rate, platformShare: cost.fee,
+    note: `Campaign payment received (R${collectedNow.toFixed(2)} of R${cost.total.toFixed(2)}). Artist is owed her full rate of R${cost.rate.toFixed(2)}, Bonisa fee R${cost.fee.toFixed(2)}, held in escrow`,
+  });
+  return cost;
+}
+
+/** Audit row for a later campaign payment (the balance), after the job is already held. */
+export async function recordCampaignPayment(tx: any, appointmentId: string, amount: number, actorUserId?: string | null, note?: string) {
+  await tx.insert(payoutEventsTable).values({
+    id: randomUUID(), appointmentId, type: "payment_received", actorUserId: actorUserId ?? null,
+    amount, artistShare: 0, platformShare: 0, note: note ?? `Campaign balance received (R${amount.toFixed(2)})`,
+  });
 }

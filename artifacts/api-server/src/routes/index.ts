@@ -15,6 +15,8 @@ import ownerRouter from "./owner";
 import complaintsRouter from "./complaints";
 import artistUpdatesRouter from "./artist-updates";
 import artistContactsRouter from "./artist-contacts";
+import brandsRouter from "./brands";
+import campaignPaymentsRouter from "./campaign-payments";
 
 const router: IRouter = Router();
 
@@ -34,5 +36,7 @@ router.use(ownerRouter);
 router.use(complaintsRouter);
 router.use(artistUpdatesRouter);
 router.use(artistContactsRouter);
+router.use(brandsRouter);
+router.use(campaignPaymentsRouter);
 
 export default router;

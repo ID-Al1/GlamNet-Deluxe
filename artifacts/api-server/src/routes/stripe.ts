@@ -355,6 +355,11 @@ router.post("/stripe/refund", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Appointment not found" });
     return;
   }
+  // Campaign money is paid in parts and shared between artists, so it is refunded by Bonisa support.
+  if (appt.feeMode === "brand_on_top") {
+    res.status(409).json({ error: "Campaign payments are refunded by Bonisa support. Please contact us." });
+    return;
+  }
   // Only the client or the lead stylist can request refunds
   const isStylist = appt.stylistId === user.id;
   const isClient = appt.clientId === user.id;

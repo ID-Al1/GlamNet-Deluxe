@@ -1378,6 +1378,221 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+  /casting/{castingId}/applicants:
+    get:
+      operationId: listCastingApplicants
+      tags: [casting]
+      summary: Applicants and invited artists for a campaign (the brand that owns it)
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Applicants
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CastingApplicant" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /casting/{castingId}/applicants/{applicationId}/decision:
+    post:
+      operationId: decideCastingApplicant
+      tags: [casting]
+      summary: Shortlist, accept or pass on an applicant. The artist is told the outcome.
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+        - { name: applicationId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/DecideCastingApplicantInput" } } }
+      responses:
+        "200": { description: Decision recorded, content: { application/json: { schema: { $ref: "#/components/schemas/CastingApplicant" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /casting/{castingId}/invite:
+    post:
+      operationId: inviteArtistToCasting
+      tags: [casting]
+      summary: Invite a verified artist to a campaign
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/InviteArtistInput" } } }
+      responses:
+        "200": { description: Invited, content: { application/json: { schema: { $ref: "#/components/schemas/CastingApplicant" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /casting/{castingId}/invitation:
+    post:
+      operationId: respondToCastingInvitation
+      tags: [casting]
+      summary: Accept or decline an invitation to a campaign (artist)
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RespondInvitationInput" } } }
+      responses:
+        "200": { description: Response recorded, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /casting/{castingId}/summary:
+    get:
+      operationId: getCampaignSummary
+      tags: [casting]
+      summary: The campaign's team, cost, payments and jobs (the brand that owns it, or the owner)
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Campaign summary, content: { application/json: { schema: { $ref: "#/components/schemas/CampaignSummary" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /casting/{castingId}/fund:
+    post:
+      operationId: startCampaignPayment
+      tags: [casting]
+      summary: Start a Stripe checkout for the deposit, the balance, or the full amount
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/StartCampaignPaymentInput" } } }
+      responses:
+        "200": { description: Where to pay, content: { application/json: { schema: { $ref: "#/components/schemas/CampaignPaymentLink" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /casting/{castingId}/confirm-payment:
+    post:
+      operationId: confirmCampaignPayment
+      tags: [casting]
+      summary: Confirm a paid Stripe checkout after the brand returns from paying
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ConfirmCampaignPaymentInput" } } }
+      responses:
+        "200": { description: Updated campaign summary, content: { application/json: { schema: { $ref: "#/components/schemas/CampaignSummary" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { description: Payment not completed, content: { application/json: { schema: { $ref: "#/components/schemas/ApiError" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /casting/{castingId}/cancel:
+    post:
+      operationId: cancelCampaign
+      tags: [casting]
+      summary: Cancel a campaign that has not been paid for. Applicants and invited artists are told.
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Cancelled, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /brand/profile:
+    get:
+      operationId: getMyBrandProfile
+      tags: [brands]
+      summary: The signed-in brand's business profile
+      responses:
+        "200": { description: Brand profile, content: { application/json: { schema: { $ref: "#/components/schemas/BrandProfile" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: updateMyBrandProfile
+      tags: [brands]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/BrandProfileInput" } } }
+      responses:
+        "200": { description: Updated, content: { application/json: { schema: { $ref: "#/components/schemas/BrandProfile" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /brand/profile/submit:
+    post:
+      operationId: submitMyBrandProfile
+      tags: [brands]
+      summary: Send the brand profile to Bonisa for verification
+      responses:
+        "200": { description: Submitted, content: { application/json: { schema: { $ref: "#/components/schemas/BrandProfile" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/brands/pending:
+    get:
+      operationId: listPendingBrands
+      tags: [owner]
+      summary: Brands waiting for verification
+      responses:
+        "200": { description: Pending brands, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerPendingBrand" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/brands/{brandProfileId}/verify:
+    post:
+      operationId: verifyBrand
+      tags: [owner]
+      parameters: [{ name: brandProfileId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Verified, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/brands/{brandProfileId}/reject:
+    post:
+      operationId: rejectBrand
+      tags: [owner]
+      parameters: [{ name: brandProfileId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RejectBrandInput" } } }
+      responses:
+        "200": { description: Rejected with a reason, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/campaigns:
+    get:
+      operationId: listOwnerCampaigns
+      tags: [owner]
+      summary: Every campaign with what has been paid, held and released
+      responses:
+        "200": { description: Campaigns, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerCampaign" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /dashboard/stylist:
     get:
       operationId: getStylistDashboard
@@ -2389,6 +2604,12 @@ components:
       type: object
       required: [id, clientId, stylistId, serviceId, serviceName, date, time, status, price, duration, createdAt]
       properties:
+        campaignId:
+          type: string
+          nullable: true
+        feeMode:
+          type: string
+          enum: [commission, brand_on_top]
         id:
           type: string
         clientId:
@@ -2547,7 +2768,7 @@ components:
 
     CastingCall:
       type: object
-      required: [id, brandId, brandName, title, brief, budget, deadline, specialty, applicantCount, createdAt]
+      required: [id, brandId, brandName, title, brief, budget, deadline, specialty, applicantCount, createdAt, artistsNeeded, ratePerArtist, eventDate, eventTime, location, status, spotsFilled, brandVerified]
       properties:
         id:
           type: string
@@ -2571,37 +2792,307 @@ components:
           type: boolean
         createdAt:
           type: string
+        artistsNeeded:
+          type: integer
+        ratePerArtist:
+          type: number
+          description: What each artist is paid, in rand. She keeps all of it.
+        eventDate:
+          type: string
+          nullable: true
+        eventTime:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+          enum: [open, deposit_paid, fully_paid, cancelled]
+        spotsFilled:
+          type: integer
+        brandVerified:
+          type: boolean
+        myStatus:
+          type: string
+          enum: [none, pending, shortlisted, invited, accepted, declined, passed]
+          description: Where the signed-in artist stands on this campaign.
 
     CastingCallInput:
       type: object
-      required: [title, brief, budget, deadline, specialty]
+      required: [title, brief, deadline, specialty, artistsNeeded, ratePerArtist, eventDate, location]
       properties:
         title:
           type: string
           minLength: 3
+          maxLength: 120
         brief:
           type: string
           minLength: 10
-        budget:
-          type: string
+          maxLength: 4000
         deadline:
           type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
         specialty:
           type: string
+        artistsNeeded:
+          type: integer
+          minimum: 1
+          maximum: 50
+        ratePerArtist:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        eventDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        eventTime:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+        location:
+          type: string
+          minLength: 2
+          maxLength: 200
 
     CastingCallUpdate:
       type: object
       properties:
         title:
           type: string
+          minLength: 3
+          maxLength: 120
         brief:
           type: string
-        budget:
-          type: string
+          minLength: 10
+          maxLength: 4000
         deadline:
           type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
         specialty:
           type: string
+        artistsNeeded:
+          type: integer
+          minimum: 1
+          maximum: 50
+        ratePerArtist:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        eventDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        eventTime:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+        location:
+          type: string
+          minLength: 2
+          maxLength: 200
+
+    BrandProfile:
+      type: object
+      required: [id, userId, companyName, registrationNumber, vatNumber, website, billingAddress, verificationStatus, rejectionReason, submittedAt, verifiedAt, missing, canSubmit]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        companyName: { type: string }
+        registrationNumber: { type: string, nullable: true }
+        vatNumber: { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        billingAddress: { type: string, nullable: true }
+        verificationStatus: { type: string, enum: [none, pending, verified] }
+        rejectionReason: { type: string, nullable: true }
+        submittedAt: { type: string, format: date-time, nullable: true }
+        verifiedAt: { type: string, format: date-time, nullable: true }
+        missing:
+          type: array
+          items: { type: string }
+          description: What is still needed before the profile can be submitted.
+        canSubmit: { type: boolean }
+
+    BrandProfileInput:
+      type: object
+      properties:
+        companyName: { type: string, maxLength: 160 }
+        registrationNumber: { type: string, maxLength: 60, nullable: true }
+        vatNumber: { type: string, maxLength: 40, nullable: true }
+        website: { type: string, maxLength: 200, nullable: true }
+        billingAddress: { type: string, maxLength: 400, nullable: true }
+
+    OwnerPendingBrand:
+      type: object
+      required: [profileId, userId, companyName, registrationNumber, vatNumber, website, billingAddress, contactName, email, phone, submittedAt]
+      properties:
+        profileId: { type: string }
+        userId: { type: string }
+        companyName: { type: string }
+        registrationNumber: { type: string, nullable: true }
+        vatNumber: { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        billingAddress: { type: string, nullable: true }
+        contactName: { type: string }
+        email: { type: string }
+        phone: { type: string, nullable: true }
+        submittedAt: { type: string, format: date-time, nullable: true }
+
+    RejectBrandInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 1000 }
+
+    CastingApplicant:
+      type: object
+      required: [applicationId, stylistId, name, specialty, location, source, status, jobsCompleted, rating, reviewCount, appliedAt]
+      properties:
+        applicationId: { type: string }
+        stylistId: { type: string }
+        name: { type: string }
+        specialty: { type: string }
+        location: { type: string }
+        source: { type: string, enum: [applied, invited] }
+        status: { type: string, enum: [pending, shortlisted, invited, accepted, declined, passed] }
+        jobsCompleted: { type: integer }
+        rating: { type: number }
+        reviewCount: { type: integer }
+        appliedAt: { type: string, format: date-time }
+
+    DecideCastingApplicantInput:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [shortlist, accept, pass] }
+
+    InviteArtistInput:
+      type: object
+      required: [stylistId]
+      properties:
+        stylistId: { type: string }
+
+    RespondInvitationInput:
+      type: object
+      required: [accept]
+      properties:
+        accept: { type: boolean }
+
+    CampaignTeamMember:
+      type: object
+      required: [applicationId, stylistId, name, specialty, rate, fee, total, deposit, balance]
+      properties:
+        applicationId: { type: string }
+        stylistId: { type: string }
+        name: { type: string }
+        specialty: { type: string }
+        rate: { type: number }
+        fee: { type: number }
+        total: { type: number }
+        deposit: { type: number }
+        balance: { type: number }
+
+    CampaignJob:
+      type: object
+      required: [appointmentId, stylistId, name, rate, total, collected, status, payoutStatus, confirmedByBrand, confirmedByArtist]
+      properties:
+        appointmentId: { type: string }
+        stylistId: { type: string }
+        name: { type: string }
+        rate: { type: number }
+        total: { type: number }
+        collected: { type: number }
+        status: { type: string }
+        payoutStatus: { type: string }
+        confirmedByBrand: { type: boolean }
+        confirmedByArtist: { type: boolean }
+
+    CampaignPaymentRecord:
+      type: object
+      required: [id, kind, amount, status, createdAt, paidAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [deposit, balance, full] }
+        amount: { type: number }
+        status: { type: string, enum: [pending, paid, failed, expired] }
+        createdAt: { type: string, format: date-time }
+        paidAt: { type: string, format: date-time, nullable: true }
+
+    CampaignCost:
+      type: object
+      required: [artists, artistFees, fee, total, deposit, balance]
+      properties:
+        artists: { type: integer }
+        artistFees: { type: number }
+        fee: { type: number }
+        total: { type: number }
+        deposit: { type: number }
+        balance: { type: number }
+
+    CampaignSummary:
+      type: object
+      required: [call, stage, team, jobs, payments, cost, paid, outstanding, balanceDueDate, balanceOverdue, depositAllowed, canFund, canPayBalance, blockers]
+      properties:
+        call: { $ref: "#/components/schemas/CastingCall" }
+        stage: { type: string, enum: [open, deposit_paid, fully_paid, completed, cancelled] }
+        team:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignTeamMember" }
+        jobs:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignJob" }
+        payments:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignPaymentRecord" }
+        cost: { $ref: "#/components/schemas/CampaignCost" }
+        paid: { type: number }
+        outstanding: { type: number }
+        balanceDueDate: { type: string, nullable: true }
+        balanceOverdue: { type: boolean }
+        depositAllowed: { type: boolean }
+        canFund: { type: boolean }
+        canPayBalance: { type: boolean }
+        blockers:
+          type: array
+          items: { type: string }
+
+    StartCampaignPaymentInput:
+      type: object
+      required: [kind]
+      properties:
+        kind: { type: string, enum: [deposit, balance, full] }
+
+    CampaignPaymentLink:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+
+    ConfirmCampaignPaymentInput:
+      type: object
+      required: [sessionId]
+      properties:
+        sessionId: { type: string }
+
+    OwnerCampaign:
+      type: object
+      required: [id, title, brandId, brandName, specialty, eventDate, stage, artistsFunded, artistFees, bonisaFee, total, paid, outstanding, balanceDueDate, balanceOverdue, heldInEscrow, releasedToArtists, jobsReleased, jobsTotal, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        brandId: { type: string }
+        brandName: { type: string }
+        specialty: { type: string }
+        eventDate: { type: string, nullable: true }
+        stage: { type: string, enum: [open, deposit_paid, fully_paid, completed, cancelled] }
+        artistsFunded: { type: integer }
+        artistFees: { type: number }
+        bonisaFee: { type: number }
+        total: { type: number }
+        paid: { type: number }
+        outstanding: { type: number }
+        balanceDueDate: { type: string, nullable: true }
+        balanceOverdue: { type: boolean }
+        heldInEscrow: { type: number }
+        releasedToArtists: { type: number }
+        jobsReleased: { type: integer }
+        jobsTotal: { type: integer }
+        createdAt: { type: string, format: date-time }
 
     StylistDashboard:
       type: object

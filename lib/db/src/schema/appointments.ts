@@ -45,6 +45,11 @@ export const appointmentsTable = pgTable("appointments", {
   payoutStatus: text("payout_status").notNull().default("held"),
   artistPayoutAmount: real("artist_payout_amount").notNull().default(0),
   platformFeeAmount: real("platform_fee_amount").notNull().default(0),
+  // ── Brand campaigns ────────────────────────────────────────────────────────
+  // commission:   the usual booking, Bonisa keeps 18% of what the client pays.
+  // brand_on_top: a campaign job, the artist keeps her full rate and the brand paid 18% more.
+  campaignId: text("campaign_id"),
+  feeMode: text("fee_mode").notNull().default("commission"),
 });
 
 export type Appointment = typeof appointmentsTable.$inferSelect;

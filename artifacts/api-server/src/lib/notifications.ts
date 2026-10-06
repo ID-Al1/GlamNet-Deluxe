@@ -70,7 +70,19 @@ export type NotificationEvent =
   // ── Owner updates: one-to-many messages from Bonisa ───────────────────────
   | "artist.update"             // → artist
   | "artist.reminder"           // → artist or waitlist contact (automatic nudge)
-  | "artist.email";             // → artist or contact (branded email the owner chose)
+  | "artist.email"              // → artist or contact (branded email the owner chose)
+
+  // ── Brand campaigns ───────────────────────────────────────────────────────
+  | "casting.invited"           // → artist (a brand invited her to a campaign)
+  | "campaign.artist_accepted"  // → brand
+  | "campaign.artist_declined"  // → brand
+  | "campaign.cancelled"        // → artist (the brand cancelled before paying)
+  | "campaign.funded"           // → artist (confirmed and funded)
+  | "campaign.deposit_received" // → brand
+  | "campaign.balance_due"      // → brand (reminder)
+  | "campaign.balance_received" // → brand
+  | "brand.verified"            // → brand
+  | "brand.rejected";           // → brand
 
 /**
  * Which channel each event uses.
@@ -102,6 +114,17 @@ const CHANNEL_POLICY: Record<NotificationEvent, "whatsapp" | "both"> = {
   "artist.update": "both",
   "artist.reminder": "both",
   "artist.email": "both",
+
+  "casting.invited": "both",
+  "campaign.artist_accepted": "whatsapp",
+  "campaign.artist_declined": "whatsapp",
+  "campaign.cancelled": "both",
+  "campaign.funded": "both",
+  "campaign.deposit_received": "both",
+  "campaign.balance_due": "both",
+  "campaign.balance_received": "both",
+  "brand.verified": "both",
+  "brand.rejected": "both",
 };
 
 export interface NotificationData {
@@ -134,6 +157,14 @@ export interface NotificationData {
   // Owner updates (already personalised for this artist)
   updateSubject?: string;
   updateBody?: string;
+
+  // Brand campaigns
+  eventDate?: string;
+  location?: string;
+  rate?: number;
+  artistCount?: number;
+  balanceDueDate?: string;
+  balanceAmount?: number;
 }
 
 export interface Recipient {
@@ -270,6 +301,73 @@ function formatMessage(event: NotificationEvent, data: NotificationData): string
     case "artist.reminder":
       return `*${data.updateSubject ?? "A reminder from Bonisa"}*\n\n${data.updateBody ?? ""}`;
 
+    case "casting.invited":
+      return (
+        `🎬 *You have been invited to a campaign*\n\n` +
+        `${data.brandName} would like to book you for _${data.castingTitle}_.\n` +
+        `📅 ${data.eventDate ?? "Date to be confirmed"}${data.location ? ` · ${data.location}` : ""}\n` +
+        `💰 ${rand(data.rate)} for you. Your full rate, with no Bonisa commission taken off.\n\n` +
+        `Open Bonisa to accept or decline.`
+      );
+    case "campaign.artist_accepted":
+      return (
+        `✅ *${data.artistName} accepted*\n\n` +
+        `${data.artistName} will work on _${data.castingTitle}_ with you.\n\n` +
+        `Open Bonisa to see your team and pay the deposit to confirm them.`
+      );
+    case "campaign.artist_declined":
+      return (
+        `📋 *${data.artistName} is not available*\n\n` +
+        `${data.artistName} has declined your invitation to _${data.castingTitle}_.\n\n` +
+        `Open Bonisa to invite someone else.`
+      );
+    case "campaign.cancelled":
+      return (
+        `📋 *Campaign cancelled*\n\n` +
+        `${data.brandName} has cancelled _${data.castingTitle}_ before booking. Nothing is owed and nothing changes on your side.\n\n` +
+        `New campaigns are posted regularly on Bonisa.`
+      );
+    case "campaign.funded":
+      return (
+        `🎉 *Confirmed and funded*\n\n` +
+        `${data.brandName} has paid for _${data.castingTitle}_ and your spot is confirmed.\n` +
+        `📅 ${data.eventDate ?? ""}${data.location ? ` · ${data.location}` : ""}\n` +
+        `💰 ${rand(data.rate)} is held safely by Bonisa and paid to you within 24 hours of the job being confirmed complete.\n\n` +
+        `Open Bonisa for the details and to message the brand.`
+      );
+    case "campaign.deposit_received":
+      return (
+        `✅ *Payment received*\n\n` +
+        `We received ${rand(data.amount)} for _${data.castingTitle}_. Your ${data.artistCount ?? ""} artists are confirmed.\n` +
+        `${data.balanceAmount ? `The balance of ${rand(data.balanceAmount)} is due by ${data.balanceDueDate}.\n` : ""}\n` +
+        `Open Bonisa for your campaign summary.`
+      );
+    case "campaign.balance_due":
+      return (
+        `💳 *Campaign balance due*\n\n` +
+        `The balance of ${rand(data.balanceAmount)} for _${data.castingTitle}_ is due by ${data.balanceDueDate}.\n\n` +
+        `Open Bonisa to pay it and keep your artists confirmed.`
+      );
+    case "campaign.balance_received":
+      return (
+        `✅ *Campaign paid in full*\n\n` +
+        `Thank you. We received ${rand(data.amount)} and _${data.castingTitle}_ is paid in full.\n\n` +
+        `After the shoot, confirm the work in Bonisa so your artists are paid.`
+      );
+    case "brand.verified":
+      return (
+        `🎉 *${data.brandName} is verified on Bonisa*\n\n` +
+        `You can now post campaigns and book verified artists.\n\n` +
+        `Open Bonisa to create your first campaign.`
+      );
+    case "brand.rejected":
+      return (
+        `📋 *Brand verification update*\n\n` +
+        `We could not verify ${data.brandName ?? "your brand"} yet.\n\n` +
+        `${data.rejectionReason ?? "A few details still need completing."}\n\n` +
+        `Update your brand profile and submit again.`
+      );
+
     default:
       return "You have a new notification on Bonisa.";
   }
@@ -400,6 +498,107 @@ function formatEmail(event: NotificationEvent, data: NotificationData): { subjec
       return {
         subject: data.updateSubject ?? "A reminder from Bonisa",
         body: `${data.updateBody ?? ""}` + sign,
+      };
+
+    case "casting.invited":
+      return {
+        subject: `${data.brandName} invited you to ${data.castingTitle}`,
+        body:
+          `Hi ${who},\n\n` +
+          `${data.brandName} would like to book you for "${data.castingTitle}".\n\n` +
+          `  Date:      ${data.eventDate ?? "to be confirmed"}\n` +
+          (data.location ? `  Where:     ${data.location}\n` : "") +
+          `  Your rate: ${rand(data.rate)}\n\n` +
+          `That is your full rate. On brand campaigns the brand pays Bonisa's fee on top, so nothing is taken off what you are paid.\n\n` +
+          `Open Bonisa to accept or decline.` +
+          sign,
+      };
+    case "campaign.artist_accepted":
+      return {
+        subject: `${data.artistName} accepted: ${data.castingTitle}`,
+        body:
+          `${data.artistName} has accepted your invitation to "${data.castingTitle}".\n\n` +
+          `Open Bonisa to see your team. Once you pay the deposit, your artists are confirmed.` +
+          sign,
+      };
+    case "campaign.artist_declined":
+      return {
+        subject: `${data.artistName} is not available: ${data.castingTitle}`,
+        body:
+          `${data.artistName} has declined your invitation to "${data.castingTitle}".\n\n` +
+          `Open Bonisa to invite someone else.` +
+          sign,
+      };
+    case "campaign.cancelled":
+      return {
+        subject: `Campaign cancelled: ${data.castingTitle}`,
+        body:
+          `Hi ${who},\n\n` +
+          `${data.brandName} has cancelled "${data.castingTitle}" before booking any artists. ` +
+          `Nothing is owed and nothing changes on your side.\n\n` +
+          `New campaigns are posted regularly on Bonisa.` +
+          sign,
+      };
+    case "campaign.funded":
+      return {
+        subject: `Confirmed and funded: ${data.castingTitle}`,
+        body:
+          `Hi ${who},\n\n` +
+          `${data.brandName} has paid for "${data.castingTitle}", and your spot is confirmed.\n\n` +
+          `  Date:      ${data.eventDate ?? ""}\n` +
+          (data.location ? `  Where:     ${data.location}\n` : "") +
+          `  Your rate: ${rand(data.rate)}\n\n` +
+          `Your payment is held safely by Bonisa and paid to you within 24 hours of the job being confirmed complete. ` +
+          `Nothing is taken off your rate.\n\n` +
+          `Open Bonisa for the details, and to message the brand.` +
+          sign,
+      };
+    case "campaign.deposit_received":
+      return {
+        subject: `Payment received: ${data.castingTitle}`,
+        body:
+          `We have received ${rand(data.amount)} for "${data.castingTitle}". ` +
+          `Your ${data.artistCount ?? ""} artists are confirmed.\n\n` +
+          (data.balanceAmount
+            ? `The balance of ${rand(data.balanceAmount)} is due by ${data.balanceDueDate}, three days before the event. ` +
+              `We will remind you. If it is not paid by then, your artists may be released.\n\n`
+            : `The campaign is paid in full.\n\n`) +
+          `After the event, confirm in Bonisa that the work was done, and your artists are paid.` +
+          sign,
+      };
+    case "campaign.balance_due":
+      return {
+        subject: `Balance due by ${data.balanceDueDate}: ${data.castingTitle}`,
+        body:
+          `The balance of ${rand(data.balanceAmount)} for "${data.castingTitle}" is due by ${data.balanceDueDate}.\n\n` +
+          `Please pay it in Bonisa to keep your artists confirmed for the event.` +
+          sign,
+      };
+    case "campaign.balance_received":
+      return {
+        subject: `Paid in full: ${data.castingTitle}`,
+        body:
+          `Thank you. We received ${rand(data.amount)} and "${data.castingTitle}" is now paid in full.\n\n` +
+          `After the event, confirm in Bonisa that the work was done. Your artists are paid within 24 hours of both sides confirming.` +
+          sign,
+      };
+    case "brand.verified":
+      return {
+        subject: `${data.brandName} is verified on Bonisa`,
+        body:
+          `${data.brandName} has been verified.\n\n` +
+          `You can now post campaigns, invite verified artists and book your team. ` +
+          `Your artists are paid their full rate, and Bonisa's fee is added on top, so you always see the exact total before you pay.` +
+          sign,
+      };
+    case "brand.rejected":
+      return {
+        subject: `Your Bonisa brand verification needs a bit more`,
+        body:
+          `We could not verify ${data.brandName ?? "your brand"} yet.\n\n` +
+          `${data.rejectionReason ?? "A few details still need completing."}\n\n` +
+          `Update your brand profile and submit it again. We review every submission within 72 hours.` +
+          sign,
       };
 
     default:

@@ -44,6 +44,11 @@ import type {
   BankVerificationInput,
   BankVerificationResult,
   BrandDashboard,
+  BrandProfile,
+  BrandProfileInput,
+  CampaignPaymentLink,
+  CampaignSummary,
+  CastingApplicant,
   CastingCall,
   CastingCallInput,
   CastingCallUpdate,
@@ -53,14 +58,17 @@ import type {
   ComplaintCreateInput,
   ComplaintEvidence,
   ComplaintEvidenceInput,
+  ConfirmCampaignPaymentInput,
   ConflictResponse,
   Conversation,
+  DecideCastingApplicantInput,
   ForbiddenResponse,
   GetOwnerArtistManagementParams,
   GetOwnerPayoutsParams,
   HealthStatus,
   IdentityVerificationInput,
   IdentityVerificationStatus,
+  InviteArtistInput,
   ListAppointmentsParams,
   ListCastingCallsParams,
   ListOwnerArtistsParams,
@@ -84,6 +92,7 @@ import type {
   OwnerArtistSummary,
   OwnerArtistUpdate,
   OwnerArtistUpdateInput,
+  OwnerCampaign,
   OwnerCommandCentreMetrics,
   OwnerComplaint,
   OwnerComplaintAction,
@@ -92,19 +101,23 @@ import type {
   OwnerPaymentOverview,
   OwnerPayoutBatch,
   OwnerPayoutGroup,
+  OwnerPendingBrand,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
   OwnerUpdateAudienceArtist,
   PortfolioItem,
   PortfolioItemInput,
   ReceiveWaitlistSignup200,
+  RejectBrandInput,
   RemindDueArtistContacts200,
+  RespondInvitationInput,
   RevealArtistBankAccount200,
   SearchOwnerRegistryParams,
   Service,
   ServiceInput,
   ServiceUpdate,
   SignupInput,
+  StartCampaignPaymentInput,
   StartConversationInput,
   StylistDashboard,
   StylistProfile,
@@ -5832,6 +5845,1081 @@ export const useApplyToCastingCall = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getApplyToCastingCallMutationOptions(options));
     }
+
+export const getListCastingApplicantsUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/applicants`
+}
+
+/**
+ * @summary Applicants and invited artists for a campaign (the brand that owns it)
+ */
+export const listCastingApplicants = async (castingId: string, options?: RequestInit): Promise<CastingApplicant[]> => {
+
+  return customFetch<CastingApplicant[]>(getListCastingApplicantsUrl(castingId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCastingApplicantsQueryKey = (castingId: string,) => {
+    return [
+    `/api/casting/${castingId}/applicants`
+    ] as const;
+    }
+
+
+export const getListCastingApplicantsQueryOptions = <TData = Awaited<ReturnType<typeof listCastingApplicants>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(castingId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCastingApplicants>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCastingApplicantsQueryKey(castingId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCastingApplicants>>> = ({ signal }) => listCastingApplicants(castingId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: castingId !== null && castingId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCastingApplicants>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCastingApplicantsQueryResult = NonNullable<Awaited<ReturnType<typeof listCastingApplicants>>>
+export type ListCastingApplicantsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Applicants and invited artists for a campaign (the brand that owns it)
+ */
+
+export function useListCastingApplicants<TData = Awaited<ReturnType<typeof listCastingApplicants>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ castingId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCastingApplicants>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCastingApplicantsQueryOptions(castingId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDecideCastingApplicantUrl = (castingId: string,
+    applicationId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/applicants/${applicationId}/decision`
+}
+
+/**
+ * @summary Shortlist, accept or pass on an applicant. The artist is told the outcome.
+ */
+export const decideCastingApplicant = async (castingId: string,
+    applicationId: string,
+    decideCastingApplicantInput: DecideCastingApplicantInput, options?: RequestInit): Promise<CastingApplicant> => {
+
+  return customFetch<CastingApplicant>(getDecideCastingApplicantUrl(castingId,applicationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(decideCastingApplicantInput)
+  }
+);}
+
+
+
+
+export const getDecideCastingApplicantMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideCastingApplicant>>, TError,{castingId: string;applicationId: string;data: BodyType<DecideCastingApplicantInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof decideCastingApplicant>>, TError,{castingId: string;applicationId: string;data: BodyType<DecideCastingApplicantInput>}, TContext> => {
+
+const mutationKey = ['decideCastingApplicant'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof decideCastingApplicant>>, {castingId: string;applicationId: string;data: BodyType<DecideCastingApplicantInput>}> = (props) => {
+          const {castingId,applicationId,data} = props ?? {};
+
+          return  decideCastingApplicant(castingId,applicationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DecideCastingApplicantMutationResult = NonNullable<Awaited<ReturnType<typeof decideCastingApplicant>>>
+    export type DecideCastingApplicantMutationBody = BodyType<DecideCastingApplicantInput>
+    export type DecideCastingApplicantMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Shortlist, accept or pass on an applicant. The artist is told the outcome.
+ */
+export const useDecideCastingApplicant = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideCastingApplicant>>, TError,{castingId: string;applicationId: string;data: BodyType<DecideCastingApplicantInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof decideCastingApplicant>>,
+        TError,
+        {castingId: string;applicationId: string;data: BodyType<DecideCastingApplicantInput>},
+        TContext
+      > => {
+      return useMutation(getDecideCastingApplicantMutationOptions(options));
+    }
+
+export const getInviteArtistToCastingUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/invite`
+}
+
+/**
+ * @summary Invite a verified artist to a campaign
+ */
+export const inviteArtistToCasting = async (castingId: string,
+    inviteArtistInput: InviteArtistInput, options?: RequestInit): Promise<CastingApplicant> => {
+
+  return customFetch<CastingApplicant>(getInviteArtistToCastingUrl(castingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(inviteArtistInput)
+  }
+);}
+
+
+
+
+export const getInviteArtistToCastingMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteArtistToCasting>>, TError,{castingId: string;data: BodyType<InviteArtistInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof inviteArtistToCasting>>, TError,{castingId: string;data: BodyType<InviteArtistInput>}, TContext> => {
+
+const mutationKey = ['inviteArtistToCasting'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteArtistToCasting>>, {castingId: string;data: BodyType<InviteArtistInput>}> = (props) => {
+          const {castingId,data} = props ?? {};
+
+          return  inviteArtistToCasting(castingId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InviteArtistToCastingMutationResult = NonNullable<Awaited<ReturnType<typeof inviteArtistToCasting>>>
+    export type InviteArtistToCastingMutationBody = BodyType<InviteArtistInput>
+    export type InviteArtistToCastingMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Invite a verified artist to a campaign
+ */
+export const useInviteArtistToCasting = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteArtistToCasting>>, TError,{castingId: string;data: BodyType<InviteArtistInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof inviteArtistToCasting>>,
+        TError,
+        {castingId: string;data: BodyType<InviteArtistInput>},
+        TContext
+      > => {
+      return useMutation(getInviteArtistToCastingMutationOptions(options));
+    }
+
+export const getRespondToCastingInvitationUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/invitation`
+}
+
+/**
+ * @summary Accept or decline an invitation to a campaign (artist)
+ */
+export const respondToCastingInvitation = async (castingId: string,
+    respondInvitationInput: RespondInvitationInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getRespondToCastingInvitationUrl(castingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(respondInvitationInput)
+  }
+);}
+
+
+
+
+export const getRespondToCastingInvitationMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToCastingInvitation>>, TError,{castingId: string;data: BodyType<RespondInvitationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondToCastingInvitation>>, TError,{castingId: string;data: BodyType<RespondInvitationInput>}, TContext> => {
+
+const mutationKey = ['respondToCastingInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToCastingInvitation>>, {castingId: string;data: BodyType<RespondInvitationInput>}> = (props) => {
+          const {castingId,data} = props ?? {};
+
+          return  respondToCastingInvitation(castingId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RespondToCastingInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof respondToCastingInvitation>>>
+    export type RespondToCastingInvitationMutationBody = BodyType<RespondInvitationInput>
+    export type RespondToCastingInvitationMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Accept or decline an invitation to a campaign (artist)
+ */
+export const useRespondToCastingInvitation = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToCastingInvitation>>, TError,{castingId: string;data: BodyType<RespondInvitationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof respondToCastingInvitation>>,
+        TError,
+        {castingId: string;data: BodyType<RespondInvitationInput>},
+        TContext
+      > => {
+      return useMutation(getRespondToCastingInvitationMutationOptions(options));
+    }
+
+export const getGetCampaignSummaryUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/summary`
+}
+
+/**
+ * @summary The campaign's team, cost, payments and jobs (the brand that owns it, or the owner)
+ */
+export const getCampaignSummary = async (castingId: string, options?: RequestInit): Promise<CampaignSummary> => {
+
+  return customFetch<CampaignSummary>(getGetCampaignSummaryUrl(castingId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCampaignSummaryQueryKey = (castingId: string,) => {
+    return [
+    `/api/casting/${castingId}/summary`
+    ] as const;
+    }
+
+
+export const getGetCampaignSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getCampaignSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(castingId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCampaignSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCampaignSummaryQueryKey(castingId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCampaignSummary>>> = ({ signal }) => getCampaignSummary(castingId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: castingId !== null && castingId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCampaignSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCampaignSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getCampaignSummary>>>
+export type GetCampaignSummaryQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary The campaign's team, cost, payments and jobs (the brand that owns it, or the owner)
+ */
+
+export function useGetCampaignSummary<TData = Awaited<ReturnType<typeof getCampaignSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ castingId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCampaignSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCampaignSummaryQueryOptions(castingId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartCampaignPaymentUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/fund`
+}
+
+/**
+ * @summary Start a Stripe checkout for the deposit, the balance, or the full amount
+ */
+export const startCampaignPayment = async (castingId: string,
+    startCampaignPaymentInput: StartCampaignPaymentInput, options?: RequestInit): Promise<CampaignPaymentLink> => {
+
+  return customFetch<CampaignPaymentLink>(getStartCampaignPaymentUrl(castingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(startCampaignPaymentInput)
+  }
+);}
+
+
+
+
+export const getStartCampaignPaymentMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startCampaignPayment>>, TError,{castingId: string;data: BodyType<StartCampaignPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startCampaignPayment>>, TError,{castingId: string;data: BodyType<StartCampaignPaymentInput>}, TContext> => {
+
+const mutationKey = ['startCampaignPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startCampaignPayment>>, {castingId: string;data: BodyType<StartCampaignPaymentInput>}> = (props) => {
+          const {castingId,data} = props ?? {};
+
+          return  startCampaignPayment(castingId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartCampaignPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof startCampaignPayment>>>
+    export type StartCampaignPaymentMutationBody = BodyType<StartCampaignPaymentInput>
+    export type StartCampaignPaymentMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Start a Stripe checkout for the deposit, the balance, or the full amount
+ */
+export const useStartCampaignPayment = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startCampaignPayment>>, TError,{castingId: string;data: BodyType<StartCampaignPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startCampaignPayment>>,
+        TError,
+        {castingId: string;data: BodyType<StartCampaignPaymentInput>},
+        TContext
+      > => {
+      return useMutation(getStartCampaignPaymentMutationOptions(options));
+    }
+
+export const getConfirmCampaignPaymentUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/confirm-payment`
+}
+
+/**
+ * @summary Confirm a paid Stripe checkout after the brand returns from paying
+ */
+export const confirmCampaignPayment = async (castingId: string,
+    confirmCampaignPaymentInput: ConfirmCampaignPaymentInput, options?: RequestInit): Promise<CampaignSummary> => {
+
+  return customFetch<CampaignSummary>(getConfirmCampaignPaymentUrl(castingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(confirmCampaignPaymentInput)
+  }
+);}
+
+
+
+
+export const getConfirmCampaignPaymentMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ApiError | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCampaignPayment>>, TError,{castingId: string;data: BodyType<ConfirmCampaignPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmCampaignPayment>>, TError,{castingId: string;data: BodyType<ConfirmCampaignPaymentInput>}, TContext> => {
+
+const mutationKey = ['confirmCampaignPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmCampaignPayment>>, {castingId: string;data: BodyType<ConfirmCampaignPaymentInput>}> = (props) => {
+          const {castingId,data} = props ?? {};
+
+          return  confirmCampaignPayment(castingId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmCampaignPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof confirmCampaignPayment>>>
+    export type ConfirmCampaignPaymentMutationBody = BodyType<ConfirmCampaignPaymentInput>
+    export type ConfirmCampaignPaymentMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ApiError | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Confirm a paid Stripe checkout after the brand returns from paying
+ */
+export const useConfirmCampaignPayment = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ApiError | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCampaignPayment>>, TError,{castingId: string;data: BodyType<ConfirmCampaignPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmCampaignPayment>>,
+        TError,
+        {castingId: string;data: BodyType<ConfirmCampaignPaymentInput>},
+        TContext
+      > => {
+      return useMutation(getConfirmCampaignPaymentMutationOptions(options));
+    }
+
+export const getCancelCampaignUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/cancel`
+}
+
+/**
+ * @summary Cancel a campaign that has not been paid for. Applicants and invited artists are told.
+ */
+export const cancelCampaign = async (castingId: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getCancelCampaignUrl(castingId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCancelCampaignMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelCampaign>>, TError,{castingId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelCampaign>>, TError,{castingId: string}, TContext> => {
+
+const mutationKey = ['cancelCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelCampaign>>, {castingId: string}> = (props) => {
+          const {castingId} = props ?? {};
+
+          return  cancelCampaign(castingId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof cancelCampaign>>>
+
+    export type CancelCampaignMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Cancel a campaign that has not been paid for. Applicants and invited artists are told.
+ */
+export const useCancelCampaign = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelCampaign>>, TError,{castingId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelCampaign>>,
+        TError,
+        {castingId: string},
+        TContext
+      > => {
+      return useMutation(getCancelCampaignMutationOptions(options));
+    }
+
+export const getGetMyBrandProfileUrl = () => {
+
+
+
+
+  return `/api/brand/profile`
+}
+
+/**
+ * @summary The signed-in brand's business profile
+ */
+export const getMyBrandProfile = async ( options?: RequestInit): Promise<BrandProfile> => {
+
+  return customFetch<BrandProfile>(getGetMyBrandProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBrandProfileQueryKey = () => {
+    return [
+    `/api/brand/profile`
+    ] as const;
+    }
+
+
+export const getGetMyBrandProfileQueryOptions = <TData = Awaited<ReturnType<typeof getMyBrandProfile>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBrandProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBrandProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBrandProfile>>> = ({ signal }) => getMyBrandProfile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBrandProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyBrandProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBrandProfile>>>
+export type GetMyBrandProfileQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary The signed-in brand's business profile
+ */
+
+export function useGetMyBrandProfile<TData = Awaited<ReturnType<typeof getMyBrandProfile>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBrandProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyBrandProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMyBrandProfileUrl = () => {
+
+
+
+
+  return `/api/brand/profile`
+}
+
+export const updateMyBrandProfile = async (brandProfileInput: BrandProfileInput, options?: RequestInit): Promise<BrandProfile> => {
+
+  return customFetch<BrandProfile>(getUpdateMyBrandProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(brandProfileInput)
+  }
+);}
+
+
+
+
+export const getUpdateMyBrandProfileMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyBrandProfile>>, TError,{data: BodyType<BrandProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyBrandProfile>>, TError,{data: BodyType<BrandProfileInput>}, TContext> => {
+
+const mutationKey = ['updateMyBrandProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyBrandProfile>>, {data: BodyType<BrandProfileInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyBrandProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyBrandProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyBrandProfile>>>
+    export type UpdateMyBrandProfileMutationBody = BodyType<BrandProfileInput>
+    export type UpdateMyBrandProfileMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
+
+    export const useUpdateMyBrandProfile = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyBrandProfile>>, TError,{data: BodyType<BrandProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyBrandProfile>>,
+        TError,
+        {data: BodyType<BrandProfileInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyBrandProfileMutationOptions(options));
+    }
+
+export const getSubmitMyBrandProfileUrl = () => {
+
+
+
+
+  return `/api/brand/profile/submit`
+}
+
+/**
+ * @summary Send the brand profile to Bonisa for verification
+ */
+export const submitMyBrandProfile = async ( options?: RequestInit): Promise<BrandProfile> => {
+
+  return customFetch<BrandProfile>(getSubmitMyBrandProfileUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSubmitMyBrandProfileMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitMyBrandProfile>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitMyBrandProfile>>, TError,void, TContext> => {
+
+const mutationKey = ['submitMyBrandProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitMyBrandProfile>>, void> = () => {
+
+
+          return  submitMyBrandProfile(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitMyBrandProfileMutationResult = NonNullable<Awaited<ReturnType<typeof submitMyBrandProfile>>>
+
+    export type SubmitMyBrandProfileMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
+
+    /**
+ * @summary Send the brand profile to Bonisa for verification
+ */
+export const useSubmitMyBrandProfile = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitMyBrandProfile>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitMyBrandProfile>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSubmitMyBrandProfileMutationOptions(options));
+    }
+
+export const getListPendingBrandsUrl = () => {
+
+
+
+
+  return `/api/owner/brands/pending`
+}
+
+/**
+ * @summary Brands waiting for verification
+ */
+export const listPendingBrands = async ( options?: RequestInit): Promise<OwnerPendingBrand[]> => {
+
+  return customFetch<OwnerPendingBrand[]>(getListPendingBrandsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPendingBrandsQueryKey = () => {
+    return [
+    `/api/owner/brands/pending`
+    ] as const;
+    }
+
+
+export const getListPendingBrandsQueryOptions = <TData = Awaited<ReturnType<typeof listPendingBrands>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingBrands>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPendingBrandsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingBrands>>> = ({ signal }) => listPendingBrands({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPendingBrands>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPendingBrandsQueryResult = NonNullable<Awaited<ReturnType<typeof listPendingBrands>>>
+export type ListPendingBrandsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Brands waiting for verification
+ */
+
+export function useListPendingBrands<TData = Awaited<ReturnType<typeof listPendingBrands>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingBrands>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPendingBrandsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getVerifyBrandUrl = (brandProfileId: string,) => {
+
+
+
+
+  return `/api/owner/brands/${brandProfileId}/verify`
+}
+
+export const verifyBrand = async (brandProfileId: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getVerifyBrandUrl(brandProfileId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getVerifyBrandMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyBrand>>, TError,{brandProfileId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyBrand>>, TError,{brandProfileId: string}, TContext> => {
+
+const mutationKey = ['verifyBrand'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyBrand>>, {brandProfileId: string}> = (props) => {
+          const {brandProfileId} = props ?? {};
+
+          return  verifyBrand(brandProfileId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyBrandMutationResult = NonNullable<Awaited<ReturnType<typeof verifyBrand>>>
+
+    export type VerifyBrandMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    export const useVerifyBrand = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyBrand>>, TError,{brandProfileId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyBrand>>,
+        TError,
+        {brandProfileId: string},
+        TContext
+      > => {
+      return useMutation(getVerifyBrandMutationOptions(options));
+    }
+
+export const getRejectBrandUrl = (brandProfileId: string,) => {
+
+
+
+
+  return `/api/owner/brands/${brandProfileId}/reject`
+}
+
+export const rejectBrand = async (brandProfileId: string,
+    rejectBrandInput: RejectBrandInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getRejectBrandUrl(brandProfileId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(rejectBrandInput)
+  }
+);}
+
+
+
+
+export const getRejectBrandMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectBrand>>, TError,{brandProfileId: string;data: BodyType<RejectBrandInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rejectBrand>>, TError,{brandProfileId: string;data: BodyType<RejectBrandInput>}, TContext> => {
+
+const mutationKey = ['rejectBrand'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectBrand>>, {brandProfileId: string;data: BodyType<RejectBrandInput>}> = (props) => {
+          const {brandProfileId,data} = props ?? {};
+
+          return  rejectBrand(brandProfileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectBrandMutationResult = NonNullable<Awaited<ReturnType<typeof rejectBrand>>>
+    export type RejectBrandMutationBody = BodyType<RejectBrandInput>
+    export type RejectBrandMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    export const useRejectBrand = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectBrand>>, TError,{brandProfileId: string;data: BodyType<RejectBrandInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rejectBrand>>,
+        TError,
+        {brandProfileId: string;data: BodyType<RejectBrandInput>},
+        TContext
+      > => {
+      return useMutation(getRejectBrandMutationOptions(options));
+    }
+
+export const getListOwnerCampaignsUrl = () => {
+
+
+
+
+  return `/api/owner/campaigns`
+}
+
+/**
+ * @summary Every campaign with what has been paid, held and released
+ */
+export const listOwnerCampaigns = async ( options?: RequestInit): Promise<OwnerCampaign[]> => {
+
+  return customFetch<OwnerCampaign[]>(getListOwnerCampaignsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerCampaignsQueryKey = () => {
+    return [
+    `/api/owner/campaigns`
+    ] as const;
+    }
+
+
+export const getListOwnerCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerCampaigns>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerCampaignsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerCampaigns>>> = ({ signal }) => listOwnerCampaigns({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerCampaigns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerCampaignsQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerCampaigns>>>
+export type ListOwnerCampaignsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Every campaign with what has been paid, held and released
+ */
+
+export function useListOwnerCampaigns<TData = Awaited<ReturnType<typeof listOwnerCampaigns>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerCampaignsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetStylistDashboardUrl = () => {
 

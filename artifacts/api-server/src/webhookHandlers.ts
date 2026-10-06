@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { getStripeCredentials, getUncachableStripeClient } from './stripeClient';
 import { getStripeSync } from './stripeClient';
 import { fulfillCheckoutSession } from './lib/paymentHelpers';
+import { fulfillCampaignSession, handleCampaignSessionExpired } from './lib/campaign-payments';
 import { db, paymentsTable, appointmentsTable } from '@workspace/db';
 import { eq, and } from 'drizzle-orm';
 import { logger } from './lib/logger';
@@ -47,6 +48,20 @@ export class WebhookHandlers {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.payment_status !== 'paid') break;
+        if (session.metadata?.kind === 'campaign_payment') {
+          // A brand paying towards a campaign. Errors here are logged and skipped so Stripe does not retry forever.
+          try {
+            const result = await fulfillCampaignSession(stripe, session.id);
+            logger.info({ sessionId: session.id, castingId: result.castingId, alreadyDone: result.alreadyDone }, 'Webhook: campaign payment fulfilled');
+          } catch (err: any) {
+            if (['amount_mismatch', 'not_found', 'forbidden', 'payment_not_completed'].includes(err.code)) {
+              logger.error({ err, sessionId: session.id }, 'Webhook: campaign payment needs manual review');
+            } else {
+              throw err;
+            }
+          }
+          break;
+        }
         try {
           const result = await fulfillCheckoutSession(stripe, session.id);
           if (result.alreadyExisted) {
@@ -72,6 +87,10 @@ export class WebhookHandlers {
         // Release any pending appointment tied to this session so the slot
         // becomes available again and the customer can re-book.
         const expiredSession = event.data.object as Stripe.Checkout.Session;
+        if (expiredSession.metadata?.kind === 'campaign_payment') {
+          await handleCampaignSessionExpired(expiredSession.id);
+          break;
+        }
         const pendingAppts = await db.select().from(appointmentsTable)
           .where(eq(appointmentsTable.stripeSessionId, expiredSession.id));
         for (const appt of pendingAppts) {

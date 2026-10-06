@@ -14,3 +14,4 @@ export * from "./complaints";
 export * from "./bank-accounts";
 export * from "./artist-updates";
 export * from "./artist-contacts";
+export * from "./brands";

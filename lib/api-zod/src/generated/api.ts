@@ -548,6 +548,8 @@ export const ListAppointmentsQueryParams = zod.object({
 })
 
 export const ListAppointmentsResponseItem = zod.object({
+  "campaignId": zod.string().nullish(),
+  "feeMode": zod.enum(['commission', 'brand_on_top']).optional(),
   "id": zod.string(),
   "clientId": zod.string(),
   "clientName": zod.string().optional(),
@@ -578,6 +580,8 @@ export const CreateAppointmentBody = zod.object({
 })
 
 export const CreateAppointmentResponse = zod.object({
+  "campaignId": zod.string().nullish(),
+  "feeMode": zod.enum(['commission', 'brand_on_top']).optional(),
   "id": zod.string(),
   "clientId": zod.string(),
   "clientName": zod.string().optional(),
@@ -603,6 +607,8 @@ export const GetAppointmentParams = zod.object({
 })
 
 export const GetAppointmentResponse = zod.object({
+  "campaignId": zod.string().nullish(),
+  "feeMode": zod.enum(['commission', 'brand_on_top']).optional(),
   "id": zod.string(),
   "clientId": zod.string(),
   "clientName": zod.string().optional(),
@@ -635,6 +641,8 @@ export const UpdateAppointmentBody = zod.object({
 })
 
 export const UpdateAppointmentResponse = zod.object({
+  "campaignId": zod.string().nullish(),
+  "feeMode": zod.enum(['commission', 'brand_on_top']).optional(),
   "id": zod.string(),
   "clientId": zod.string(),
   "clientName": zod.string().optional(),
@@ -1785,7 +1793,16 @@ export const ListCastingCallsResponseItem = zod.object({
   "specialty": zod.string(),
   "applicantCount": zod.number(),
   "hasApplied": zod.boolean().optional(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
 })
 export const ListCastingCallsResponse = zod.array(ListCastingCallsResponseItem)
 
@@ -1794,17 +1811,33 @@ export const ListCastingCallsResponse = zod.array(ListCastingCallsResponseItem)
  * @summary Post a casting call (brand only)
  */
 export const createCastingCallBodyTitleMin = 3;
+export const createCastingCallBodyTitleMax = 120;
 
 export const createCastingCallBodyBriefMin = 10;
+export const createCastingCallBodyBriefMax = 4000;
+
+export const createCastingCallBodyDeadlineRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createCastingCallBodyArtistsNeededMax = 50;
+
+export const createCastingCallBodyRatePerArtistMax = 1000000;
+
+export const createCastingCallBodyEventDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createCastingCallBodyEventTimeRegExp = new RegExp('^\\d{2}:\\d{2}$');
+export const createCastingCallBodyLocationMin = 2;
+export const createCastingCallBodyLocationMax = 200;
 
 
 
 export const CreateCastingCallBody = zod.object({
-  "title": zod.string().min(createCastingCallBodyTitleMin),
-  "brief": zod.string().min(createCastingCallBodyBriefMin),
-  "budget": zod.string(),
-  "deadline": zod.string(),
-  "specialty": zod.string()
+  "title": zod.string().min(createCastingCallBodyTitleMin).max(createCastingCallBodyTitleMax),
+  "brief": zod.string().min(createCastingCallBodyBriefMin).max(createCastingCallBodyBriefMax),
+  "deadline": zod.string().regex(createCastingCallBodyDeadlineRegExp),
+  "specialty": zod.string(),
+  "artistsNeeded": zod.number().min(1).max(createCastingCallBodyArtistsNeededMax),
+  "ratePerArtist": zod.number().min(1).max(createCastingCallBodyRatePerArtistMax),
+  "eventDate": zod.string().regex(createCastingCallBodyEventDateRegExp),
+  "eventTime": zod.string().regex(createCastingCallBodyEventTimeRegExp).optional(),
+  "location": zod.string().min(createCastingCallBodyLocationMin).max(createCastingCallBodyLocationMax)
 })
 
 export const CreateCastingCallResponse = zod.object({
@@ -1818,7 +1851,16 @@ export const CreateCastingCallResponse = zod.object({
   "specialty": zod.string(),
   "applicantCount": zod.number(),
   "hasApplied": zod.boolean().optional(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
 })
 
 
@@ -1840,7 +1882,16 @@ export const GetCastingCallResponse = zod.object({
   "specialty": zod.string(),
   "applicantCount": zod.number(),
   "hasApplied": zod.boolean().optional(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
 })
 
 
@@ -1851,12 +1902,34 @@ export const UpdateCastingCallParams = zod.object({
   "castingId": zod.coerce.string()
 })
 
+export const updateCastingCallBodyTitleMin = 3;
+export const updateCastingCallBodyTitleMax = 120;
+
+export const updateCastingCallBodyBriefMin = 10;
+export const updateCastingCallBodyBriefMax = 4000;
+
+export const updateCastingCallBodyDeadlineRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updateCastingCallBodyArtistsNeededMax = 50;
+
+export const updateCastingCallBodyRatePerArtistMax = 1000000;
+
+export const updateCastingCallBodyEventDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updateCastingCallBodyEventTimeRegExp = new RegExp('^\\d{2}:\\d{2}$');
+export const updateCastingCallBodyLocationMin = 2;
+export const updateCastingCallBodyLocationMax = 200;
+
+
+
 export const UpdateCastingCallBody = zod.object({
-  "title": zod.string().optional(),
-  "brief": zod.string().optional(),
-  "budget": zod.string().optional(),
-  "deadline": zod.string().optional(),
-  "specialty": zod.string().optional()
+  "title": zod.string().min(updateCastingCallBodyTitleMin).max(updateCastingCallBodyTitleMax).optional(),
+  "brief": zod.string().min(updateCastingCallBodyBriefMin).max(updateCastingCallBodyBriefMax).optional(),
+  "deadline": zod.string().regex(updateCastingCallBodyDeadlineRegExp).optional(),
+  "specialty": zod.string().optional(),
+  "artistsNeeded": zod.number().min(1).max(updateCastingCallBodyArtistsNeededMax).optional(),
+  "ratePerArtist": zod.number().min(1).max(updateCastingCallBodyRatePerArtistMax).optional(),
+  "eventDate": zod.string().regex(updateCastingCallBodyEventDateRegExp).optional(),
+  "eventTime": zod.string().regex(updateCastingCallBodyEventTimeRegExp).optional(),
+  "location": zod.string().min(updateCastingCallBodyLocationMin).max(updateCastingCallBodyLocationMax).optional()
 })
 
 export const UpdateCastingCallResponse = zod.object({
@@ -1870,7 +1943,16 @@ export const UpdateCastingCallResponse = zod.object({
   "specialty": zod.string(),
   "applicantCount": zod.number(),
   "hasApplied": zod.boolean().optional(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
 })
 
 
@@ -1899,6 +1981,443 @@ export const ApplyToCastingCallResponse = zod.object({
 
 
 /**
+ * @summary Applicants and invited artists for a campaign (the brand that owns it)
+ */
+export const ListCastingApplicantsParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const ListCastingApplicantsResponseItem = zod.object({
+  "applicationId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "location": zod.string(),
+  "source": zod.enum(['applied', 'invited']),
+  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']),
+  "jobsCompleted": zod.number(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "appliedAt": zod.coerce.date()
+})
+export const ListCastingApplicantsResponse = zod.array(ListCastingApplicantsResponseItem)
+
+
+/**
+ * @summary Shortlist, accept or pass on an applicant. The artist is told the outcome.
+ */
+export const DecideCastingApplicantParams = zod.object({
+  "castingId": zod.coerce.string(),
+  "applicationId": zod.coerce.string()
+})
+
+export const DecideCastingApplicantBody = zod.object({
+  "decision": zod.enum(['shortlist', 'accept', 'pass'])
+})
+
+export const DecideCastingApplicantResponse = zod.object({
+  "applicationId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "location": zod.string(),
+  "source": zod.enum(['applied', 'invited']),
+  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']),
+  "jobsCompleted": zod.number(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "appliedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Invite a verified artist to a campaign
+ */
+export const InviteArtistToCastingParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const InviteArtistToCastingBody = zod.object({
+  "stylistId": zod.string()
+})
+
+export const InviteArtistToCastingResponse = zod.object({
+  "applicationId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "location": zod.string(),
+  "source": zod.enum(['applied', 'invited']),
+  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']),
+  "jobsCompleted": zod.number(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "appliedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Accept or decline an invitation to a campaign (artist)
+ */
+export const RespondToCastingInvitationParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const RespondToCastingInvitationBody = zod.object({
+  "accept": zod.boolean()
+})
+
+export const RespondToCastingInvitationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary The campaign's team, cost, payments and jobs (the brand that owns it, or the owner)
+ */
+export const GetCampaignSummaryParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const GetCampaignSummaryResponse = zod.object({
+  "call": zod.object({
+  "id": zod.string(),
+  "brandId": zod.string(),
+  "brandName": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "budget": zod.string(),
+  "deadline": zod.string(),
+  "specialty": zod.string(),
+  "applicantCount": zod.number(),
+  "hasApplied": zod.boolean().optional(),
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+}),
+  "stage": zod.enum(['open', 'deposit_paid', 'fully_paid', 'completed', 'cancelled']),
+  "team": zod.array(zod.object({
+  "applicationId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "rate": zod.number(),
+  "fee": zod.number(),
+  "total": zod.number(),
+  "deposit": zod.number(),
+  "balance": zod.number()
+})),
+  "jobs": zod.array(zod.object({
+  "appointmentId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "rate": zod.number(),
+  "total": zod.number(),
+  "collected": zod.number(),
+  "status": zod.string(),
+  "payoutStatus": zod.string(),
+  "confirmedByBrand": zod.boolean(),
+  "confirmedByArtist": zod.boolean()
+})),
+  "payments": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['deposit', 'balance', 'full']),
+  "amount": zod.number(),
+  "status": zod.enum(['pending', 'paid', 'failed', 'expired']),
+  "createdAt": zod.coerce.date(),
+  "paidAt": zod.coerce.date().nullable()
+})),
+  "cost": zod.object({
+  "artists": zod.number(),
+  "artistFees": zod.number(),
+  "fee": zod.number(),
+  "total": zod.number(),
+  "deposit": zod.number(),
+  "balance": zod.number()
+}),
+  "paid": zod.number(),
+  "outstanding": zod.number(),
+  "balanceDueDate": zod.string().nullable(),
+  "balanceOverdue": zod.boolean(),
+  "depositAllowed": zod.boolean(),
+  "canFund": zod.boolean(),
+  "canPayBalance": zod.boolean(),
+  "blockers": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Start a Stripe checkout for the deposit, the balance, or the full amount
+ */
+export const StartCampaignPaymentParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const StartCampaignPaymentBody = zod.object({
+  "kind": zod.enum(['deposit', 'balance', 'full'])
+})
+
+export const StartCampaignPaymentResponse = zod.object({
+  "url": zod.string()
+})
+
+
+/**
+ * @summary Confirm a paid Stripe checkout after the brand returns from paying
+ */
+export const ConfirmCampaignPaymentParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const ConfirmCampaignPaymentBody = zod.object({
+  "sessionId": zod.string()
+})
+
+export const ConfirmCampaignPaymentResponse = zod.object({
+  "call": zod.object({
+  "id": zod.string(),
+  "brandId": zod.string(),
+  "brandName": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "budget": zod.string(),
+  "deadline": zod.string(),
+  "specialty": zod.string(),
+  "applicantCount": zod.number(),
+  "hasApplied": zod.boolean().optional(),
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+}),
+  "stage": zod.enum(['open', 'deposit_paid', 'fully_paid', 'completed', 'cancelled']),
+  "team": zod.array(zod.object({
+  "applicationId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "rate": zod.number(),
+  "fee": zod.number(),
+  "total": zod.number(),
+  "deposit": zod.number(),
+  "balance": zod.number()
+})),
+  "jobs": zod.array(zod.object({
+  "appointmentId": zod.string(),
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "rate": zod.number(),
+  "total": zod.number(),
+  "collected": zod.number(),
+  "status": zod.string(),
+  "payoutStatus": zod.string(),
+  "confirmedByBrand": zod.boolean(),
+  "confirmedByArtist": zod.boolean()
+})),
+  "payments": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['deposit', 'balance', 'full']),
+  "amount": zod.number(),
+  "status": zod.enum(['pending', 'paid', 'failed', 'expired']),
+  "createdAt": zod.coerce.date(),
+  "paidAt": zod.coerce.date().nullable()
+})),
+  "cost": zod.object({
+  "artists": zod.number(),
+  "artistFees": zod.number(),
+  "fee": zod.number(),
+  "total": zod.number(),
+  "deposit": zod.number(),
+  "balance": zod.number()
+}),
+  "paid": zod.number(),
+  "outstanding": zod.number(),
+  "balanceDueDate": zod.string().nullable(),
+  "balanceOverdue": zod.boolean(),
+  "depositAllowed": zod.boolean(),
+  "canFund": zod.boolean(),
+  "canPayBalance": zod.boolean(),
+  "blockers": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Cancel a campaign that has not been paid for. Applicants and invited artists are told.
+ */
+export const CancelCampaignParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const CancelCampaignResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary The signed-in brand's business profile
+ */
+export const GetMyBrandProfileResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "registrationNumber": zod.string().nullable(),
+  "vatNumber": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "billingAddress": zod.string().nullable(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "rejectionReason": zod.string().nullable(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "verifiedAt": zod.coerce.date().nullable(),
+  "missing": zod.array(zod.string()).describe('What is still needed before the profile can be submitted.'),
+  "canSubmit": zod.boolean()
+})
+
+
+export const updateMyBrandProfileBodyCompanyNameMax = 160;
+
+export const updateMyBrandProfileBodyRegistrationNumberMax = 60;
+
+export const updateMyBrandProfileBodyVatNumberMax = 40;
+
+export const updateMyBrandProfileBodyWebsiteMax = 200;
+
+export const updateMyBrandProfileBodyBillingAddressMax = 400;
+
+
+
+export const UpdateMyBrandProfileBody = zod.object({
+  "companyName": zod.string().max(updateMyBrandProfileBodyCompanyNameMax).optional(),
+  "registrationNumber": zod.string().max(updateMyBrandProfileBodyRegistrationNumberMax).nullish(),
+  "vatNumber": zod.string().max(updateMyBrandProfileBodyVatNumberMax).nullish(),
+  "website": zod.string().max(updateMyBrandProfileBodyWebsiteMax).nullish(),
+  "billingAddress": zod.string().max(updateMyBrandProfileBodyBillingAddressMax).nullish()
+})
+
+export const UpdateMyBrandProfileResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "registrationNumber": zod.string().nullable(),
+  "vatNumber": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "billingAddress": zod.string().nullable(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "rejectionReason": zod.string().nullable(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "verifiedAt": zod.coerce.date().nullable(),
+  "missing": zod.array(zod.string()).describe('What is still needed before the profile can be submitted.'),
+  "canSubmit": zod.boolean()
+})
+
+
+/**
+ * @summary Send the brand profile to Bonisa for verification
+ */
+export const SubmitMyBrandProfileResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "registrationNumber": zod.string().nullable(),
+  "vatNumber": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "billingAddress": zod.string().nullable(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "rejectionReason": zod.string().nullable(),
+  "submittedAt": zod.coerce.date().nullable(),
+  "verifiedAt": zod.coerce.date().nullable(),
+  "missing": zod.array(zod.string()).describe('What is still needed before the profile can be submitted.'),
+  "canSubmit": zod.boolean()
+})
+
+
+/**
+ * @summary Brands waiting for verification
+ */
+export const ListPendingBrandsResponseItem = zod.object({
+  "profileId": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "registrationNumber": zod.string().nullable(),
+  "vatNumber": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "billingAddress": zod.string().nullable(),
+  "contactName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullable(),
+  "submittedAt": zod.coerce.date().nullable()
+})
+export const ListPendingBrandsResponse = zod.array(ListPendingBrandsResponseItem)
+
+
+export const VerifyBrandParams = zod.object({
+  "brandProfileId": zod.coerce.string()
+})
+
+export const VerifyBrandResponse = zod.object({
+  "message": zod.string()
+})
+
+
+export const RejectBrandParams = zod.object({
+  "brandProfileId": zod.coerce.string()
+})
+
+export const rejectBrandBodyReasonMin = 3;
+export const rejectBrandBodyReasonMax = 1000;
+
+
+
+export const RejectBrandBody = zod.object({
+  "reason": zod.string().min(rejectBrandBodyReasonMin).max(rejectBrandBodyReasonMax)
+})
+
+export const RejectBrandResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Every campaign with what has been paid, held and released
+ */
+export const ListOwnerCampaignsResponseItem = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "brandId": zod.string(),
+  "brandName": zod.string(),
+  "specialty": zod.string(),
+  "eventDate": zod.string().nullable(),
+  "stage": zod.enum(['open', 'deposit_paid', 'fully_paid', 'completed', 'cancelled']),
+  "artistsFunded": zod.number(),
+  "artistFees": zod.number(),
+  "bonisaFee": zod.number(),
+  "total": zod.number(),
+  "paid": zod.number(),
+  "outstanding": zod.number(),
+  "balanceDueDate": zod.string().nullable(),
+  "balanceOverdue": zod.boolean(),
+  "heldInEscrow": zod.number(),
+  "releasedToArtists": zod.number(),
+  "jobsReleased": zod.number(),
+  "jobsTotal": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListOwnerCampaignsResponse = zod.array(ListOwnerCampaignsResponseItem)
+
+
+/**
  * @summary Stylist dashboard summary
  */
 export const GetStylistDashboardResponse = zod.object({
@@ -1910,6 +2429,8 @@ export const GetStylistDashboardResponse = zod.object({
   "thisMonthEarnings": zod.number(),
   "profileStrength": zod.number().optional(),
   "upcomingAppointments": zod.array(zod.object({
+  "campaignId": zod.string().nullish(),
+  "feeMode": zod.enum(['commission', 'brand_on_top']).optional(),
   "id": zod.string(),
   "clientId": zod.string(),
   "clientName": zod.string().optional(),
@@ -1943,6 +2464,8 @@ export const GetClientDashboardResponse = zod.object({
   "completedBookings": zod.number(),
   "favouriteStylists": zod.number(),
   "recentAppointments": zod.array(zod.object({
+  "campaignId": zod.string().nullish(),
+  "feeMode": zod.enum(['commission', 'brand_on_top']).optional(),
   "id": zod.string(),
   "clientId": zod.string(),
   "clientName": zod.string().optional(),
@@ -2020,7 +2543,16 @@ export const GetBrandDashboardResponse = zod.object({
   "specialty": zod.string(),
   "applicantCount": zod.number(),
   "hasApplied": zod.boolean().optional(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "artistsNeeded": zod.number(),
+  "ratePerArtist": zod.number().describe('What each artist is paid, in rand. She keeps all of it.'),
+  "eventDate": zod.string().nullable(),
+  "eventTime": zod.string(),
+  "location": zod.string(),
+  "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
+  "spotsFilled": zod.number(),
+  "brandVerified": zod.boolean(),
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
 }))
 })
 
