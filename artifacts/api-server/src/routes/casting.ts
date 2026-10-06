@@ -26,6 +26,7 @@ import type { Request, Response } from "express";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
+  appointmentsTable,
   castingApplicationsTable,
   castingCallsTable,
   db,
@@ -38,6 +39,8 @@ import {
   InviteArtistToCastingBody,
   RespondToCastingInvitationBody,
   UpdateCastingCallBody,
+  WithdrawFromCampaignBody,
+  RequestCampaignCancellationBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { param } from "../lib/params";
@@ -59,6 +62,14 @@ import {
   type CallRow,
 } from "../lib/campaigns";
 import { cancelCampaignCall } from "../lib/campaign-payments";
+import {
+  afterSeatFilled,
+  fillOpenSeat,
+  giveUpOpenSeats,
+  isFunded,
+  requestCancellation,
+  withdrawArtist,
+} from "../lib/campaign-seats";
 
 const router = Router();
 
@@ -95,8 +106,8 @@ function presentApplicant(app: ApplicationRow, profile: typeof stylistProfilesTa
     name: profile?.name ?? app.stylistName,
     specialty: profile?.specialty ?? "",
     location: profile?.location ?? "",
-    source: app.source as "applied" | "invited",
-    status: app.status as "pending" | "shortlisted" | "invited" | "accepted" | "declined" | "passed",
+    source: app.source as "applied" | "invited" | "seat_offer",
+    status: app.status as "pending" | "shortlisted" | "invited" | "accepted" | "declined" | "passed" | "withdrawn",
     jobsCompleted: jobs,
     rating: profile?.rating ?? 0,
     reviewCount: profile?.reviewCount ?? 0,
@@ -287,7 +298,7 @@ router.get("/casting/:castingId/applicants", requireAuth, async (req, res) => {
     : [];
   const byId = new Map(profiles.map((p) => [p.id, p]));
   const jobs = await artistJobsCompleted(apps.map((a) => a.stylistId));
-  const rank: Record<string, number> = { accepted: 0, shortlisted: 1, pending: 2, invited: 3, declined: 4, passed: 5 };
+  const rank: Record<string, number> = { accepted: 0, shortlisted: 1, pending: 2, invited: 3, declined: 4, passed: 5, withdrawn: 6 };
   res.json(apps
     .map((a) => presentApplicant(a, byId.get(a.stylistId), jobs.get(a.stylistId) ?? 0))
     .sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9)));
@@ -302,10 +313,11 @@ router.post("/casting/:castingId/applicants/:applicationId/decision", requireAut
   const applicationId = param(req.params.applicationId);
   const { decision } = parsed.data;
 
-  const result = await db.transaction(async (tx): Promise<Fail | { app: ApplicationRow; call: CallRow; event: "casting.shortlisted" | "casting.accepted" | "casting.declined" }> => {
+  const result = await db.transaction(async (tx): Promise<Fail | { app: ApplicationRow; call: CallRow; event: "casting.shortlisted" | "casting.accepted" | "casting.declined"; filled?: { replaced: string; profile: typeof stylistProfilesTable.$inferSelect } }> => {
     const [call] = await tx.select().from(castingCallsTable).where(eq(castingCallsTable.id, own.call.id)).for("update");
     if (!call) return { status: 404, error: "Campaign not found" } as const;
-    if (call.status !== "open") return { status: 409, error: "This campaign has been paid for or cancelled, so the team can no longer change." } as const;
+    if (call.status === "cancelled") return { status: 409, error: "This campaign has been cancelled." } as const;
+    const funded = isFunded(call);
     const [app] = await tx.select().from(castingApplicationsTable)
       .where(and(eq(castingApplicationsTable.id, applicationId), eq(castingApplicationsTable.castingId, call.id)));
     if (!app) return { status: 404, error: "Applicant not found" } as const;
@@ -319,9 +331,16 @@ router.post("/casting/:castingId/applicants/:applicationId/decision", requireAut
     if (decision === "accept") {
       if (app.source === "invited") return { status: 409, error: "You invited this artist, so she accepts herself. We will tell you when she does." } as const;
       if (app.status !== "pending" && app.status !== "shortlisted") return { status: 409, error: "This applicant has already been decided." } as const;
+      const [profile] = await tx.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, app.stylistId));
+      if (funded) {
+        // The team is paid for. The only way in is an open seat, and she agreed by applying.
+        if (!profile) return { status: 404, error: "Applicant not found" } as const;
+        const filled = await fillOpenSeat(tx, call, profile, app.id);
+        if ("error" in filled) return filled;
+        return { app, call, event: "casting.accepted" as const, filled: { replaced: filled.replaced, profile } } as const;
+      }
       const accepted = await countAccepted(tx, call.id);
       if (accepted >= call.artistsNeeded) return { status: 409, error: "Your team is already full. Pass on someone first, or ask for more artists." } as const;
-      const [profile] = await tx.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, app.stylistId));
       if (!profile?.verified) return { status: 409, error: "This artist is not verified, so she cannot be booked." } as const;
       const [artistUser] = await tx.select({ status: usersTable.accountStatus }).from(usersTable).where(eq(usersTable.id, profile.userId));
       if (artistUser?.status === "suspended") return { status: 409, error: "This artist's account is suspended." } as const;
@@ -333,13 +352,16 @@ router.post("/casting/:castingId/applicants/:applicationId/decision", requireAut
     }
 
     // pass
+    if (funded && app.status === "accepted") return { status: 409, error: "This artist is on your paid team. If she cannot make it, she can withdraw and her seat will be offered to someone else." } as const;
     if (!["pending", "shortlisted", "accepted", "invited"].includes(app.status)) return { status: 409, error: "This applicant has already been decided." } as const;
     await tx.update(castingApplicationsTable).set({ status: "passed", respondedAt: new Date() }).where(eq(castingApplicationsTable.id, app.id));
     return { app, call, event: "casting.declined" as const } as const;
   });
 
   if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
-  setImmediate(() => void notifyStylistProfile(result.app.stylistId, result.event, artistDetails(result.call)));
+  const filled = result.filled;
+  if (filled) setImmediate(() => void afterSeatFilled(result.call, filled.profile, filled.replaced, result.call.ratePerArtist));
+  else setImmediate(() => void notifyStylistProfile(result.app.stylistId, result.event, artistDetails(result.call)));
   res.json(await presentApplicantById(applicationId));
 });
 
@@ -357,7 +379,14 @@ router.post("/casting/:castingId/invite", requireAuth, async (req, res) => {
   const result = await db.transaction(async (tx): Promise<Fail | { app: ApplicationRow; call: CallRow }> => {
     const [call] = await tx.select().from(castingCallsTable).where(eq(castingCallsTable.id, own.call.id)).for("update");
     if (!call) return { status: 404, error: "Campaign not found" } as const;
-    if (call.status !== "open") return { status: 409, error: "This campaign has been paid for or cancelled, so you cannot invite more artists." } as const;
+    const funded = isFunded(call);
+    if (call.status !== "open" && !funded) return { status: 409, error: "This campaign has been cancelled, so you cannot invite more artists." } as const;
+    if (funded) {
+      const [seats] = await tx.select({ n: sql<number>`count(*)::int` }).from(appointmentsTable).where(and(
+        eq(appointmentsTable.campaignId, call.id), eq(appointmentsTable.status, "cancelled"), eq(appointmentsTable.seatOpen, true),
+      ));
+      if ((seats?.n ?? 0) === 0) return { status: 409, error: "This campaign has been paid for and has no open seat, so you cannot invite more artists." } as const;
+    }
     if (call.ratePerArtist <= 0) return { status: 409, error: "Add what each artist is paid before inviting anyone." } as const;
     const [profile] = await tx.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.id, parsed.data.stylistId));
     if (!profile || !profile.verified) return { status: 404, error: "Only verified artists can be invited." } as const;
@@ -379,14 +408,18 @@ router.post("/casting/:castingId/invite", requireAuth, async (req, res) => {
       stylistId: profile.id,
       stylistName: profile.name,
       status: "invited",
-      source: "invited",
+      source: funded ? "seat_offer" : "invited",
     }).returning();
     await tx.update(castingCallsTable).set({ applicantCount: call.applicantCount + 1 }).where(eq(castingCallsTable.id, call.id));
     return { app: app!, call } as const;
   });
 
   if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
-  setImmediate(() => void notifyStylistProfile(result.app.stylistId, "casting.invited", artistDetails(result.call)));
+  setImmediate(() => void notifyStylistProfile(
+    result.app.stylistId,
+    result.app.source === "seat_offer" ? "casting.seat_offer" : "casting.invited",
+    artistDetails(result.call),
+  ));
   res.json(await presentApplicantById(result.app.id));
 });
 
@@ -399,12 +432,29 @@ router.post("/casting/:castingId/invitation", requireAuth, async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: "Choose accept or decline." }); return; }
   const castingId = param(req.params.castingId);
 
-  const result = await db.transaction(async (tx): Promise<Fail | { call: CallRow; accepted: boolean }> => {
+  const result = await db.transaction(async (tx): Promise<Fail | { call: CallRow; accepted: boolean; replaced?: string }> => {
     const [call] = await tx.select().from(castingCallsTable).where(eq(castingCallsTable.id, castingId)).for("update");
     if (!call) return { status: 404, error: "Campaign not found" } as const;
     const [app] = await tx.select().from(castingApplicationsTable)
       .where(and(eq(castingApplicationsTable.castingId, call.id), eq(castingApplicationsTable.stylistId, profile.id)));
-    if (!app || app.source !== "invited" || app.status !== "invited") return { status: 409, error: "There is no open invitation for you on this campaign." } as const;
+    if (!app || (app.source !== "invited" && app.source !== "seat_offer") || app.status !== "invited") return { status: 409, error: "There is no open invitation for you on this campaign." } as const;
+
+    // A seat that opened up on a paid campaign: first to accept gets it.
+    if (app.source === "seat_offer") {
+      if (!isFunded(call)) return { status: 409, error: "This campaign is no longer taking changes." } as const;
+      if (!parsed.data.accept) {
+        await tx.update(castingApplicationsTable).set({ status: "declined", respondedAt: new Date() }).where(eq(castingApplicationsTable.id, app.id));
+        return { call, accepted: false } as const;
+      }
+      const filled = await fillOpenSeat(tx, call, profile, app.id);
+      if ("error" in filled) {
+        if (filled.error.includes("just been filled")) {
+          await tx.update(castingApplicationsTable).set({ status: "passed", respondedAt: new Date() }).where(eq(castingApplicationsTable.id, app.id));
+        }
+        return filled;
+      }
+      return { call, accepted: true, replaced: filled.replaced } as const;
+    }
     if (call.status !== "open") return { status: 409, error: "This campaign is no longer taking changes." } as const;
 
     if (!parsed.data.accept) {
@@ -421,12 +471,63 @@ router.post("/casting/:castingId/invitation", requireAuth, async (req, res) => {
   });
 
   if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
+  if (result.replaced !== undefined) {
+    const replaced = result.replaced;
+    setImmediate(() => void afterSeatFilled(result.call, profile, replaced, result.call.ratePerArtist));
+    res.json({ message: "The seat is yours. The booking is confirmed and already paid for." });
+    return;
+  }
+  if (!result.accepted && isFunded(result.call)) { res.json({ message: "Offer declined." }); return; }
   setImmediate(() => void notifyUserId(
     result.call.brandId,
     result.accepted ? "campaign.artist_accepted" : "campaign.artist_declined",
     { artistName: profile.name, castingTitle: result.call.title },
   ));
   res.json({ message: result.accepted ? "You are on the team. We will confirm your booking once the brand has paid." : "Invitation declined." });
+});
+
+// ---------------------------------------------------------------------------
+// When someone cannot make it
+// ---------------------------------------------------------------------------
+
+/** An artist on the team pulls out. Open seats are offered to a backup, then to matching artists. */
+router.post("/casting/:castingId/withdraw", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(403).json({ error: "Only artists can withdraw from a campaign." }); return; }
+  const parsed = WithdrawFromCampaignBody.safeParse(req.body ?? {});
+  if (!parsed.success) { res.status(400).json({ error: "Check what you wrote and try again." }); return; }
+  const [call] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
+  if (!call) { res.status(404).json({ error: "Campaign not found" }); return; }
+  const result = await withdrawArtist(call, profile, parsed.data.reason?.trim() || null);
+  if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
+  res.json(result);
+});
+
+/** The brand goes ahead with fewer artists. What it paid for the open seats is marked to be refunded. */
+router.post("/casting/:castingId/seats/release", requireAuth, async (req, res) => {
+  const own = await loadOwnCall(req, res, param(req.params.castingId));
+  if (!own) return;
+  const result = await giveUpOpenSeats(own.call);
+  if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
+  res.json({
+    message: result.refund > 0
+      ? `You are going ahead with fewer artists. We will refund R${result.refund.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`
+      : "You are going ahead with fewer artists. Nothing had been paid for those seats, so nothing is owed back.",
+    seats: result.seats,
+    refund: result.refund,
+  });
+});
+
+/** A paid campaign cannot be cancelled by the brand alone. This asks Bonisa to look at it. */
+router.post("/casting/:castingId/request-cancellation", requireAuth, async (req, res) => {
+  const own = await loadOwnCall(req, res, param(req.params.castingId));
+  if (!own) return;
+  const parsed = RequestCampaignCancellationBody.safeParse(req.body ?? {});
+  if (!parsed.success) { res.status(400).json({ error: "Check what you wrote and try again." }); return; }
+  const result = await requestCancellation(own.call, parsed.data.reason?.trim() || null);
+  if ("error" in result) { res.status(result.status).json({ error: result.error }); return; }
+  res.json({ message: "Thank you. Bonisa has been told and will be in touch about what happens next." });
 });
 
 // ---------------------------------------------------------------------------

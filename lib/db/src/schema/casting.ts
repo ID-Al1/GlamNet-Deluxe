@@ -24,6 +24,14 @@ export const castingCallsTable = pgTable("casting_calls", {
   // open -> deposit_paid -> fully_paid, or cancelled. "Completed" is derived from the artist jobs.
   status: text("status").notNull().default("open"),
   balanceReminderSentAt: timestamp("balance_reminder_sent_at"),
+  // ── Seats: the artists the brand paid for, and what happens when one cannot make it ──
+  seatsFunded: integer("seats_funded").notNull().default(0),
+  // Replacement offers go out in waves; this is which wave, and when the last one went.
+  seatWave: integer("seat_wave").notNull().default(0),
+  seatWaveAt: timestamp("seat_wave_at"),
+  seatDecisionNotifiedAt: timestamp("seat_decision_notified_at"),
+  cancellationRequestedAt: timestamp("cancellation_requested_at"),
+  cancellationReason: text("cancellation_reason"),
 });
 
 export const castingApplicationsTable = pgTable("casting_applications", {
@@ -34,7 +42,9 @@ export const castingApplicationsTable = pgTable("casting_applications", {
   stylistName: text("stylist_name").notNull(),
   // applied: pending | shortlisted | accepted | passed
   // invited: invited | accepted | declined
+  // withdrawn: she was in the team and pulled out
   status: text("status").notNull().default("pending"),
+  // applied | invited | seat_offer (offered a seat that opened up after someone withdrew)
   source: text("source").notNull().default("applied"),
   appliedAt: timestamp("applied_at").notNull().defaultNow(),
   respondedAt: timestamp("responded_at"),

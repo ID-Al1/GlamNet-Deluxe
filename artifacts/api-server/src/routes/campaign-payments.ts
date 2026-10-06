@@ -11,13 +11,14 @@
 import { Router } from "express";
 import { desc, eq, sql } from "drizzle-orm";
 import { castingCallsTable, db } from "@workspace/db";
-import { ConfirmCampaignPaymentBody, StartCampaignPaymentBody } from "@workspace/api-zod";
+import { ConfirmCampaignPaymentBody, MarkSeatRefundedBody, StartCampaignPaymentBody } from "@workspace/api-zod";
 import { requireAuth, requireOwner } from "../lib/auth";
 import { param } from "../lib/params";
 import { getUncachableStripeClient } from "../stripeClient";
 import { logger } from "../lib/logger";
 import { buildCampaignSummary, isBrandVerified, isOwnerUser } from "../lib/campaigns";
 import { fulfillCampaignSession, startCampaignPayment } from "../lib/campaign-payments";
+import { markSeatRefunded, ownerSeatAttention } from "../lib/campaign-seats";
 
 const router = Router();
 
@@ -84,6 +85,18 @@ router.post("/casting/:castingId/confirm-payment", requireAuth, async (req, res)
   res.json(await buildCampaignSummary(updated!, user));
 });
 
+router.get("/owner/seat-attention", requireOwner, async (_req, res) => {
+  res.json(await ownerSeatAttention());
+});
+
+router.post("/owner/seat-refunds/:appointmentId/paid", requireOwner, async (req, res) => {
+  const parsed = MarkSeatRefundedBody.safeParse(req.body ?? {});
+  if (!parsed.success) { res.status(400).json({ error: "Check the reference and try again." }); return; }
+  const ok = await markSeatRefunded(param(req.params.appointmentId), parsed.data.reference?.trim() || null);
+  if (!ok) { res.status(409).json({ error: "There is no unpaid refund for that seat." }); return; }
+  res.json({ message: "Refund recorded." });
+});
+
 router.get("/owner/campaigns", requireOwner, async (_req, res) => {
   const calls = await db.select().from(castingCallsTable)
     .where(sql`${castingCallsTable.ratePerArtist} > 0`)
@@ -109,7 +122,7 @@ router.get("/owner/campaigns", requireOwner, async (_req, res) => {
       outstanding: s.outstanding,
       balanceDueDate: s.balanceDueDate,
       balanceOverdue: s.balanceOverdue,
-      heldInEscrow: Math.round(s.jobs.filter((j) => j.payoutStatus !== "released").reduce((sum, j) => sum + j.collected, 0) * 100) / 100,
+      heldInEscrow: Math.round((s.jobs.filter((j) => j.payoutStatus !== "released").reduce((sum, j) => sum + j.collected, 0) + s.seatMoneyHeld) * 100) / 100,
       releasedToArtists: Math.round(released.reduce((sum, j) => sum + j.rate, 0) * 100) / 100,
       jobsReleased: released.length,
       jobsTotal: s.jobs.length,

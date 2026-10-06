@@ -127,7 +127,18 @@ A casting call is now a campaign with real numbers: how many artists, what each 
 
 **Forbidden:** taking Bonisa's fee off a campaign artist's rate. Releasing any payout before the campaign is paid in full. Letting an unverified brand post or pay. Showing a brand a total that leaves out the fee.
 
-**Cancelling:** a brand can cancel freely until it has paid. After payment, cancelling or refunding goes through Bonisa support, because the money is shared between several artists. This is deliberate for Phase 1 and is a known gap (see replit.md).
+**Cancelling:** a brand can cancel freely until it has paid. After payment it asks Bonisa to cancel (see "When an artist cannot make it"), because the money is shared between several artists.
+
+**When an artist cannot make it (agreed with Alwande, October 2026):**
+
+- *The seat stays paid for.* When an artist withdraws from a paid campaign her job is cancelled but the money paid for her seat stays held. The brand owes nothing extra and loses nothing.
+- *Finding a replacement.* Two things happen together and the first artist to accept gets the seat: Bonisa offers it in waves (first the brand's backup applicants, then the best matching verified artists who are free that day, 5 at a time, every 2 hours, every hour inside 3 days, every 15 minutes inside 24 hours), and the brand can pick someone itself (invite an artist or accept an applicant). The replacement's booking carries the money already paid, so the brand pays nothing extra and the balance is worked out as normal.
+- *Strikes.* 7 or more days before the event: no mark. 2 to 7 days: a late withdrawal, noted. Under 48 hours: a strike. Several strikes means the owner reviews the artist (the owner portal shows strike counts). A withdrawing artist is never paid for work not done. A withdrawal before the brand has paid is free and leaves no mark.
+- *No vote.* Each artist stands alone. Nobody needs the others' agreement and the campaign goes ahead with whoever is on it. A brand cannot be forced to run a smaller team: if no replacement is found by 24 hours before the event the brand is told it must decide, either go ahead with fewer artists (the open seat's money is marked as owed back and Bonisa refunds it) or ask Bonisa to cancel.
+- *Cancelling a paid campaign* is a request to Bonisa, which tells the owner. Bonisa speaks to the brand and the artists and decides what is fair. There is no automatic compensation yet.
+- *Refunds* of seat money are recorded in the app (`refund_due_amount`) and paid back by the owner in Stripe, then marked paid.
+
+**Not built yet:** a minimum team size a brand can set, and per artist agreement to material changes (date, time, place) after payment. Today those fields lock once artists accept, so changes go through Bonisa.
 
 **Done when:** a verified brand can post, build a team, pay the deposit and balance, confirm the work, and every artist ends up paid her exact rate with Bonisa's fee recorded, with nothing paid twice however many times a button is pressed.
 

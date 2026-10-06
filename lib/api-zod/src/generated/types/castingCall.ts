@@ -31,4 +31,6 @@ export interface CastingCall {
   brandVerified: boolean;
   /** Where the signed-in artist stands on this campaign. */
   myStatus?: CastingCallMyStatus;
+  /** True when the signed-in artist's invitation is for a seat that opened up on a paid campaign. */
+  myOfferIsSeat?: boolean;
 }

@@ -14,7 +14,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec (run after any change to openapi.yaml)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only; see gotchas)
 - Required env: `DATABASE_URL` (Postgres), Stripe credentials via the Replit connector
-- Brand campaigns need `PUBLIC_APP_URL` (the Stripe return link) and the Stripe connector. Run `pnpm --filter @workspace/db run migrate:brand-campaigns:dev` (or `db push`) before first use
+- Brand campaigns need `PUBLIC_APP_URL` (the Stripe return link) and the Stripe connector. Run `pnpm --filter @workspace/db run migrate:brand-campaigns:dev` and then `migrate:campaign-seats:dev` (or `db push`) before first use
 - Optional env for artist contacts: `WAITLIST_WEBHOOK_SECRET` (Vercel waitlist webhook, see docs/WAITLIST_CONNECTION.md), `PUBLIC_APP_URL` (links in reminders)
 
 ## Stack
@@ -50,7 +50,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 - **Verification has two fields on purpose:** `verified` (boolean gate) and `verificationStatus` (`none`/`pending`/`verified`). Both must agree.
 - **Payment logic is quarantined** in `stripeClient.ts`, `routes/stripe.ts`, and the booking success page so the provider can be swapped without touching booking logic.
 - **The OpenAPI spec is the contract.** Change the spec, run codegen, then use generated types. Do not hand-write API types.
-- **Brand campaigns** are casting calls with real numbers (`casting_calls`). Each hired artist becomes one `appointments` row with `campaign_id` set and `fee_mode = 'brand_on_top'`, so earnings, payouts, disputes and messaging all work as before. One Stripe payment covers the whole team and is shared out by `campaign_payment_lines`. All the rules live in `artifacts/api-server/src/lib/money.ts`, `campaigns.ts` and `campaign-payments.ts`.
+- **Brand campaigns** are casting calls with real numbers (`casting_calls`). Each hired artist becomes one `appointments` row with `campaign_id` set and `fee_mode = 'brand_on_top'`, so earnings, payouts, disputes and messaging all work as before. One Stripe payment covers the whole team and is shared out by `campaign_payment_lines`. All the rules live in `artifacts/api-server/src/lib/money.ts`, `campaigns.ts`, `campaign-payments.ts` and `campaign-seats.ts` (artist withdrawals, replacement offers in waves, strikes, giving seats up; a 5 minute job runs the waves).
 - **Team bookings** split a job via `payoutPercentage` on team members — separate from and not to be confused with the platform's 18% commission.
 
 ## Non-negotiables (do not change without explicit instruction from Alwande)
@@ -95,7 +95,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 
 ## Known gaps (do not treat as done)
 
-- Brand campaigns: cancelling or refunding after the brand has paid is handled by Bonisa support, not in the app. No VAT invoices or 30-day invoice terms for brands yet (card payment only)
+- Brand campaigns: cancelling a paid campaign is a request to Bonisa (owner portal lists it), and seat refunds are paid by the owner in Stripe then marked paid in the portal. Nothing is refunded automatically. No minimum-team setting or per-artist agreement to date/place changes yet. No VAT invoices or 30-day invoice terms for brands yet (card payment only)
 - Brand campaigns: an overdue balance is flagged to the owner and the brand is reminded, but nothing is released or cancelled automatically
 
 - Commission and payout fields missing from the appointments table

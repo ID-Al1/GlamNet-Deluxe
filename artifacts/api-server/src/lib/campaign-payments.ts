@@ -358,8 +358,21 @@ export async function fulfillCampaignSession(stripe: Stripe, sessionId: string, 
       .set({ status: "paid", paidAt: new Date(), stripePaymentIntentId: paymentIntentId })
       .where(eq(campaignPaymentsTable.id, cp.id));
 
-    const newStatus = kind === "deposit" ? "deposit_paid" : "fully_paid";
-    await tx.update(castingCallsTable).set({ status: newStatus }).where(eq(castingCallsTable.id, call.id));
+    // After a balance, the campaign is "paid in full" when every artist working it is paid up. An open
+    // seat (someone withdrew, no replacement yet) does not hold that back: its balance waits for the replacement.
+    let newStatus: "deposit_paid" | "fully_paid" = kind === "full" ? "fully_paid" : "deposit_paid";
+    if (kind === "balance") {
+      const working = await tx.select().from(appointmentsTable)
+        .where(and(eq(appointmentsTable.campaignId, call.id), eq(appointmentsTable.status, "confirmed")));
+      let allPaid = true;
+      for (const j of working) {
+        if (cents(await resolveCampaignCollected(tx, j.id)) < cents(campaignArtistCost(j.price).total)) allPaid = false;
+      }
+      newStatus = allPaid ? "fully_paid" : "deposit_paid";
+    }
+    await tx.update(castingCallsTable)
+      .set({ status: newStatus, ...(kind !== "balance" ? { seatsFunded: lines.length } : {}) })
+      .where(eq(castingCallsTable.id, call.id));
     return {
       castingId: call.id, alreadyDone: false, kind, amount: cp.amount,
       call: { ...call, status: newStatus }, artists, fullyPaid: newStatus === "fully_paid",

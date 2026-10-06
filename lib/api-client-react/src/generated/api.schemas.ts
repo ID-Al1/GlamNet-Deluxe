@@ -1260,6 +1260,7 @@ export const CastingCallMyStatus = {
   accepted: 'accepted',
   declined: 'declined',
   passed: 'passed',
+  withdrawn: 'withdrawn',
 } as const;
 
 export interface CastingCall {
@@ -1285,6 +1286,8 @@ export interface CastingCall {
   brandVerified: boolean;
   /** Where the signed-in artist stands on this campaign. */
   myStatus?: CastingCallMyStatus;
+  /** True when the signed-in artist's invitation is for a seat that opened up on a paid campaign. */
+  myOfferIsSeat?: boolean;
 }
 
 export interface CastingCallInput {
@@ -1424,6 +1427,7 @@ export type CastingApplicantSource = typeof CastingApplicantSource[keyof typeof 
 export const CastingApplicantSource = {
   applied: 'applied',
   invited: 'invited',
+  seat_offer: 'seat_offer',
 } as const;
 
 export type CastingApplicantStatus = typeof CastingApplicantStatus[keyof typeof CastingApplicantStatus];
@@ -1436,6 +1440,7 @@ export const CastingApplicantStatus = {
   accepted: 'accepted',
   declined: 'declined',
   passed: 'passed',
+  withdrawn: 'withdrawn',
 } as const;
 
 export interface CastingApplicant {
@@ -1535,6 +1540,106 @@ export interface CampaignCost {
   balance: number;
 }
 
+export interface WithdrawFromCampaignInput {
+  /** @maxLength 1000 */
+  reason?: string;
+}
+
+export type WithdrawResultSeverity = typeof WithdrawResultSeverity[keyof typeof WithdrawResultSeverity] | null;
+
+
+export const WithdrawResultSeverity = {
+  early: 'early',
+  late: 'late',
+  last_minute: 'last_minute',
+} as const;
+
+export interface WithdrawResult {
+  message: string;
+  severity: WithdrawResultSeverity;
+  strikes: number;
+}
+
+export interface ReleaseSeatsResult {
+  message: string;
+  seats: number;
+  refund: number;
+}
+
+export interface RequestCampaignCancellationInput {
+  /** @maxLength 1000 */
+  reason?: string;
+}
+
+export interface MarkSeatRefundedInput {
+  /** @maxLength 200 */
+  reference?: string;
+}
+
+export type CampaignChangeKind = typeof CampaignChangeKind[keyof typeof CampaignChangeKind];
+
+
+export const CampaignChangeKind = {
+  withdrew: 'withdrew',
+  filled: 'filled',
+  given_up: 'given_up',
+} as const;
+
+export interface CampaignChange {
+  id: string;
+  kind: CampaignChangeKind;
+  text: string;
+  createdAt: string;
+}
+
+export interface SeatRefund {
+  appointmentId: string;
+  castingId: string;
+  campaignTitle: string;
+  brandName: string;
+  artistName: string;
+  amount: number;
+  refundedAt: string | null;
+  reference: string | null;
+}
+
+export interface CancellationRequest {
+  castingId: string;
+  campaignTitle: string;
+  brandName: string;
+  reason: string | null;
+  requestedAt: string;
+}
+
+export type SeatWithdrawalSeverity = typeof SeatWithdrawalSeverity[keyof typeof SeatWithdrawalSeverity];
+
+
+export const SeatWithdrawalSeverity = {
+  early: 'early',
+  late: 'late',
+  last_minute: 'last_minute',
+} as const;
+
+export interface SeatWithdrawal {
+  id: string;
+  castingId: string;
+  campaignTitle: string;
+  brandName: string;
+  artistName: string;
+  stylistId: string;
+  severity: SeatWithdrawalSeverity;
+  hoursBefore: number | null;
+  reason: string | null;
+  strikes: number;
+  createdAt: string;
+}
+
+export interface OwnerSeatAttention {
+  refunds: SeatRefund[];
+  cancellationRequests: CancellationRequest[];
+  withdrawals: SeatWithdrawal[];
+}
+
 export type CampaignSummaryStage = typeof CampaignSummaryStage[keyof typeof CampaignSummaryStage];
 
 
@@ -1555,12 +1660,20 @@ export interface CampaignSummary {
   cost: CampaignCost;
   paid: number;
   outstanding: number;
+  deferred: number;
   balanceDueDate: string | null;
   balanceOverdue: boolean;
   depositAllowed: boolean;
   canFund: boolean;
   canPayBalance: boolean;
   blockers: string[];
+  openSeats: number;
+  offersOut: number;
+  refundsDue: number;
+  hoursUntilEvent: number | null;
+  needsDecision: boolean;
+  seatMoneyHeld: number;
+  changes: CampaignChange[];
 }
 
 export type StartCampaignPaymentInputKind = typeof StartCampaignPaymentInputKind[keyof typeof StartCampaignPaymentInputKind];

@@ -2,8 +2,11 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListOwnerCampaignsQueryKey,
+  getGetOwnerSeatAttentionQueryKey,
   getListPendingBrandsQueryKey,
+  useGetOwnerSeatAttention,
   useListOwnerCampaigns,
+  useMarkSeatRefunded,
   useListPendingBrands,
   useRejectBrand,
   useVerifyBrand,
@@ -13,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -160,6 +164,93 @@ function PendingBrands() {
   );
 }
 
+const SEVERITY_WORDS = { early: "Early, no mark", late: "Late, noted", last_minute: "Last minute, strike" } as const;
+
+/**
+ * What needs the owner's hand after an artist cannot make it: refunds to pay back to brands,
+ * brands asking to cancel a paid campaign, and who has pulled out (several strikes means a review).
+ */
+function SeatAttention() {
+  const queryClient = useQueryClient();
+  const { data } = useGetOwnerSeatAttention({ query: { queryKey: getGetOwnerSeatAttentionQueryKey() } });
+  const markPaid = useMarkSeatRefunded();
+  const [refs, setRefs] = useState<Record<string, string>>({});
+  if (!data) return null;
+  const refundsToPay = data.refunds.filter((r) => !r.refundedAt);
+  const repeat = data.withdrawals.filter((w) => w.strikes >= 2);
+  const recent = data.withdrawals.slice(0, 8);
+  if (refundsToPay.length === 0 && data.cancellationRequests.length === 0 && recent.length === 0) return null;
+
+  async function paid(appointmentId: string) {
+    try {
+      const res = await markPaid.mutateAsync({ appointmentId, data: { reference: refs[appointmentId]?.trim() || undefined } });
+      toast.success(res.message);
+      await queryClient.invalidateQueries({ queryKey: getGetOwnerSeatAttentionQueryKey() });
+    } catch (e) {
+      toast.error(apiMessage(e, "Could not record that."));
+    }
+  }
+
+  return (
+    <section className="space-y-4" aria-labelledby="seats-heading" data-testid="section-seat-attention">
+      <div>
+        <h2 id="seats-heading" className="font-serif text-2xl">Withdrawals and refunds</h2>
+        <p className="mt-1 text-sm text-muted-foreground">When an artist cannot make it, the brand's money for her seat stays held. These need your hand.</p>
+      </div>
+
+      {data.cancellationRequests.length > 0 && (
+        <Card className="border-destructive/30 bg-destructive/5" role="alert">
+          <CardContent className="space-y-2 p-4 text-sm">
+            <p className="font-semibold">{data.cancellationRequests.length === 1 ? "A brand wants to cancel a paid campaign" : `${data.cancellationRequests.length} brands want to cancel paid campaigns`}</p>
+            {data.cancellationRequests.map((c) => (
+              <p key={c.castingId}>{c.brandName}, {c.campaignTitle}{c.reason ? `: "${c.reason}"` : ""} <span className="text-muted-foreground">(asked {longDate(c.requestedAt.slice(0, 10))})</span></p>
+            ))}
+            <p className="text-xs text-muted-foreground">Speak to the brand and the artists, then decide what is fair. Cancelling a paid campaign is done by you, outside this list.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {refundsToPay.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Refunds to pay back to brands</p>
+          {refundsToPay.map((r) => (
+            <Card key={r.appointmentId} className="bg-card" data-testid={`seat-refund-${r.appointmentId}`}>
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm">
+                  <p className="font-semibold">{rand(r.amount)} to {r.brandName}</p>
+                  <p className="text-xs text-muted-foreground">For the seat {r.artistName} left on {r.campaignTitle}. Refund it in Stripe, then record it here.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Input className="w-40" placeholder="Reference (optional)" value={refs[r.appointmentId] ?? ""} onChange={(e) => setRefs((p) => ({ ...p, [r.appointmentId]: e.target.value }))} />
+                  <Button size="sm" disabled={markPaid.isPending} onClick={() => void paid(r.appointmentId)}>Paid back</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {recent.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent withdrawals{repeat.length > 0 ? ` (${repeat.length} with several strikes)` : ""}</p>
+          {recent.map((w) => (
+            <div key={w.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-card p-3 text-sm">
+              <div>
+                <p className="font-medium">{w.artistName} <span className="font-normal text-muted-foreground">left {w.campaignTitle} ({w.brandName})</span></p>
+                {w.reason && <p className="text-xs text-muted-foreground">"{w.reason}"</p>}
+              </div>
+              <div className="flex gap-1.5">
+                <Badge variant={w.severity === "last_minute" ? "destructive" : "secondary"}>{SEVERITY_WORDS[w.severity]}</Badge>
+                {w.strikes >= 2 && <Badge variant="destructive">{w.strikes} strikes, review</Badge>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CampaignMoney() {
   const { data: campaigns, isLoading, isError, refetch } = useListOwnerCampaigns({ query: { queryKey: getListOwnerCampaignsQueryKey() } });
   const [stage, setStage] = useState<OwnerCampaign["stage"] | "all">("all");
@@ -265,6 +356,7 @@ export default function OwnerCampaigns() {
         <p className="text-sm text-muted-foreground">Verify brands, and follow every rand brands pay for artists.</p>
       </div>
       <PendingBrands />
+      <SeatAttention />
       <CampaignMoney />
     </div>
   );

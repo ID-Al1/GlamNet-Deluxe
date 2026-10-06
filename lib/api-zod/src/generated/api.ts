@@ -1802,7 +1802,8 @@ export const ListCastingCallsResponseItem = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 })
 export const ListCastingCallsResponse = zod.array(ListCastingCallsResponseItem)
 
@@ -1860,7 +1861,8 @@ export const CreateCastingCallResponse = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 })
 
 
@@ -1891,7 +1893,8 @@ export const GetCastingCallResponse = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 })
 
 
@@ -1952,7 +1955,8 @@ export const UpdateCastingCallResponse = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 })
 
 
@@ -1993,8 +1997,8 @@ export const ListCastingApplicantsResponseItem = zod.object({
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
-  "source": zod.enum(['applied', 'invited']),
-  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']),
+  "source": zod.enum(['applied', 'invited', 'seat_offer']),
+  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']),
   "jobsCompleted": zod.number(),
   "rating": zod.number(),
   "reviewCount": zod.number(),
@@ -2021,8 +2025,8 @@ export const DecideCastingApplicantResponse = zod.object({
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
-  "source": zod.enum(['applied', 'invited']),
-  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']),
+  "source": zod.enum(['applied', 'invited', 'seat_offer']),
+  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']),
   "jobsCompleted": zod.number(),
   "rating": zod.number(),
   "reviewCount": zod.number(),
@@ -2047,8 +2051,8 @@ export const InviteArtistToCastingResponse = zod.object({
   "name": zod.string(),
   "specialty": zod.string(),
   "location": zod.string(),
-  "source": zod.enum(['applied', 'invited']),
-  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']),
+  "source": zod.enum(['applied', 'invited', 'seat_offer']),
+  "status": zod.enum(['pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']),
   "jobsCompleted": zod.number(),
   "rating": zod.number(),
   "reviewCount": zod.number(),
@@ -2100,7 +2104,8 @@ export const GetCampaignSummaryResponse = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 }),
   "stage": zod.enum(['open', 'deposit_paid', 'fully_paid', 'completed', 'cancelled']),
   "team": zod.array(zod.object({
@@ -2144,12 +2149,25 @@ export const GetCampaignSummaryResponse = zod.object({
 }),
   "paid": zod.number(),
   "outstanding": zod.number(),
+  "deferred": zod.number(),
   "balanceDueDate": zod.string().nullable(),
   "balanceOverdue": zod.boolean(),
   "depositAllowed": zod.boolean(),
   "canFund": zod.boolean(),
   "canPayBalance": zod.boolean(),
-  "blockers": zod.array(zod.string())
+  "blockers": zod.array(zod.string()),
+  "openSeats": zod.number(),
+  "offersOut": zod.number(),
+  "refundsDue": zod.number(),
+  "hoursUntilEvent": zod.number().nullable(),
+  "needsDecision": zod.boolean(),
+  "seatMoneyHeld": zod.number(),
+  "changes": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['withdrew', 'filled', 'given_up']),
+  "text": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
 })
 
 
@@ -2201,7 +2219,8 @@ export const ConfirmCampaignPaymentResponse = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 }),
   "stage": zod.enum(['open', 'deposit_paid', 'fully_paid', 'completed', 'cancelled']),
   "team": zod.array(zod.object({
@@ -2245,12 +2264,25 @@ export const ConfirmCampaignPaymentResponse = zod.object({
 }),
   "paid": zod.number(),
   "outstanding": zod.number(),
+  "deferred": zod.number(),
   "balanceDueDate": zod.string().nullable(),
   "balanceOverdue": zod.boolean(),
   "depositAllowed": zod.boolean(),
   "canFund": zod.boolean(),
   "canPayBalance": zod.boolean(),
-  "blockers": zod.array(zod.string())
+  "blockers": zod.array(zod.string()),
+  "openSeats": zod.number(),
+  "offersOut": zod.number(),
+  "refundsDue": zod.number(),
+  "hoursUntilEvent": zod.number().nullable(),
+  "needsDecision": zod.boolean(),
+  "seatMoneyHeld": zod.number(),
+  "changes": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['withdrew', 'filled', 'given_up']),
+  "text": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
 })
 
 
@@ -2262,6 +2294,119 @@ export const CancelCampaignParams = zod.object({
 })
 
 export const CancelCampaignResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary An artist on the team pulls out. The seat is offered to someone else; late withdrawals are recorded.
+ */
+export const WithdrawFromCampaignParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const withdrawFromCampaignBodyReasonMax = 1000;
+
+
+
+export const WithdrawFromCampaignBody = zod.object({
+  "reason": zod.string().max(withdrawFromCampaignBodyReasonMax).optional()
+})
+
+export const WithdrawFromCampaignResponse = zod.object({
+  "message": zod.string(),
+  "severity": zod.enum(['early', 'late', 'last_minute']).nullable(),
+  "strikes": zod.number()
+})
+
+
+/**
+ * @summary Go ahead with fewer artists. What was paid for the open seats is marked to be refunded.
+ */
+export const ReleaseOpenSeatsParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const ReleaseOpenSeatsResponse = zod.object({
+  "message": zod.string(),
+  "seats": zod.number(),
+  "refund": zod.number()
+})
+
+
+/**
+ * @summary Ask Bonisa to cancel a paid campaign
+ */
+export const RequestCampaignCancellationParams = zod.object({
+  "castingId": zod.coerce.string()
+})
+
+export const requestCampaignCancellationBodyReasonMax = 1000;
+
+
+
+export const RequestCampaignCancellationBody = zod.object({
+  "reason": zod.string().max(requestCampaignCancellationBodyReasonMax).optional()
+})
+
+export const RequestCampaignCancellationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Refunds to pay, cancellation requests and withdrawals with strike counts
+ */
+export const GetOwnerSeatAttentionResponse = zod.object({
+  "refunds": zod.array(zod.object({
+  "appointmentId": zod.string(),
+  "castingId": zod.string(),
+  "campaignTitle": zod.string(),
+  "brandName": zod.string(),
+  "artistName": zod.string(),
+  "amount": zod.number(),
+  "refundedAt": zod.coerce.date().nullable(),
+  "reference": zod.string().nullable()
+})),
+  "cancellationRequests": zod.array(zod.object({
+  "castingId": zod.string(),
+  "campaignTitle": zod.string(),
+  "brandName": zod.string(),
+  "reason": zod.string().nullable(),
+  "requestedAt": zod.coerce.date()
+})),
+  "withdrawals": zod.array(zod.object({
+  "id": zod.string(),
+  "castingId": zod.string(),
+  "campaignTitle": zod.string(),
+  "brandName": zod.string(),
+  "artistName": zod.string(),
+  "stylistId": zod.string(),
+  "severity": zod.enum(['early', 'late', 'last_minute']),
+  "hoursBefore": zod.number().nullable(),
+  "reason": zod.string().nullable(),
+  "strikes": zod.number(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Record that a seat refund has been paid back to the brand
+ */
+export const MarkSeatRefundedParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const markSeatRefundedBodyReferenceMax = 200;
+
+
+
+export const MarkSeatRefundedBody = zod.object({
+  "reference": zod.string().max(markSeatRefundedBodyReferenceMax).optional()
+})
+
+export const MarkSeatRefundedResponse = zod.object({
   "message": zod.string()
 })
 
@@ -2552,7 +2697,8 @@ export const GetBrandDashboardResponse = zod.object({
   "status": zod.enum(['open', 'deposit_paid', 'fully_paid', 'cancelled']),
   "spotsFilled": zod.number(),
   "brandVerified": zod.boolean(),
-  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed']).optional().describe('Where the signed-in artist stands on this campaign.')
+  "myStatus": zod.enum(['none', 'pending', 'shortlisted', 'invited', 'accepted', 'declined', 'passed', 'withdrawn']).optional().describe('Where the signed-in artist stands on this campaign.'),
+  "myOfferIsSeat": zod.boolean().optional().describe('True when the signed-in artist\'s invitation is for a seat that opened up on a paid campaign.')
 }))
 })
 

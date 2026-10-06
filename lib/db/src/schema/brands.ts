@@ -59,5 +59,31 @@ export const campaignPaymentLinesTable = pgTable("campaign_payment_lines", {
   paymentAppointmentUnique: uniqueIndex("campaign_payment_lines_unique").on(t.campaignPaymentId, t.appointmentId),
 }));
 
+/**
+ * Everything that happens to a seat on a funded campaign: an artist withdrawing, a
+ * replacement joining, a seat given up. It is the brand's story of what changed and
+ * Bonisa's record of how reliable each artist is: withdrawals carry a severity, and
+ * last-minute ones count as strikes.
+ */
+export const campaignSeatEventsTable = pgTable("campaign_seat_events", {
+  id: text("id").primaryKey(),
+  castingId: text("casting_id").notNull().references(() => castingCallsTable.id),
+  // withdrew | filled | given_up
+  kind: text("kind").notNull(),
+  stylistProfileId: text("stylist_profile_id"),
+  stylistName: text("stylist_name").notNull().default(""),
+  // For "filled": who she replaced.
+  otherName: text("other_name"),
+  // For "withdrew": early | late | last_minute
+  severity: text("severity"),
+  hoursBefore: real("hours_before"),
+  reason: text("reason"),
+  amount: real("amount"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  kindCheck: check("campaign_seat_events_kind_check", sql`${t.kind} in ('withdrew','filled','given_up')`),
+}));
+
 export type BrandProfile = typeof brandProfilesTable.$inferSelect;
+export type CampaignSeatEvent = typeof campaignSeatEventsTable.$inferSelect;
 export type CampaignPayment = typeof campaignPaymentsTable.$inferSelect;

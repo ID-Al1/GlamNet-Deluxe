@@ -12,6 +12,8 @@ import {
   useInviteArtistToCasting,
   useListCastingApplicants,
   useListStylists,
+  useReleaseOpenSeats,
+  useRequestCampaignCancellation,
   useStartCampaignPayment,
   useUpdateCastingCall,
   type CampaignSummary,
@@ -22,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -30,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CampaignForm } from "@/components/campaign-form";
 import { apiMessage, longDate, rand, randWhole } from "@/lib/campaign-money";
-import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, Clock, CreditCard, MapPin, Pencil, Search, ShieldAlert, Star, UserPlus, Users } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, Clock, CreditCard, History, MapPin, Pencil, Search, ShieldAlert, Star, UserMinus, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const STAGE: Record<CampaignSummary["stage"], { label: string; tone: "default" | "secondary" | "outline" }> = {
@@ -48,6 +51,7 @@ const STATUS_WORDS: Record<CastingApplicant["status"], string> = {
   accepted: "In your team",
   declined: "Declined your invitation",
   passed: "Passed",
+  withdrawn: "Withdrew",
 };
 
 export default function CampaignPage() {
@@ -70,7 +74,12 @@ export default function CampaignPage() {
   const confirmPayment = useConfirmCampaignPayment();
   const cancel = useCancelCampaign();
   const edit = useUpdateCastingCall();
+  const releaseSeats = useReleaseOpenSeats();
+  const requestCancel = useRequestCampaignCancellation();
 
+  const [confirmingRelease, setConfirmingRelease] = useState(false);
+  const [askingCancel, setAskingCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [editing, setEditing] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [busyJob, setBusyJob] = useState<string | null>(null);
@@ -115,7 +124,7 @@ export default function CampaignPage() {
 
   // Artists the brand could invite: verified artists of the right type who are not already on the campaign.
   const { data: stylists = [] } = useListStylists({ specialty: summary?.call.specialty }, {
-    query: { queryKey: ["stylists", "campaign-invite", summary?.call.specialty ?? ""], enabled: summary?.stage === "open" },
+    query: { queryKey: ["stylists", "campaign-invite", summary?.call.specialty ?? ""], enabled: summary?.stage === "open" || (summary?.openSeats ?? 0) > 0 },
   });
   const onCampaign = useMemo(() => new Set((applicants ?? []).map((a) => a.stylistId)), [applicants]);
   const inviteable = stylists
@@ -149,6 +158,9 @@ export default function CampaignPage() {
   const call = summary.call;
   const open = summary.stage === "open";
   const funded = summary.stage === "deposit_paid" || summary.stage === "fully_paid" || summary.stage === "completed";
+  const seatOpen = summary.openSeats > 0;
+  // The team is picked while the campaign is open, and again whenever a paid seat is empty.
+  const canChoose = open || seatOpen;
   const team = applicants?.filter((a) => a.status === "accepted") ?? [];
   const waiting = applicants?.filter((a) => a.status === "pending" || a.status === "shortlisted") ?? [];
   const invited = applicants?.filter((a) => a.status === "invited") ?? [];
@@ -200,6 +212,29 @@ export default function CampaignPage() {
       toast.error(e.message || "Could not confirm the work.");
     } finally {
       setBusyJob(null);
+    }
+  }
+
+  async function giveUpSeats() {
+    setConfirmingRelease(false);
+    try {
+      const res = await releaseSeats.mutateAsync({ castingId: id });
+      await refreshAll();
+      toast.success(res.message);
+    } catch (e) {
+      toast.error(apiMessage(e, "Could not give up the seat."));
+    }
+  }
+
+  async function askToCancel() {
+    try {
+      const res = await requestCancel.mutateAsync({ castingId: id, data: { reason: cancelReason.trim() || undefined } });
+      setAskingCancel(false);
+      setCancelReason("");
+      await refreshAll();
+      toast.success(res.message);
+    } catch (e) {
+      toast.error(apiMessage(e, "Could not send your request."));
     }
   }
 
@@ -349,6 +384,42 @@ export default function CampaignPage() {
         </Card>
       )}
 
+      {/* ── An artist could not make it ───────────────────────────── */}
+      {seatOpen && (
+        <Card className={`bg-card ${summary.needsDecision ? "border-destructive/60" : "border-primary/40"}`} data-testid="card-open-seats">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg"><UserMinus className="h-5 w-5" strokeWidth={1.9} />
+              {summary.openSeats === 1 ? "One artist can't make it" : `${summary.openSeats} artists can't make it`}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p className="leading-relaxed">
+              {summary.openSeats === 1 ? "Her seat is" : "Their seats are"} still yours and the money for {summary.openSeats === 1 ? "it" : "them"} ({rand(summary.seatMoneyHeld)}) is held safely. Nothing extra is owed.
+              We have offered {summary.openSeats === 1 ? "it" : "them"} to your backup applicants and then to matching verified artists. The first to accept gets the seat.
+              {summary.offersOut > 0 && ` ${summary.offersOut} ${summary.offersOut === 1 ? "offer is" : "offers are"} out right now.`}
+              {" "}You can also choose someone yourself below.
+            </p>
+            {summary.needsDecision && (
+              <p className="rounded-lg bg-destructive/10 p-3 font-medium text-destructive" role="alert">
+                Your event is less than 24 hours away. Decide now: go ahead with fewer artists, or ask Bonisa to cancel.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button variant={summary.needsDecision ? "default" : "outline"} className="rounded-full" disabled={releaseSeats.isPending} onClick={() => setConfirmingRelease(true)} data-testid="button-release-seats">
+                Go ahead with fewer artists
+              </Button>
+              <Button variant="ghost" className="rounded-full text-destructive hover:text-destructive" onClick={() => setAskingCancel(true)} data-testid="button-ask-cancel-seats">Ask Bonisa to cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {summary.refundsDue > 0 && (
+        <p className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm" role="status" data-testid="note-refund-due">
+          Bonisa owes you {rand(summary.refundsDue)} for the seats you gave up. We will refund it to the card you paid with.
+        </p>
+      )}
+
       {/* ── Team and applicants ───────────────────────────────────── */}
       <Card className="border-border/60 bg-card" data-testid="card-campaign-team">
         <CardHeader className="pb-2"><CardTitle className="text-lg">{funded ? "Everyone who applied or was invited" : "Your team"}</CardTitle></CardHeader>
@@ -365,18 +436,18 @@ export default function CampaignPage() {
                     {group.rows.map((a) => (
                       <div key={a.applicationId} className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between" data-testid={`applicant-${a.applicationId}`}>
                         <div>
-                          <div className="font-medium">{a.name} <Badge variant="outline" className="ml-1.5 align-middle text-[11px]">{STATUS_WORDS[a.status]}</Badge></div>
+                          <div className="font-medium">{a.name} <Badge variant="outline" className="ml-1.5 align-middle text-[11px]">{a.status === "invited" && a.source === "seat_offer" ? "Offered the open seat" : STATUS_WORDS[a.status]}</Badge></div>
                           <p className="text-xs text-muted-foreground">
                             {[a.specialty, a.location].filter(Boolean).join(" · ")} · {a.jobsCompleted} {a.jobsCompleted === 1 ? "job" : "jobs"} on Bonisa
                             {a.reviewCount > 0 && <span className="ml-1 inline-flex items-center gap-0.5"><Star className="h-3 w-3" strokeWidth={1.9} />{a.rating.toFixed(1)} ({a.reviewCount})</span>}
                           </p>
                         </div>
-                        {open && (
+                        {canChoose && (
                           <div className="flex flex-wrap gap-2">
                             {a.status === "pending" && <Button size="sm" variant="outline" className="rounded-full" onClick={() => void decideOn(a, "shortlist")}>Shortlist</Button>}
-                            {(a.status === "pending" || a.status === "shortlisted") && <Button size="sm" className="rounded-full" onClick={() => void decideOn(a, "accept")}>Accept</Button>}
+                            {(a.status === "pending" || a.status === "shortlisted") && <Button size="sm" className="rounded-full" onClick={() => void decideOn(a, "accept")}>{open ? "Accept" : "Give her the open seat"}</Button>}
                             {(a.status === "pending" || a.status === "shortlisted") && <Button size="sm" variant="ghost" className="rounded-full" onClick={() => void decideOn(a, "pass")}>Pass</Button>}
-                            {(a.status === "accepted" || a.status === "invited") && <Button size="sm" variant="ghost" className="rounded-full" onClick={() => void decideOn(a, "pass")}>{a.status === "invited" ? "Withdraw invite" : "Remove"}</Button>}
+                            {open && (a.status === "accepted" || a.status === "invited") && <Button size="sm" variant="ghost" className="rounded-full" onClick={() => void decideOn(a, "pass")}>{a.status === "invited" ? "Withdraw invite" : "Remove"}</Button>}
                           </div>
                         )}
                       </div>
@@ -389,9 +460,9 @@ export default function CampaignPage() {
       </Card>
 
       {/* ── Invite ─────────────────────────────────────────────────── */}
-      {open && (
+      {canChoose && (
         <Card className="border-border/60 bg-card" data-testid="card-campaign-invite">
-          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-lg"><UserPlus className="h-5 w-5" strokeWidth={1.9} />Invite a verified artist</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-lg"><UserPlus className="h-5 w-5" strokeWidth={1.9} />{open ? "Invite a verified artist" : "Choose someone for the open seat"}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.9} />
@@ -408,7 +479,21 @@ export default function CampaignPage() {
                 <Button size="sm" variant="outline" className="rounded-full" disabled={invite.isPending} onClick={() => void inviteArtist(s.id, s.name)} data-testid={`button-invite-${s.id}`}>Invite</Button>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground">Invited artists see your rate and the date, then accept or decline. You can only pay once they have accepted.</p>
+            <p className="text-xs text-muted-foreground">{open ? "Invited artists see your rate and the date, then accept or decline. You can only pay once they have accepted." : "The seat is already paid for, so whoever accepts is booked straight away at no extra cost to you."}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {summary.changes.length > 0 && (
+        <Card className="border-border/60 bg-card" data-testid="card-campaign-changes">
+          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-lg"><History className="h-5 w-5" strokeWidth={1.9} />What has changed</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {summary.changes.map((c) => (
+              <div key={c.id} className="rounded-lg border border-border/60 p-3 text-sm">
+                <p>{c.text}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}
@@ -435,7 +520,10 @@ export default function CampaignPage() {
         </div>
       )}
       {funded && summary.stage !== "completed" && (
-        <p className="text-xs text-muted-foreground">Need to cancel or change a paid campaign? Contact Bonisa and we will sort it out with you and your artists.</p>
+        <div className="space-y-2 pt-2">
+          <p className="text-xs text-muted-foreground">Need to cancel a paid campaign? Ask Bonisa. We look at each one with you and your artists, and decide what is fair.</p>
+          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setAskingCancel(true)} data-testid="button-ask-cancel">Ask Bonisa to cancel</Button>
+        </div>
       )}
 
       <Dialog open={editing} onOpenChange={setEditing}>
@@ -462,6 +550,32 @@ export default function CampaignPage() {
               }
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmingRelease} onOpenChange={setConfirmingRelease}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Go ahead with fewer artists?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The open {summary.openSeats === 1 ? "seat is" : "seats are"} given up and nobody else is offered {summary.openSeats === 1 ? "it" : "them"}. {rand(summary.seatMoneyHeld)} is refunded to the card you paid with. Your other artists are not affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep looking</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void giveUpSeats()}>Go ahead</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={askingCancel} onOpenChange={setAskingCancel}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="font-serif text-2xl">Ask Bonisa to cancel</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Your campaign is paid for and artists are counting on it, so we look at it with you before anything is cancelled. Tell us what has happened.</p>
+            <Textarea rows={4} placeholder="What has changed?" value={cancelReason} maxLength={1000} onChange={(e) => setCancelReason(e.target.value)} data-testid="input-cancel-reason" />
+            <Button className="w-full rounded-full" disabled={requestCancel.isPending} onClick={() => void askToCancel()} data-testid="button-send-cancel-request">Send to Bonisa</Button>
+          </div>
         </DialogContent>
       </Dialog>
 

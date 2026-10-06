@@ -15,6 +15,7 @@ import {
   appointmentsTable,
   brandProfilesTable,
   campaignPaymentsTable,
+  campaignSeatEventsTable,
   castingApplicationsTable,
   castingCallsTable,
   db,
@@ -138,7 +139,7 @@ export async function notifyStylistProfile(profileId: string, event: Notificatio
 // Casting calls as the app shows them
 // ---------------------------------------------------------------------------
 
-export type ArtistCallStatus = "none" | "pending" | "shortlisted" | "invited" | "accepted" | "declined" | "passed";
+export type ArtistCallStatus = "none" | "pending" | "shortlisted" | "invited" | "accepted" | "declined" | "passed" | "withdrawn";
 
 /** Turn call rows into what the app shows, working out spots and the viewing artist's standing in bulk. */
 export async function formatCalls(calls: CallRow[], viewer?: { id: string; role: string }) {
@@ -178,6 +179,7 @@ export async function formatCalls(calls: CallRow[], viewer?: { id: string; role:
       spotsFilled: apps.filter((a) => a.castingId === c.id && a.status === "accepted").length,
       brandVerified: verified.has(c.brandId),
       myStatus: (mine?.status ?? "none") as ArtistCallStatus,
+      myOfferIsSeat: mine?.source === "seat_offer",
     };
   });
 }
@@ -215,20 +217,45 @@ export async function artistJobsCompleted(profileIds: string[]): Promise<Map<str
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** Hours from now until the event starts (South African time), or null if there is no date. Negative once it has started. */
+export function hoursUntilEvent(call: { eventDate: string | null; eventTime: string }, now: Date = new Date()): number | null {
+  if (!call.eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(call.eventDate)) return null;
+  const time = /^\d{2}:\d{2}$/.test(call.eventTime) ? call.eventTime : "09:00";
+  const start = Date.parse(`${call.eventDate}T${time}:00+02:00`);
+  return Number.isNaN(start) ? null : (start - now.getTime()) / 3_600_000;
+}
+
+function seatEventText(e: typeof campaignSeatEventsTable.$inferSelect): string {
+  if (e.kind === "withdrew") {
+    const when = e.severity === "last_minute" ? " at the last minute" : e.severity === "late" ? " a few days before" : "";
+    return `${e.stylistName} withdrew${when}. Her seat's money is held for a replacement.`;
+  }
+  if (e.kind === "filled") return `${e.stylistName} joined the team, replacing ${e.otherName ?? "an artist who withdrew"}.`;
+  return `A seat was given up (${e.otherName ?? e.stylistName}). R${(e.amount ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} is being refunded to you.`;
+}
+
 export async function buildCampaignSummary(call: CallRow, viewer?: { id: string; role: string }) {
-  const [apps, jobRows, paymentRows] = await Promise.all([
+  const [apps, jobRows, seatRows, paymentRows, eventRows] = await Promise.all([
     db.select().from(castingApplicationsTable).where(eq(castingApplicationsTable.castingId, call.id)),
     db.select().from(appointmentsTable).where(and(
       eq(appointmentsTable.campaignId, call.id),
       inArray(appointmentsTable.status, ["pending", "confirmed", "completed"]),
     )),
+    // Every campaign job that has money attached but no longer has an artist working it.
+    db.select().from(appointmentsTable).where(and(
+      eq(appointmentsTable.campaignId, call.id),
+      eq(appointmentsTable.status, "cancelled"),
+    )),
     db.select().from(campaignPaymentsTable).where(eq(campaignPaymentsTable.castingId, call.id)).orderBy(desc(campaignPaymentsTable.createdAt)),
+    db.select().from(campaignSeatEventsTable).where(eq(campaignSeatEventsTable.castingId, call.id)).orderBy(desc(campaignSeatEventsTable.createdAt)).limit(30),
   ]);
+  const openSeatRows = seatRows.filter((j) => j.seatOpen);
+  const refundRows = seatRows.filter((j) => j.refundDueAmount > 0);
 
-  const jobIds = jobRows.map((j) => j.id);
-  const collectedRows = jobIds.length
+  const moneyIds = [...jobRows, ...openSeatRows].map((j) => j.id);
+  const collectedRows = moneyIds.length
     ? await db.select().from(paymentsTable).where(and(
-        inArray(paymentsTable.appointmentId, jobIds),
+        inArray(paymentsTable.appointmentId, moneyIds),
         sql`${paymentsTable.status} in ('succeeded', 'partial_refunded', 'refunded')`,
       ))
     : [];
@@ -259,9 +286,20 @@ export async function buildCampaignSummary(call: CallRow, viewer?: { id: string;
       balance: one.balance,
     }));
 
-  const cost = campaignCost(call.ratePerArtist, team.length);
-  const paid = round2(paymentRows.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0));
-  const outstanding = round2(Math.max(0, cost.total - paid));
+  // A seat is a place in the team the brand has paid for, whether or not an artist is in it right now.
+  const seats = funded ? jobRows.length + openSeatRows.length : team.length;
+  const cost = campaignCost(call.ratePerArtist, seats);
+  const grossPaid = round2(paymentRows.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0));
+  const refundsTotal = round2(refundRows.reduce((sum, j) => sum + j.refundDueAmount, 0));
+  const refundsDue = round2(refundRows.filter((j) => !j.refundedAt).reduce((sum, j) => sum + j.refundDueAmount, 0));
+  const paid = round2(grossPaid - refundsTotal);
+
+  const owedOn = (j: { id: string; price: number }) => Math.max(0, round2(campaignArtistCost(j.price).total - (collectedBy.get(j.id) ?? 0)));
+  // What the brand can pay right now: the balance on the artists who are working it. An open
+  // seat's balance waits until someone takes the seat.
+  const outstanding = funded ? round2(jobRows.reduce((sum, j) => sum + owedOn(j), 0)) : round2(Math.max(0, cost.total - paid));
+  const deferred = round2(openSeatRows.reduce((sum, j) => sum + owedOn(j), 0));
+  const seatMoneyHeld = round2(openSeatRows.reduce((sum, j) => sum + (collectedBy.get(j.id) ?? 0), 0));
 
   const brandVerified = await isBrandVerified(call.brandId);
   const balanceDueDate = call.status === "deposit_paid" && call.eventDate ? campaignBalanceDueDate(call.eventDate) : null;
@@ -281,11 +319,12 @@ export async function buildCampaignSummary(call: CallRow, viewer?: { id: string;
     confirmedByArtist: j.workConfirmedByArtist,
   }));
 
+  const openSeats = funded ? openSeatRows.length : 0;
   let stage: CampaignStage = "open";
   if (call.status === "cancelled") stage = "cancelled";
   else if (call.status === "deposit_paid") stage = "deposit_paid";
   else if (call.status === "fully_paid") {
-    stage = jobs.length > 0 && jobs.every((j) => j.payoutStatus === "released") ? "completed" : "fully_paid";
+    stage = jobs.length > 0 && openSeats === 0 && jobs.every((j) => j.payoutStatus === "released") ? "completed" : "fully_paid";
   }
 
   const blockers: string[] = [];
@@ -300,6 +339,9 @@ export async function buildCampaignSummary(call: CallRow, viewer?: { id: string;
 
   const canFund = call.status === "open" && blockers.length === 0;
   const canPayBalance = call.status === "deposit_paid" && outstanding > 0;
+  const hours = hoursUntilEvent(call);
+  const needsDecision = openSeats > 0 && hours !== null && hours < 24;
+  const offersOut = apps.filter((a) => a.source === "seat_offer" && a.status === "invited").length;
 
   const [calls] = await Promise.all([formatCalls([call], viewer)]);
 
@@ -319,11 +361,19 @@ export async function buildCampaignSummary(call: CallRow, viewer?: { id: string;
     cost,
     paid,
     outstanding,
+    deferred,
+    seatMoneyHeld,
     balanceDueDate,
     balanceOverdue,
     depositAllowed,
     canFund,
     canPayBalance,
     blockers,
+    openSeats,
+    offersOut,
+    refundsDue,
+    hoursUntilEvent: hours === null ? null : Math.round(hours * 10) / 10,
+    needsDecision,
+    changes: eventRows.map((e) => ({ id: e.id, kind: e.kind as "withdrew" | "filled" | "given_up", text: seatEventText(e), createdAt: e.createdAt.toISOString() })),
   };
 }

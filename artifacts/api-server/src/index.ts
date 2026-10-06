@@ -5,6 +5,7 @@ import { logger } from "./lib/logger";
 import { startEscrowTimeoutJob } from "./lib/escrowTimeout";
 import { startArtistReminderJob } from "./lib/artist-contacts";
 import { startCampaignReminderJob } from "./lib/campaign-payments";
+import { startSeatJob } from "./lib/campaign-seats";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -57,3 +58,4 @@ app.listen(port, (err) => {
 startEscrowTimeoutJob();
 startArtistReminderJob();
 startCampaignReminderJob();
+startSeatJob();

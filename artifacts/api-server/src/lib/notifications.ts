@@ -77,6 +77,13 @@ export type NotificationEvent =
   | "campaign.artist_accepted"  // → brand
   | "campaign.artist_declined"  // → brand
   | "campaign.cancelled"        // → artist (the brand cancelled before paying)
+  | "casting.seat_offer"        // → artist (a seat opened up; first to accept gets it)
+  | "campaign.artist_withdrew"  // → brand
+  | "campaign.seat_filled"      // → brand
+  | "campaign.seat_decision"    // → brand (less than 24 hours to go and a seat is still open)
+  | "campaign.withdrawal_recorded" // → the artist who withdrew
+  | "campaign.seat_refund"      // → brand
+  | "campaign.cancellation_requested" // → owner
   | "campaign.funded"           // → artist (confirmed and funded)
   | "campaign.deposit_received" // → brand
   | "campaign.balance_due"      // → brand (reminder)
@@ -119,6 +126,13 @@ const CHANNEL_POLICY: Record<NotificationEvent, "whatsapp" | "both"> = {
   "campaign.artist_accepted": "whatsapp",
   "campaign.artist_declined": "whatsapp",
   "campaign.cancelled": "both",
+  "casting.seat_offer": "both",
+  "campaign.artist_withdrew": "both",
+  "campaign.seat_filled": "both",
+  "campaign.seat_decision": "both",
+  "campaign.withdrawal_recorded": "both",
+  "campaign.seat_refund": "both",
+  "campaign.cancellation_requested": "whatsapp",
   "campaign.funded": "both",
   "campaign.deposit_received": "both",
   "campaign.balance_due": "both",
@@ -165,6 +179,9 @@ export interface NotificationData {
   artistCount?: number;
   balanceDueDate?: string;
   balanceAmount?: number;
+  otherName?: string;
+  note?: string;
+  seatCount?: number;
 }
 
 export interface Recipient {
@@ -366,6 +383,49 @@ function formatMessage(event: NotificationEvent, data: NotificationData): string
         `We could not verify ${data.brandName ?? "your brand"} yet.\n\n` +
         `${data.rejectionReason ?? "A few details still need completing."}\n\n` +
         `Update your brand profile and submit again.`
+      );
+
+    case "casting.seat_offer":
+      return (
+        `🚨 *A seat has opened up*\n\n` +
+        `${data.brandName} needs a replacement artist for _${data.castingTitle}_.\n` +
+        `📅 ${data.eventDate ?? "Date to be confirmed"}${data.location ? ` · ${data.location}` : ""}\n` +
+        `💰 ${rand(data.rate)} for you. Your full rate, already paid in and held by Bonisa.\n\n` +
+        `First to accept gets it. Open Bonisa to accept.`
+      );
+    case "campaign.artist_withdrew":
+      return (
+        `⚠️ *${data.artistName} can't make it*\n\n` +
+        `${data.artistName} has withdrawn from _${data.castingTitle}_. The money for her seat is held safely and nothing extra is owed.\n\n` +
+        `We are offering the seat to your backup applicants and matching verified artists, and the first to accept takes it. You can also choose someone yourself in Bonisa.`
+      );
+    case "campaign.seat_filled":
+      return (
+        `✅ *Seat filled*\n\n` +
+        `${data.artistName} will replace ${data.otherName ?? "the artist who withdrew"} on _${data.castingTitle}_. Everything else stays the same.`
+      );
+    case "campaign.seat_decision":
+      return (
+        `⏰ *Decision needed*\n\n` +
+        `_${data.castingTitle}_ is less than 24 hours away and still has ${data.seatCount ?? 1} open ${(data.seatCount ?? 1) === 1 ? "seat" : "seats"}.\n\n` +
+        `Open Bonisa to go ahead with fewer artists (the open seat is refunded to you), or to ask us to cancel.`
+      );
+    case "campaign.withdrawal_recorded":
+      return (
+        `📋 *Withdrawal recorded*\n\n` +
+        `You have withdrawn from _${data.castingTitle}_. ${data.note ?? ""}`
+      );
+    case "campaign.seat_refund":
+      return (
+        `💳 *Seat refund*\n\n` +
+        `You are going ahead with fewer artists on _${data.castingTitle}_. We will refund ${rand(data.amount)} to the card you paid with. It can take a few days to show.`
+      );
+    case "campaign.cancellation_requested":
+      return (
+        `📣 *Cancellation requested*\n\n` +
+        `${data.brandName} asks to cancel the paid campaign _${data.castingTitle}_.\n` +
+        `${data.note ? `Reason: ${data.note}\n` : ""}\n` +
+        `Open the owner portal, Campaigns, to review.`
       );
 
     default:
@@ -598,6 +658,66 @@ function formatEmail(event: NotificationEvent, data: NotificationData): { subjec
           `We could not verify ${data.brandName ?? "your brand"} yet.\n\n` +
           `${data.rejectionReason ?? "A few details still need completing."}\n\n` +
           `Update your brand profile and submit it again. We review every submission within 72 hours.` +
+          sign,
+      };
+
+    case "casting.seat_offer":
+      return {
+        subject: `A seat has opened up: ${data.castingTitle}`,
+        body:
+          `Hi ${who},\n\n` +
+          `${data.brandName} needs a replacement artist for "${data.castingTitle}".\n\n` +
+          `  Date:      ${data.eventDate ?? "to be confirmed"}\n` +
+          (data.location ? `  Where:     ${data.location}\n` : "") +
+          `  Your rate: ${rand(data.rate)}\n\n` +
+          `That is your full rate, already paid in and held safely by Bonisa. The first artist to accept gets the seat.\n\n` +
+          `Open Bonisa to accept.` +
+          sign,
+      };
+    case "campaign.artist_withdrew":
+      return {
+        subject: `${data.artistName} can't make it: ${data.castingTitle}`,
+        body:
+          `${data.artistName} has withdrawn from "${data.castingTitle}".\n\n` +
+          `The money for her seat is held safely, and nothing extra is owed. We are offering the seat to your backup applicants and to matching verified artists, and the first to accept takes it. ` +
+          `You can also choose someone yourself in Bonisa at any time.\n\n` +
+          `If no replacement is found by 24 hours before the event, you decide: go ahead with one fewer artist (the seat is refunded to you), or ask us to cancel.` +
+          sign,
+      };
+    case "campaign.seat_filled":
+      return {
+        subject: `Seat filled: ${data.castingTitle}`,
+        body:
+          `${data.artistName} will replace ${data.otherName ?? "the artist who withdrew"} on "${data.castingTitle}". ` +
+          `Everything else stays the same, and you pay nothing extra for the swap.` +
+          sign,
+      };
+    case "campaign.seat_decision":
+      return {
+        subject: `Decision needed: ${data.castingTitle}`,
+        body:
+          `"${data.castingTitle}" is less than 24 hours away and still has ${data.seatCount ?? 1} open ${(data.seatCount ?? 1) === 1 ? "seat" : "seats"}.\n\n` +
+          `Open Bonisa to choose:\n` +
+          `  - Go ahead with fewer artists. The open seat is refunded to you.\n` +
+          `  - Ask us to cancel the campaign.\n\n` +
+          `We are still offering the seat to matching artists, so it may yet be filled.` +
+          sign,
+      };
+    case "campaign.withdrawal_recorded":
+      return {
+        subject: `Your withdrawal from ${data.castingTitle}`,
+        body:
+          `Hi ${who},\n\n` +
+          `You have withdrawn from "${data.castingTitle}". ${data.note ?? ""}\n\n` +
+          `You are not paid for this job, and the brand's money for your seat stays safely held for a replacement.` +
+          sign,
+      };
+    case "campaign.seat_refund":
+      return {
+        subject: `Seat refund: ${data.castingTitle}`,
+        body:
+          `You are going ahead with fewer artists on "${data.castingTitle}".\n\n` +
+          `We will refund ${rand(data.amount)} to the card you paid with. It can take a few days to appear on your statement.` +
           sign,
       };
 

@@ -50,6 +50,13 @@ export const appointmentsTable = pgTable("appointments", {
   // brand_on_top: a campaign job, the artist keeps her full rate and the brand paid 18% more.
   campaignId: text("campaign_id"),
   feeMode: text("fee_mode").notNull().default("commission"),
+  // A campaign job whose artist withdrew. The job is cancelled, but the money paid for the seat
+  // stays held here until a replacement takes it over or the brand gives the seat up.
+  seatOpen: boolean("seat_open").notNull().default(false),
+  // When the brand gives a seat up, this is what Bonisa owes back to it.
+  refundDueAmount: real("refund_due_amount").notNull().default(0),
+  refundedAt: timestamp("refunded_at"),
+  refundReference: text("refund_reference"),
 });
 
 export type Appointment = typeof appointmentsTable.$inferSelect;

@@ -20,4 +20,5 @@ export const CastingCallMyStatus = {
   accepted: 'accepted',
   declined: 'declined',
   passed: 'passed',
+  withdrawn: 'withdrawn',
 } as const;

@@ -12,4 +12,5 @@ export type CastingApplicantSource = typeof CastingApplicantSource[keyof typeof 
 export const CastingApplicantSource = {
   applied: 'applied',
   invited: 'invited',
+  seat_offer: 'seat_offer',
 } as const;

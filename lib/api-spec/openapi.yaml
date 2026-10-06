@@ -1511,6 +1511,83 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /casting/{castingId}/withdraw:
+    post:
+      operationId: withdrawFromCampaign
+      tags: [casting]
+      summary: An artist on the team pulls out. The seat is offered to someone else; late withdrawals are recorded.
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { $ref: "#/components/schemas/WithdrawFromCampaignInput" } } }
+      responses:
+        "200": { description: Withdrawn, content: { application/json: { schema: { $ref: "#/components/schemas/WithdrawResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /casting/{castingId}/seats/release:
+    post:
+      operationId: releaseOpenSeats
+      tags: [casting]
+      summary: Go ahead with fewer artists. What was paid for the open seats is marked to be refunded.
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Seats released, content: { application/json: { schema: { $ref: "#/components/schemas/ReleaseSeatsResult" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /casting/{castingId}/request-cancellation:
+    post:
+      operationId: requestCampaignCancellation
+      tags: [casting]
+      summary: Ask Bonisa to cancel a paid campaign
+      parameters:
+        - { name: castingId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { $ref: "#/components/schemas/RequestCampaignCancellationInput" } } }
+      responses:
+        "200": { description: Bonisa has been told, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/seat-attention:
+    get:
+      operationId: getOwnerSeatAttention
+      tags: [owner]
+      summary: Refunds to pay, cancellation requests and withdrawals with strike counts
+      responses:
+        "200": { description: What needs attention, content: { application/json: { schema: { $ref: "#/components/schemas/OwnerSeatAttention" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/seat-refunds/{appointmentId}/paid:
+    post:
+      operationId: markSeatRefunded
+      tags: [owner]
+      summary: Record that a seat refund has been paid back to the brand
+      parameters:
+        - { name: appointmentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { $ref: "#/components/schemas/MarkSeatRefundedInput" } } }
+      responses:
+        "200": { description: Recorded, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /brand/profile:
     get:
       operationId: getMyBrandProfile
@@ -2813,8 +2890,11 @@ components:
           type: boolean
         myStatus:
           type: string
-          enum: [none, pending, shortlisted, invited, accepted, declined, passed]
+          enum: [none, pending, shortlisted, invited, accepted, declined, passed, withdrawn]
           description: Where the signed-in artist stands on this campaign.
+        myOfferIsSeat:
+          type: boolean
+          description: True when the signed-in artist's invitation is for a seat that opened up on a paid campaign.
 
     CastingCallInput:
       type: object
@@ -2948,8 +3028,8 @@ components:
         name: { type: string }
         specialty: { type: string }
         location: { type: string }
-        source: { type: string, enum: [applied, invited] }
-        status: { type: string, enum: [pending, shortlisted, invited, accepted, declined, passed] }
+        source: { type: string, enum: [applied, invited, seat_offer] }
+        status: { type: string, enum: [pending, shortlisted, invited, accepted, declined, passed, withdrawn] }
         jobsCompleted: { type: integer }
         rating: { type: number }
         reviewCount: { type: integer }
@@ -3024,9 +3104,102 @@ components:
         deposit: { type: number }
         balance: { type: number }
 
+    WithdrawFromCampaignInput:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 1000 }
+
+    WithdrawResult:
+      type: object
+      required: [message, severity, strikes]
+      properties:
+        message: { type: string }
+        severity: { type: string, enum: [early, late, last_minute], nullable: true }
+        strikes: { type: integer }
+
+    ReleaseSeatsResult:
+      type: object
+      required: [message, seats, refund]
+      properties:
+        message: { type: string }
+        seats: { type: integer }
+        refund: { type: number }
+
+    RequestCampaignCancellationInput:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 1000 }
+
+    MarkSeatRefundedInput:
+      type: object
+      properties:
+        reference: { type: string, maxLength: 200 }
+
+    CampaignChange:
+      type: object
+      required: [id, kind, text, createdAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [withdrew, filled, given_up] }
+        text: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    SeatRefund:
+      type: object
+      required: [appointmentId, castingId, campaignTitle, brandName, artistName, amount, refundedAt, reference]
+      properties:
+        appointmentId: { type: string }
+        castingId: { type: string }
+        campaignTitle: { type: string }
+        brandName: { type: string }
+        artistName: { type: string }
+        amount: { type: number }
+        refundedAt: { type: string, format: date-time, nullable: true }
+        reference: { type: string, nullable: true }
+
+    CancellationRequest:
+      type: object
+      required: [castingId, campaignTitle, brandName, reason, requestedAt]
+      properties:
+        castingId: { type: string }
+        campaignTitle: { type: string }
+        brandName: { type: string }
+        reason: { type: string, nullable: true }
+        requestedAt: { type: string, format: date-time }
+
+    SeatWithdrawal:
+      type: object
+      required: [id, castingId, campaignTitle, brandName, artistName, stylistId, severity, hoursBefore, reason, strikes, createdAt]
+      properties:
+        id: { type: string }
+        castingId: { type: string }
+        campaignTitle: { type: string }
+        brandName: { type: string }
+        artistName: { type: string }
+        stylistId: { type: string }
+        severity: { type: string, enum: [early, late, last_minute] }
+        hoursBefore: { type: number, nullable: true }
+        reason: { type: string, nullable: true }
+        strikes: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    OwnerSeatAttention:
+      type: object
+      required: [refunds, cancellationRequests, withdrawals]
+      properties:
+        refunds:
+          type: array
+          items: { $ref: "#/components/schemas/SeatRefund" }
+        cancellationRequests:
+          type: array
+          items: { $ref: "#/components/schemas/CancellationRequest" }
+        withdrawals:
+          type: array
+          items: { $ref: "#/components/schemas/SeatWithdrawal" }
+
     CampaignSummary:
       type: object
-      required: [call, stage, team, jobs, payments, cost, paid, outstanding, balanceDueDate, balanceOverdue, depositAllowed, canFund, canPayBalance, blockers]
+      required: [call, stage, team, jobs, payments, cost, paid, outstanding, deferred, balanceDueDate, balanceOverdue, depositAllowed, canFund, canPayBalance, blockers, openSeats, offersOut, refundsDue, hoursUntilEvent, needsDecision, seatMoneyHeld, changes]
       properties:
         call: { $ref: "#/components/schemas/CastingCall" }
         stage: { type: string, enum: [open, deposit_paid, fully_paid, completed, cancelled] }
@@ -3042,6 +3215,7 @@ components:
         cost: { $ref: "#/components/schemas/CampaignCost" }
         paid: { type: number }
         outstanding: { type: number }
+        deferred: { type: number }
         balanceDueDate: { type: string, nullable: true }
         balanceOverdue: { type: boolean }
         depositAllowed: { type: boolean }
@@ -3050,6 +3224,15 @@ components:
         blockers:
           type: array
           items: { type: string }
+        openSeats: { type: integer }
+        offersOut: { type: integer }
+        refundsDue: { type: number }
+        hoursUntilEvent: { type: number, nullable: true }
+        needsDecision: { type: boolean }
+        seatMoneyHeld: { type: number }
+        changes:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignChange" }
 
     StartCampaignPaymentInput:
       type: object

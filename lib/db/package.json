@@ -14,7 +14,8 @@
     "migrate:bank-details:dev": "node ./scripts/migrate-bank-details-phase4.mjs",
     "migrate:artist-updates:dev": "node ./scripts/add-artist-updates.mjs",
     "migrate:artist-contacts:dev": "node ./scripts/add-artist-contacts.mjs",
-    "migrate:brand-campaigns:dev": "node ./scripts/add-brand-campaigns.mjs"
+    "migrate:brand-campaigns:dev": "node ./scripts/add-brand-campaigns.mjs",
+    "migrate:campaign-seats:dev": "node ./scripts/add-campaign-seats.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

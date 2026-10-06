@@ -77,6 +77,7 @@ import type {
   LoginInput,
   MarkMyArtistUpdatesRead200,
   MarkOwnerPayoutInput,
+  MarkSeatRefundedInput,
   MediaUploadUrlRequest,
   MediaUploadUrlResponse,
   Message,
@@ -104,12 +105,15 @@ import type {
   OwnerPendingBrand,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
+  OwnerSeatAttention,
   OwnerUpdateAudienceArtist,
   PortfolioItem,
   PortfolioItemInput,
   ReceiveWaitlistSignup200,
   RejectBrandInput,
+  ReleaseSeatsResult,
   RemindDueArtistContacts200,
+  RequestCampaignCancellationInput,
   RespondInvitationInput,
   RevealArtistBankAccount200,
   SearchOwnerRegistryParams,
@@ -125,7 +129,9 @@ import type {
   UnauthorizedResponse,
   User,
   VerificationChecklist,
-  WaitlistSignupPayload
+  WaitlistSignupPayload,
+  WithdrawFromCampaignInput,
+  WithdrawResult
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -6425,6 +6431,366 @@ export const useCancelCampaign = <TError = ErrorType<UnauthorizedResponse | Forb
         TContext
       > => {
       return useMutation(getCancelCampaignMutationOptions(options));
+    }
+
+export const getWithdrawFromCampaignUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/withdraw`
+}
+
+/**
+ * @summary An artist on the team pulls out. The seat is offered to someone else; late withdrawals are recorded.
+ */
+export const withdrawFromCampaign = async (castingId: string,
+    withdrawFromCampaignInput?: WithdrawFromCampaignInput, options?: RequestInit): Promise<WithdrawResult> => {
+
+  return customFetch<WithdrawResult>(getWithdrawFromCampaignUrl(castingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(withdrawFromCampaignInput)
+  }
+);}
+
+
+
+
+export const getWithdrawFromCampaignMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawFromCampaign>>, TError,{castingId: string;data?: BodyType<WithdrawFromCampaignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawFromCampaign>>, TError,{castingId: string;data?: BodyType<WithdrawFromCampaignInput>}, TContext> => {
+
+const mutationKey = ['withdrawFromCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawFromCampaign>>, {castingId: string;data?: BodyType<WithdrawFromCampaignInput>}> = (props) => {
+          const {castingId,data} = props ?? {};
+
+          return  withdrawFromCampaign(castingId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawFromCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawFromCampaign>>>
+    export type WithdrawFromCampaignMutationBody = BodyType<WithdrawFromCampaignInput> | undefined
+    export type WithdrawFromCampaignMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary An artist on the team pulls out. The seat is offered to someone else; late withdrawals are recorded.
+ */
+export const useWithdrawFromCampaign = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawFromCampaign>>, TError,{castingId: string;data?: BodyType<WithdrawFromCampaignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawFromCampaign>>,
+        TError,
+        {castingId: string;data?: BodyType<WithdrawFromCampaignInput>},
+        TContext
+      > => {
+      return useMutation(getWithdrawFromCampaignMutationOptions(options));
+    }
+
+export const getReleaseOpenSeatsUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/seats/release`
+}
+
+/**
+ * @summary Go ahead with fewer artists. What was paid for the open seats is marked to be refunded.
+ */
+export const releaseOpenSeats = async (castingId: string, options?: RequestInit): Promise<ReleaseSeatsResult> => {
+
+  return customFetch<ReleaseSeatsResult>(getReleaseOpenSeatsUrl(castingId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getReleaseOpenSeatsMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseOpenSeats>>, TError,{castingId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof releaseOpenSeats>>, TError,{castingId: string}, TContext> => {
+
+const mutationKey = ['releaseOpenSeats'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof releaseOpenSeats>>, {castingId: string}> = (props) => {
+          const {castingId} = props ?? {};
+
+          return  releaseOpenSeats(castingId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReleaseOpenSeatsMutationResult = NonNullable<Awaited<ReturnType<typeof releaseOpenSeats>>>
+
+    export type ReleaseOpenSeatsMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Go ahead with fewer artists. What was paid for the open seats is marked to be refunded.
+ */
+export const useReleaseOpenSeats = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseOpenSeats>>, TError,{castingId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof releaseOpenSeats>>,
+        TError,
+        {castingId: string},
+        TContext
+      > => {
+      return useMutation(getReleaseOpenSeatsMutationOptions(options));
+    }
+
+export const getRequestCampaignCancellationUrl = (castingId: string,) => {
+
+
+
+
+  return `/api/casting/${castingId}/request-cancellation`
+}
+
+/**
+ * @summary Ask Bonisa to cancel a paid campaign
+ */
+export const requestCampaignCancellation = async (castingId: string,
+    requestCampaignCancellationInput?: RequestCampaignCancellationInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getRequestCampaignCancellationUrl(castingId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(requestCampaignCancellationInput)
+  }
+);}
+
+
+
+
+export const getRequestCampaignCancellationMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCampaignCancellation>>, TError,{castingId: string;data?: BodyType<RequestCampaignCancellationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestCampaignCancellation>>, TError,{castingId: string;data?: BodyType<RequestCampaignCancellationInput>}, TContext> => {
+
+const mutationKey = ['requestCampaignCancellation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestCampaignCancellation>>, {castingId: string;data?: BodyType<RequestCampaignCancellationInput>}> = (props) => {
+          const {castingId,data} = props ?? {};
+
+          return  requestCampaignCancellation(castingId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestCampaignCancellationMutationResult = NonNullable<Awaited<ReturnType<typeof requestCampaignCancellation>>>
+    export type RequestCampaignCancellationMutationBody = BodyType<RequestCampaignCancellationInput> | undefined
+    export type RequestCampaignCancellationMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Ask Bonisa to cancel a paid campaign
+ */
+export const useRequestCampaignCancellation = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCampaignCancellation>>, TError,{castingId: string;data?: BodyType<RequestCampaignCancellationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestCampaignCancellation>>,
+        TError,
+        {castingId: string;data?: BodyType<RequestCampaignCancellationInput>},
+        TContext
+      > => {
+      return useMutation(getRequestCampaignCancellationMutationOptions(options));
+    }
+
+export const getGetOwnerSeatAttentionUrl = () => {
+
+
+
+
+  return `/api/owner/seat-attention`
+}
+
+/**
+ * @summary Refunds to pay, cancellation requests and withdrawals with strike counts
+ */
+export const getOwnerSeatAttention = async ( options?: RequestInit): Promise<OwnerSeatAttention> => {
+
+  return customFetch<OwnerSeatAttention>(getGetOwnerSeatAttentionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerSeatAttentionQueryKey = () => {
+    return [
+    `/api/owner/seat-attention`
+    ] as const;
+    }
+
+
+export const getGetOwnerSeatAttentionQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerSeatAttention>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerSeatAttention>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerSeatAttentionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerSeatAttention>>> = ({ signal }) => getOwnerSeatAttention({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerSeatAttention>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerSeatAttentionQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerSeatAttention>>>
+export type GetOwnerSeatAttentionQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Refunds to pay, cancellation requests and withdrawals with strike counts
+ */
+
+export function useGetOwnerSeatAttention<TData = Awaited<ReturnType<typeof getOwnerSeatAttention>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerSeatAttention>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerSeatAttentionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMarkSeatRefundedUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/owner/seat-refunds/${appointmentId}/paid`
+}
+
+/**
+ * @summary Record that a seat refund has been paid back to the brand
+ */
+export const markSeatRefunded = async (appointmentId: string,
+    markSeatRefundedInput?: MarkSeatRefundedInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getMarkSeatRefundedUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(markSeatRefundedInput)
+  }
+);}
+
+
+
+
+export const getMarkSeatRefundedMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markSeatRefunded>>, TError,{appointmentId: string;data?: BodyType<MarkSeatRefundedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markSeatRefunded>>, TError,{appointmentId: string;data?: BodyType<MarkSeatRefundedInput>}, TContext> => {
+
+const mutationKey = ['markSeatRefunded'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markSeatRefunded>>, {appointmentId: string;data?: BodyType<MarkSeatRefundedInput>}> = (props) => {
+          const {appointmentId,data} = props ?? {};
+
+          return  markSeatRefunded(appointmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkSeatRefundedMutationResult = NonNullable<Awaited<ReturnType<typeof markSeatRefunded>>>
+    export type MarkSeatRefundedMutationBody = BodyType<MarkSeatRefundedInput> | undefined
+    export type MarkSeatRefundedMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Record that a seat refund has been paid back to the brand
+ */
+export const useMarkSeatRefunded = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markSeatRefunded>>, TError,{appointmentId: string;data?: BodyType<MarkSeatRefundedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markSeatRefunded>>,
+        TError,
+        {appointmentId: string;data?: BodyType<MarkSeatRefundedInput>},
+        TContext
+      > => {
+      return useMutation(getMarkSeatRefundedMutationOptions(options));
     }
 
 export const getGetMyBrandProfileUrl = () => {

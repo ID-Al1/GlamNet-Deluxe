@@ -5,6 +5,7 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { CampaignChange } from './campaignChange';
 import type { CampaignCost } from './campaignCost';
 import type { CampaignJob } from './campaignJob';
 import type { CampaignPaymentRecord } from './campaignPaymentRecord';
@@ -21,10 +22,18 @@ export interface CampaignSummary {
   cost: CampaignCost;
   paid: number;
   outstanding: number;
+  deferred: number;
   balanceDueDate: string | null;
   balanceOverdue: boolean;
   depositAllowed: boolean;
   canFund: boolean;
   canPayBalance: boolean;
   blockers: string[];
+  openSeats: number;
+  offersOut: number;
+  refundsDue: number;
+  hoursUntilEvent: number | null;
+  needsDecision: boolean;
+  seatMoneyHeld: number;
+  changes: CampaignChange[];
 }

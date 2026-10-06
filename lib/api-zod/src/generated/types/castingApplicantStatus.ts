@@ -16,4 +16,5 @@ export const CastingApplicantStatus = {
   accepted: 'accepted',
   declined: 'declined',
   passed: 'passed',
+  withdrawn: 'withdrawn',
 } as const;
