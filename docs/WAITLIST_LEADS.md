@@ -11,7 +11,7 @@ create a profile and tell them it will be checked within 2 to 3 days.
 | Name | Notes |
 |---|---|
 | Hope | Wants to join. Also introducing other beauty professionals (below). |
-| Kylie | Wants to join. |
+| Kylie | Wants to join. Knows many more makeup artists, hairstylists and nail techs. Ask her for introductions (see below). |
 
 ## Introduced by Hope (found on TikTok, no phone or email yet)
 Next step for each: message them on TikTok, say Hope referred you, ask for a WhatsApp number.
@@ -32,6 +32,10 @@ Then add them to Artist Contacts (owner portal) with the number.
 
 Next step: when it is time, email or message her the invite (she has a public contact email, so
 she can go straight into Artist Contacts).
+
+## Introductions still to collect
+- Ask Kylie for her makeup artists, hairstylists and nail techs (name, what they do, area, and a WhatsApp number or Instagram).
+- Draft message for Lebogang M (Instagram DM, then email) was written in chat on 2026-10-08. Mention the old name GlamNet, since Alwande messaged her under that name and got no reply.
 
 ## To follow up
 - One makeup artist Alwande contacted a while ago and never followed up with. Name still to add.
