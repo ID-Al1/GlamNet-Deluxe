@@ -14,6 +14,13 @@ Status key: [x] done, [~] built but needs checking, [ ] not started.
 
 The app is only one wall of the house. These are the other walls. Last updated 8 October 2026.
 
+### Latest updates (8 October 2026)
+
+- **Ambassador "Oshobi Girl" is confirmed.** She has the link and is testing the app. Her notes are the first outside feedback Bonisa gets, so collect them in one place
+- **Peach Payments is delayed.** The link they needed was only sent on Monday 5 October, so the 10 day wait starts then. Calendar days: answer around 15 October. Working days: around 19 October. Confirm which one Peach means
+- **Payments are not settled**, so no real money moves yet and the Stripe or Peach decision stays open
+- **Legal is still not started**
+
 ### The five streams
 
 **1. Launch events with Favour (event coordinator for Hayden's team)**
