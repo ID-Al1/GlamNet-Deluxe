@@ -36,6 +36,8 @@ export default function Signup() {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
     if (ref) setReferralCode(ref.toUpperCase());
+    // An invite link with ?role=artist opens the form already set to Artist
+    if (params.get("role") === "artist") setRole(SignupInputRole.stylist);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

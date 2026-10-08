@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
   Play, ChevronRight, Star,
   Calendar, MessageCircle,
-  CheckCircle, ShieldAlert, CircleCheck, Banknote,
+  CheckCircle, ShieldAlert, CircleCheck, Banknote, Copy, CheckCheck, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { frenchGreeting } from "@/components/bonisa-logo";
@@ -104,6 +104,20 @@ export default function ClientDashboard() {
     } finally {
       setSavingPhone(false);
     }
+  };
+
+  // Invite link for artists the client already works with. role=artist opens sign-up as an artist.
+  const referralCode = (user as any)?.referralCode ?? null;
+  const inviteLink = referralCode
+    ? `${window.location.origin}/signup?ref=${referralCode}&role=artist`
+    : "";
+  const [copied, setCopied] = useState(false);
+  const inviteMessage = `Hi! I'd love to book you through Bonisa, South Africa's verified network for beauty artists. Join here: ${inviteLink}`;
+  const copyInvite = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   if (error) return (
@@ -370,6 +384,32 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
+
+      {/* ── INVITE YOUR ARTIST ── */}
+      {inviteLink && (
+        <div className="px-5 mb-8">
+          <SectionHeading title="Invite Your Artist" />
+          <div className="bg-card rounded-[20px] p-4 border border-border/40 shadow-sm space-y-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Already have a makeup artist, hair stylist or nail tech you love? Send them this link. Once Bonisa verifies them, you can book them here.
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 bg-muted/50 border border-border/60 rounded-lg px-3 py-2 text-xs text-muted-foreground font-mono truncate">
+                {inviteLink}
+              </div>
+              <Button size="sm" variant="outline" onClick={copyInvite} className="shrink-0 gap-1.5 rounded-full">
+                {copied ? <CheckCheck className="h-3.5 w-3.5 text-primary" strokeWidth={1.9} /> : <Copy className="h-3.5 w-3.5" strokeWidth={1.9} />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <a href={`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`} target="_blank" rel="noopener noreferrer">
+              <Button size="sm" className="w-full rounded-full h-9 text-xs font-bold gap-1.5">
+                <Send className="h-3.5 w-3.5" strokeWidth={1.9} />Send on WhatsApp
+              </Button>
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* ── MY CASES ── */}
       <div className="px-5 mb-8">
