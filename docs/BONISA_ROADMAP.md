@@ -21,6 +21,13 @@ The app is only one wall of the house. These are the other walls. Last updated 8
 - **Payments are not settled**, so no real money moves yet and the Stripe or Peach decision stays open
 - **Legal is still not started**
 
+### Decisions made (8 October 2026)
+
+- **Peach Payments replaces Stripe.** Stripe is out. The payment code was kept in its own corner so it can be swapped, but this is real build work and the rule "payments are Stripe only" in `replit.md` and the agent notes must be changed on purpose. Until Peach confirms how it works (holding money, the 82/18 split, payout timing), the build cannot start
+- **Legal documents:** you and Haiden will work on them together. Next step is to agree who drafts, who reviews and the date
+- **Amali is not an employee.** She is a helper or ambassador, so a weekly target and a fixed job do not fit. Agree what she earns (for example per verified artist), put it in a short written agreement, and treat any target as a goal, not an obligation
+- **Haiden's newer version of the app:** `http://bonisa.opusintelligence.co.za/get`. I could not open it from this workspace (network blocked), so Part B has not been checked against it. Describe or screenshot it and I will update the ticks
+
 ### The five streams
 
 **1. Launch events with Favour (event coordinator for Hayden's team)**
