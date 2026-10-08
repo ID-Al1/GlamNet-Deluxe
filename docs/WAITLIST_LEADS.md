@@ -25,5 +25,13 @@ Then add them to Artist Contacts (owner portal) with the number.
 | Nails | Nailed ntswempu | Greenside |
 | Nails | Clawed by P | Melville |
 
+## Makeup artist, found on Instagram (Alwande wants her)
+| Name | Instagram | Notes |
+|---|---|---|
+| Lebogang M (Lebs Matlala) | lebs.matlala (MUA page: lebsbeats) | Digital creator, beauty and lifestyle, about 45.9K followers. Business email in her bio: info.lebsmatlala@gmail.com. Alwande already follows her. |
+
+Next step: when it is time, email or message her the invite (she has a public contact email, so
+she can go straight into Artist Contacts).
+
 ## To follow up
 - One makeup artist Alwande contacted a while ago and never followed up with. Name still to add.
