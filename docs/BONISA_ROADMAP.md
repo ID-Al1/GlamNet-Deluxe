@@ -10,6 +10,110 @@ Status key: [x] done, [~] built but needs checking, [ ] not started.
 
 ---
 
+## Part A. The business roadmap (people, money, paperwork, events)
+
+The app is only one wall of the house. These are the other walls. Last updated 8 October 2026.
+
+### The five streams
+
+**1. Launch events with Favour (event coordinator for Hayden's team)**
+- [ ] Favour confirms the new dates for the rescheduled events
+- [ ] Agree what Bonisa gets: a stand, a slot on stage, a mention, or promo girls only
+- [ ] Agree the promo girls' role: handing out a card or QR code that sends people to Bonisa
+- [ ] Lock the launch line. Options on the table: "Honey, it's time to show up with Bonisa" or "Honey, it's time for you to meet Bonisa". Pick one and use it everywhere
+- [ ] Printed QR code goes to a simple page that works on a phone
+- [ ] Decide what a person does after scanning (sign up as a client, or apply as an artist)
+
+Analogy: the event is opening night. The promo girls are the people handing out invitations. Invitations are useless if the doors are not ready, so the date of the event decides the deadline for everything else.
+
+**2. Amali: getting verified artists now**
+- [ ] Give Amali a clear job: find artists, walk them through signup and verification, chase missing documents
+- [ ] One shared list (name, city, speciality, Instagram, status: contacted, applied, verified)
+- [ ] A weekly number for Amali, agreed with you (suggestion: 10 new applications a week)
+- [ ] A short script and a one page guide so every artist hears the same pitch
+- [ ] Amali sees the owner queue status so she can tell artists where they are stuck
+
+Why now: verification is the slowest step in the whole business. Starting it early means the artists are ready when payments and events are.
+
+**3. Campus ambassadors for makeup artists**
+- [ ] Pick 1 or 2 campuses or training academies to pilot
+- [ ] Define what an ambassador does (spreads the word, helps classmates apply) and what they get (commission, free tier, a title, a reference letter)
+- [ ] Write a one page ambassador pitch
+- [ ] Track which artists came from which ambassador, so you can reward fairly
+- [ ] Review after 4 weeks: how many applied, how many passed verification
+
+**4. Money: Peach Payments and the Opus bank account**
+- [ ] Chase Peach Payments for a date and for what they need from Opus Intelligence (Pty) Ltd
+- [ ] Confirm the Opus bank account will receive client payments, and how artists get paid out
+- [ ] Ask Peach in writing: do they support holding money until the work is confirmed, and splitting 82% artist and 18% Bonisa?
+- [ ] Ask Peach about fees, payout timing and how the "paid within 24 hours" promise works
+- [ ] Decision for you and Hayden: **our rules currently say Stripe only.** If Peach replaces Stripe, that rule must be changed on purpose, in writing, before anyone builds it. The payment code was kept in its own corner so a swap is possible, but it is still real work
+- [ ] No real customer money flows until this is settled
+
+**5. Legal paperwork (not started)**
+- [ ] Find who writes it: a lawyer, or a reputable template provider reviewed by a lawyer
+- [ ] Privacy policy (POPIA)
+- [ ] Terms for clients
+- [ ] Terms for artists, including the 18% commission and how disputes work
+- [ ] Ambassador agreement (if they are paid)
+- [ ] Event and promo girl agreement with Favour's side, if money or branding is involved
+- [ ] Consent wording for ID documents and bank details
+- [ ] Who is the Information Officer for POPIA (a named person)
+
+### What blocks what
+
+Think of it as a row of dominoes:
+
+1. **Legal documents** must be done before any real booking.
+2. **Peach Payments** must be settled before any real money moves.
+3. **Verified artists** must exist before an event, or the people who scan have nobody to book.
+4. **The event** is the loudest moment, so it needs 1, 2 and 3 to be ready.
+
+Work backwards from the event date: that is the one date nobody on our side controls.
+
+### Draft timeline (for the conversation with Hayden)
+
+I do not know the event dates or Peach's date yet, so this uses weeks counted from the day you and Hayden agree. Change the numbers once Favour and Peach answer.
+
+| When | What happens | Who |
+|---|---|---|
+| **Week 0** | Agree roles and this plan. Get Favour's event dates. Chase Peach. Start the legal search. Decide who owns what | You, Hayden |
+| **Weeks 1 to 2** | Amali starts outreach. Ambassador pitch written. Legal drafts commissioned. Opus bank details sent to Peach. Pick the launch line | Amali, you, Hayden |
+| **Weeks 3 to 4** | Campus pilot starts. First 10 artists verified. Legal drafts reviewed. Peach answer expected, decide Stripe or Peach | All |
+| **Weeks 5 to 6** | Legal live in the app (signup consent, policy pages). Payment tested end to end with a small real payment and a refund. 25 verified artists | Hayden (app), you |
+| **Weeks 7 to 8** | First real bookings from friendly clients. Fix what breaks. Reach 40 to 50 verified artists. Event materials ready (QR, cards, landing page) | All, Favour |
+| **Event week** | Launch with the promo girls. Only go if the 3 gates below are green | Favour, all |
+| **After the event** | Measure: signups, bookings, artists paid inside 24 hours. Then decide on the PWA and the mobile app | You, Hayden |
+
+**Three gates before the event (all must be yes):**
+- [ ] Legal is live in the app
+- [ ] Real payments work end to end
+- [ ] At least 30 verified artists are visible and bookable (50 is the goal)
+
+If the event date arrives before a gate is green, it is better to move the launch moment than to launch without it. A first impression with no artists or broken payments cannot be taken back.
+
+### Numbers to sanity check
+These are my assumptions, not facts. Adjust them with Hayden.
+- Not every applicant passes verification. If about 6 in 10 pass, you need roughly 80 applications to reach 50 verified artists
+- 10 applications a week for 8 weeks gives about 80
+- Ambassadors can add to that, so Amali's number could drop to about 6 a week once they are active
+
+### Questions for you and Hayden
+1. What are Favour's dates, and what does Bonisa get at the events?
+2. Is Peach replacing Stripe, or running alongside it for now?
+3. Who writes the legal documents, and what is the budget?
+4. Is Amali full time or part time, and what is her weekly target?
+5. Which campuses first, and what do ambassadors earn?
+6. Hayden's newer version of the app: can you share the link, so this roadmap reflects the real current state? This file was built from the earlier Replit project only, so the status ticks in Part B may be out of date
+
+---
+
+## Part B. The product roadmap (the app itself)
+
+The sections below track the app. If Hayden's newer version is ahead of this one, tick the boxes to match it.
+
+---
+
 ## The one rule behind every task
 
 **One task. One check. Stop and report.**
