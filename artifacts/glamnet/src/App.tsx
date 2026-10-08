@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 const Home = lazy(() => import("@/pages/home"));
 const Login = lazy(() => import("@/pages/auth/login"));
 const Signup = lazy(() => import("@/pages/auth/signup"));
+const Get = lazy(() => import("@/pages/get"));
 const DashboardRouter = lazy(() => import("@/pages/dashboard"));
 const StylistDashboard = lazy(() => import("@/pages/dashboards/stylist-dashboard"));
 const StylistsList = lazy(() => import("@/pages/stylists/index"));
@@ -91,6 +92,7 @@ function Router() {
                 <Route path="/" component={Home} />
                 <Route path="/login" component={Login} />
                 <Route path="/signup" component={Signup} />
+                <Route path="/get" component={Get} />
                 <Route path="/profile" component={Profile} />
                 <Route path="/dashboard/artist">
                   <RequireOwner>

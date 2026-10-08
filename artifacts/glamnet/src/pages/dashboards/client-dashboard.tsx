@@ -109,7 +109,7 @@ export default function ClientDashboard() {
   // Invite link for artists the client already works with. role=artist opens sign-up as an artist.
   const referralCode = (user as any)?.referralCode ?? null;
   const inviteLink = referralCode
-    ? `${window.location.origin}/signup?ref=${referralCode}&role=artist`
+    ? `${window.location.origin}/get?ref=${referralCode}`
     : "";
   const [copied, setCopied] = useState(false);
   const inviteMessage = `Hi! I'd love to book you through Bonisa, South Africa's verified network for beauty artists. Join here: ${inviteLink}`;
