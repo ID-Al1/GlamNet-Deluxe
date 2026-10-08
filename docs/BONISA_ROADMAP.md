@@ -67,6 +67,45 @@ Why now: verification is the slowest step in the whole business. Starting it ear
 - [ ] Consent wording for ID documents and bank details
 - [ ] Who is the Information Officer for POPIA (a named person)
 
+### Stream 6. Show Me Girl ambassador programme (design stage)
+
+**The idea:** a Show Me Girl signs in as a client but is recognised as something more. She sees her own title, level, credit and the people she has brought to Bonisa.
+
+**Recommended shape (for Hayden to confirm):**
+- **Not a fourth role.** She stays a client account with a Show Me Girl status on top, like a loyalty card clipped onto a membership. This respects the rule that Bonisa has three roles and three dashboards, and it keeps the build small. If you want her to have her own full dashboard, that changes the rule and Hayden must agree first
+- **Her own badge, not the verification badge.** The verified badge means "Bonisa checked this professional's identity and work". Reusing it for ambassadors would water that down. Give her a separate mark (name and look to be designed in the Bonisa style)
+- **The owner switches the status on.** Nobody can claim it on their own. Staff grant it, so only confirmed Show Me Girls get it
+- **Her profile top card shows:** title, level, credit balance, her personal code and QR, and a count of people she has brought in
+
+**How credit is earned (only for real events, never for signups alone):**
+- An artist she brought gets verified (the biggest reward, because this is what Bonisa needs most)
+- A client she brought completes a first paid booking
+- Event scans count as leads, but earn nothing until one of the two things above happens
+
+This stops people gaming it with fake accounts.
+
+**Levels:** climb by real results, the same idea as artist tiers. Level names and the credit amounts are for you and Hayden to decide, I have not invented rand values.
+
+**Where the credit comes from:** Bonisa keeps 18% of each booking. Any cash credit is paid out of that 18%, so the amounts must be tested against it. Safer to start with credit as points tracked in a ledger and paid by hand, the way artist payouts are handled now, until Peach is settled.
+
+**What already exists in the app:** a referrals table (who referred whom, artist or client, pending or completed, bonus paid yes or no). It is a good starting point, but it has no levels, no credit balance and no codes yet.
+
+**Build order (small steps, one at a time):**
+- [ ] Step 1, decisions only: cash or points, level names, who can grant the status, what she gets at each level
+- [ ] Step 2: personal code and QR so every signup is traced to her
+- [ ] Step 3: credit ledger, earned only on verified artists and first paid bookings
+- [ ] Step 4: Show Me Girl card on her client profile with level and balance
+- [ ] Step 5: owner screen to grant the status, see results and mark credit paid
+
+**Paperwork:** an ambassador agreement (what she earns, what she may and may not say, tracking consent under POPIA).
+
+**Questions for Hayden:**
+1. Is she an event promo girl only, or an ongoing ambassador?
+2. Is credit cash, points, or discount on services?
+3. How many levels, and what does each one unlock?
+4. Can she also become an artist later?
+5. Does the campus ambassador use the same programme?
+
 ### What blocks what
 
 Think of it as a row of dominoes:
