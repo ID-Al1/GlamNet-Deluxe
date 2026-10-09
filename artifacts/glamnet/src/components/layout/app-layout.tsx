@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { BonisaLogo } from "@/components/bonisa-logo";
 import { ArtistVerificationBanner } from "@/components/artist-verification-banner";
+import { LEGAL_IDENTITY } from "@/lib/legal";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -365,7 +366,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="border-t border-border/60 pt-6 text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Bonisa. All rights reserved.
+              <p>
+                © {new Date().getFullYear()} Bonisa, operated by {LEGAL_IDENTITY.operator} (Reg. {LEGAL_IDENTITY.cipcRegistrationNumber}).{" "}
+                <Link href="/legal" className="hover:text-primary transition-colors underline">Legal identity</Link>
+              </p>
             </div>
           </div>
         </footer>
