@@ -1699,7 +1699,7 @@ components:
 
     SignupInput:
       type: object
-      required: [name, email, password, role, phone]
+      required: [name, email, password, role, phone, consent]
       properties:
         name:
           type: string
@@ -1719,6 +1719,30 @@ components:
           enum: [client, stylist, brand]
         businessName:
           type: ["string", "null"]
+        consent:
+          $ref: "#/components/schemas/SignupConsent"
+
+    SignupConsent:
+      type: object
+      description: >
+        What the person agreed to at signup. Terms acceptance and the privacy
+        notice are required. Marketing is optional and defaults to off.
+        The versions are the document versions shown on screen; the server
+        rejects the signup if they are out of date.
+      required: [acceptedTerms, acknowledgedPrivacyNotice, marketingOptIn, termsVersion, privacyVersion, marketingVersion]
+      properties:
+        acceptedTerms:
+          type: boolean
+        acknowledgedPrivacyNotice:
+          type: boolean
+        marketingOptIn:
+          type: boolean
+        termsVersion:
+          type: string
+        privacyVersion:
+          type: string
+        marketingVersion:
+          type: string
 
     LoginInput:
       type: object

@@ -1,5 +1,5 @@
 import { LegalDocument, type LegalSection } from "@/components/legal-document";
-import { LEGAL_IDENTITY as L } from "@/lib/legal";
+import { LEGAL_IDENTITY as L, LEGAL_VERSIONS } from "@/lib/legal";
 
 const SECTIONS: LegalSection[] = [
   {
@@ -184,7 +184,7 @@ export default function TermsPage() {
   return (
     <LegalDocument
       title="Terms of Service"
-      updated="9 October 2026"
+      updated={LEGAL_VERSIONS.terms}
       intro="These terms explain how Bonisa works and what we expect from each other. We have tried to keep them in plain language."
       sections={SECTIONS}
     />

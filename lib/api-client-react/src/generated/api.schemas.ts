@@ -639,6 +639,18 @@ export const SignupInputRole = {
   brand: 'brand',
 } as const;
 
+/**
+ * What the person agreed to at signup. Terms acceptance and the privacy notice are required. Marketing is optional and defaults to off. The versions are the document versions shown on screen; the server rejects the signup if they are out of date.
+ */
+export interface SignupConsent {
+  acceptedTerms: boolean;
+  acknowledgedPrivacyNotice: boolean;
+  marketingOptIn: boolean;
+  termsVersion: string;
+  privacyVersion: string;
+  marketingVersion: string;
+}
+
 export interface SignupInput {
   /** @minLength 2 */
   name: string;
@@ -653,6 +665,7 @@ export interface SignupInput {
   role: SignupInputRole;
   /** @nullable */
   businessName?: string | null;
+  consent: SignupConsent;
 }
 
 export interface LoginInput {

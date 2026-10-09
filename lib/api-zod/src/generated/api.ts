@@ -34,7 +34,15 @@ export const SignupBody = zod.object({
   "password": zod.string().min(signupBodyPasswordMin),
   "phone": zod.string().min(signupBodyPhoneMin).max(signupBodyPhoneMax),
   "role": zod.enum(['client', 'stylist', 'brand']),
-  "businessName": zod.string().nullish()
+  "businessName": zod.string().nullish(),
+  "consent": zod.object({
+  "acceptedTerms": zod.boolean(),
+  "acknowledgedPrivacyNotice": zod.boolean(),
+  "marketingOptIn": zod.boolean(),
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "marketingVersion": zod.string()
+}).describe('What the person agreed to at signup. Terms acceptance and the privacy notice are required. Marketing is optional and defaults to off. The versions are the document versions shown on screen; the server rejects the signup if they are out of date.\n')
 })
 
 export const SignupResponse = zod.object({

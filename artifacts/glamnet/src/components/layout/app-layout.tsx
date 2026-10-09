@@ -373,6 +373,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link href="/terms" className="hover:text-primary transition-colors underline">Terms</Link>
                 {" "}
                 <Link href="/privacy" className="hover:text-primary transition-colors underline">Privacy</Link>
+                {" "}
+                <Link href="/client-terms" className="hover:text-primary transition-colors underline">Client Terms</Link>
+                {" "}
+                <Link href="/artist-agreement" className="hover:text-primary transition-colors underline">Artist Agreement</Link>
               </p>
             </div>
           </div>

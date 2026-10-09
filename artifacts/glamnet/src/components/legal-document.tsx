@@ -39,6 +39,14 @@ export function LegalDocument({ title, intro, updated, sections }: LegalDocument
         ,{" "}
         <Link href="/terms" className="underline hover:text-primary transition-colors">
           Terms of Service
+        </Link>
+        ,{" "}
+        <Link href="/client-terms" className="underline hover:text-primary transition-colors">
+          Client Terms
+        </Link>
+        ,{" "}
+        <Link href="/artist-agreement" className="underline hover:text-primary transition-colors">
+          Artist Agreement
         </Link>{" "}
         and{" "}
         <Link href="/privacy" className="underline hover:text-primary transition-colors">

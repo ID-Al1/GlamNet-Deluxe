@@ -118,6 +118,7 @@ export * from './searchOwnerRegistryParams';
 export * from './service';
 export * from './serviceInput';
 export * from './serviceUpdate';
+export * from './signupConsent';
 export * from './signupInput';
 export * from './signupInputRole';
 export * from './startConversationInput';

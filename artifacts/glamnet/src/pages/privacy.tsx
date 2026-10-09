@@ -1,5 +1,5 @@
 import { LegalDocument, type LegalSection } from "@/components/legal-document";
-import { LEGAL_IDENTITY as L } from "@/lib/legal";
+import { LEGAL_IDENTITY as L, LEGAL_VERSIONS } from "@/lib/legal";
 
 const SECTIONS: LegalSection[] = [
   {
@@ -56,7 +56,8 @@ const SECTIONS: LegalSection[] = [
         <li>To take payments, hold funds, and pay artists correctly.</li>
         <li>To handle complaints, refunds and disputes fairly.</li>
         <li>To keep Bonisa safe, prevent fraud and meet our legal duties.</li>
-        <li>To send you messages about your bookings and account.</li>
+        <li>To send you messages about your bookings, payments and account, by WhatsApp or email.</li>
+        <li>To send you news and offers, only if you chose to receive them (see Marketing below).</li>
       </ul>
     ),
   },
@@ -80,7 +81,7 @@ const SECTIONS: LegalSection[] = [
         <p>We do not sell your personal information. We share it only where needed:</p>
         <ul className="list-disc pl-5 space-y-2">
           <li>With the other party to a booking, as needed to deliver it.</li>
-          <li>With service providers who work for us, such as our payment processor, hosting and email providers. They may use your information only for the service they give us.</li>
+          <li>With service providers who work for us, such as our payment processor, and the providers that host our systems, store files, and send our WhatsApp messages and emails. They may use your information only for the service they give us.</li>
           <li>With banks, to pay artists.</li>
           <li>With authorities, courts or regulators where the law requires it.</li>
         </ul>
@@ -109,6 +110,17 @@ const SECTIONS: LegalSection[] = [
         We use access controls, private storage for sensitive documents, and audit logs for access
         to sensitive information. No system is perfectly secure. If a breach affects your personal
         information, we will tell you and the Information Regulator as POPIA requires.
+      </p>
+    ),
+  },
+  {
+    heading: "Marketing",
+    body: (
+      <p>
+        We send marketing only if you tick the box for it when you sign up. It is off unless you
+        choose it, and joining Bonisa does not depend on it. You can change your mind at any time by
+        emailing {L.privacyEmail}, and we will stop. Messages about your bookings, payments and
+        account are not marketing and will still be sent.
       </p>
     ),
   },
@@ -164,7 +176,7 @@ export default function PrivacyPage() {
   return (
     <LegalDocument
       title="Privacy Policy"
-      updated="9 October 2026"
+      updated={LEGAL_VERSIONS.privacy}
       intro="This policy explains what personal information Bonisa collects, why, who sees it, and the choices you have. It is written to meet South Africa's Protection of Personal Information Act (POPIA)."
       sections={SECTIONS}
     />

@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { db, usersTable, referralsTable } from "@workspace/db";
+import { db, usersTable, referralsTable, consentRecordsTable } from "@workspace/db";
+import { LEGAL_VERSIONS, roleAgreementFor } from "../lib/legalVersions";
 import { and, eq, ne } from "drizzle-orm";
 import { randomUUID, randomBytes } from "crypto";
 import { createHmac, timingSafeEqual } from "crypto";
@@ -83,7 +84,21 @@ router.post("/auth/signup", async (req, res) => {
     res.status(400).json({ error: "Validation error" });
     return;
   }
-  const { name, password, role, businessName } = parsed.data;
+  const { name, password, role, businessName, consent } = parsed.data;
+  // Terms and the privacy notice are required. Marketing is optional and off by default.
+  if (!consent.acceptedTerms || !consent.acknowledgedPrivacyNotice) {
+    res.status(400).json({ error: "You must accept the Terms and confirm you have read the Privacy Notice" });
+    return;
+  }
+  // The person must have seen the current wording, not an old cached copy.
+  if (
+    consent.termsVersion !== roleAgreementFor(role).version ||
+    consent.privacyVersion !== LEGAL_VERSIONS.privacy ||
+    consent.marketingVersion !== LEGAL_VERSIONS.marketing
+  ) {
+    res.status(409).json({ error: "Our terms have been updated. Please refresh the page and try again." });
+    return;
+  }
   // Normalise email at write time so stored values are always canonical.
   const email = parsed.data.email.trim().toLowerCase();
   const phone = normalizePhone(parsed.data.phone);
@@ -115,16 +130,29 @@ router.post("/auth/signup", async (req, res) => {
   const passwordHash = hashPassword(password);
   const newReferralCode = generateReferralCode();
 
-  const [user] = await db.insert(usersTable).values({
-    id,
-    name,
-    email,
-    passwordHash,
-    role: role as "client" | "stylist" | "brand",
-    phone,
-    businessName: businessName ?? null,
-    referralCode: newReferralCode,
-  }).returning();
+  // Account and consent records are written together so there is never an
+  // account without a record of what it agreed to.
+  const roleAgreement = roleAgreementFor(role);
+  const user = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(usersTable).values({
+      id,
+      name,
+      email,
+      passwordHash,
+      role: role as "client" | "stylist" | "brand",
+      phone,
+      businessName: businessName ?? null,
+      referralCode: newReferralCode,
+    }).returning();
+    const action = "signup_form";
+    await tx.insert(consentRecordsTable).values([
+      { id: randomUUID(), userId: id, documentType: "terms_of_service", documentVersion: LEGAL_VERSIONS.terms, decision: "accepted", action },
+      { id: randomUUID(), userId: id, documentType: roleAgreement.type, documentVersion: roleAgreement.version, decision: "accepted", action },
+      { id: randomUUID(), userId: id, documentType: "privacy_notice", documentVersion: LEGAL_VERSIONS.privacy, decision: "acknowledged", action },
+      { id: randomUUID(), userId: id, documentType: "marketing", documentVersion: LEGAL_VERSIONS.marketing, decision: consent.marketingOptIn ? "accepted" : "declined", action },
+    ]);
+    return created;
+  });
 
   if (role === "stylist") {
     const { stylistProfilesTable } = await import("@workspace/db");

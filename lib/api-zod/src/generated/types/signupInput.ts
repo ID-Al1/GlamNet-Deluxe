@@ -5,6 +5,7 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { SignupConsent } from './signupConsent';
 import type { SignupInputRole } from './signupInputRole';
 
 export interface SignupInput {
@@ -21,4 +22,5 @@ export interface SignupInput {
   role: SignupInputRole;
   /** @nullable */
   businessName?: string | null;
+  consent: SignupConsent;
 }

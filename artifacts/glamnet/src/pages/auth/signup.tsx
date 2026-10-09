@@ -4,6 +4,8 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -27,6 +29,9 @@ export default function Signup() {
   const [businessName, setBusinessName] = useState("");
   const [specialty, setSpecialty] = useState("Makeup");
   const [referralCode, setReferralCode] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acknowledgedPrivacy, setAcknowledgedPrivacy] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const [, setLocation] = useLocation();
@@ -51,6 +56,14 @@ export default function Signup() {
           role,
           businessName: role === SignupInputRole.brand ? businessName : undefined,
           ...(referralCode ? { referralCode } : {}),
+          consent: {
+            acceptedTerms,
+            acknowledgedPrivacyNotice: acknowledgedPrivacy,
+            marketingOptIn,
+            termsVersion: role === SignupInputRole.stylist ? LEGAL_VERSIONS.artistAgreement : LEGAL_VERSIONS.clientTerms,
+            privacyVersion: LEGAL_VERSIONS.privacy,
+            marketingVersion: LEGAL_VERSIONS.marketing,
+          },
         } as any,
       });
       toast.success("Account created — let's set up your profile!");
@@ -167,9 +180,43 @@ export default function Signup() {
                 maxLength={20}
               />
             </div>
+            {/* Legal: acceptance, privacy notice and marketing are three separate choices */}
+            <div className="space-y-4 rounded-xl border border-border bg-background p-4">
+              <div className="flex items-start gap-3">
+                <Checkbox id="acceptedTerms" checked={acceptedTerms} onCheckedChange={v => setAcceptedTerms(v === true)} className="mt-0.5" />
+                <Label htmlFor="acceptedTerms" className="text-sm font-normal leading-relaxed">
+                  I accept the{" "}
+                  <Link href="/terms" className="text-primary underline">Terms of Service</Link>
+                  {" "}and the{" "}
+                  {role === SignupInputRole.stylist ? (
+                    <Link href="/artist-agreement" className="text-primary underline">Artist Agreement</Link>
+                  ) : (
+                    <Link href="/client-terms" className="text-primary underline">Client Terms of Use</Link>
+                  )}
+                  . <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox id="acknowledgedPrivacy" checked={acknowledgedPrivacy} onCheckedChange={v => setAcknowledgedPrivacy(v === true)} className="mt-0.5" />
+                <Label htmlFor="acknowledgedPrivacy" className="text-sm font-normal leading-relaxed">
+                  I have read the{" "}
+                  <Link href="/privacy" className="text-primary underline">Privacy Policy</Link>
+                  , which explains what Bonisa collects, why, and my rights. <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox id="marketingOptIn" checked={marketingOptIn} onCheckedChange={v => setMarketingOptIn(v === true)} className="mt-0.5" />
+                <Label htmlFor="marketingOptIn" className="text-sm font-normal leading-relaxed">
+                  Send me news and offers from Bonisa by email or WhatsApp. <span className="text-muted-foreground text-xs">(optional)</span>
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                We use your details to create your account, {role === SignupInputRole.stylist ? "verify you, " : ""}run bookings and payments, and keep Bonisa safe. You can change your marketing choice at any time by emailing the privacy contact in the Privacy Policy.
+              </p>
+            </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
+          <Button type="submit" className="w-full h-12 text-base" disabled={isLoading || !acceptedTerms || !acknowledgedPrivacy}>
             {isLoading ? "Creating account…" : role === SignupInputRole.stylist ? "Create account & set up profile →" : "Create Account"}
           </Button>
         </form>

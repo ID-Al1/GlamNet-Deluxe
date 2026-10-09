@@ -12,3 +12,4 @@ export * from "./payout-batches";
 export * from "./payout-ledger";
 export * from "./complaints";
 export * from "./bank-accounts";
+export * from "./consent-records";
