@@ -31,6 +31,8 @@ const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const ComplaintsList = lazy(() => import("@/pages/complaints/index"));
 const NewComplaint = lazy(() => import("@/pages/complaints/new"));
 const ComplaintDetail = lazy(() => import("@/pages/complaints/[id]"));
+const Terms = lazy(() => import("@/pages/terms"));
+const Privacy = lazy(() => import("@/pages/privacy"));
 const Legal = lazy(() => import("@/pages/legal"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const OwnerPortal = lazy(() => import("@/pages/owner/index"));
@@ -91,6 +93,8 @@ function Router() {
                   <Switch>
                 <Route path="/" component={Home} />
                 <Route path="/legal" component={Legal} />
+                <Route path="/terms" component={Terms} />
+                <Route path="/privacy" component={Privacy} />
                 <Route path="/login" component={Login} />
                 <Route path="/signup" component={Signup} />
                 <Route path="/profile" component={Profile} />

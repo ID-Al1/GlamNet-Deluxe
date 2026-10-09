@@ -369,6 +369,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <p>
                 © {new Date().getFullYear()} Bonisa, operated by {LEGAL_IDENTITY.operator} (Reg. {LEGAL_IDENTITY.cipcRegistrationNumber}).{" "}
                 <Link href="/legal" className="hover:text-primary transition-colors underline">Legal identity</Link>
+                {" "}
+                <Link href="/terms" className="hover:text-primary transition-colors underline">Terms</Link>
+                {" "}
+                <Link href="/privacy" className="hover:text-primary transition-colors underline">Privacy</Link>
               </p>
             </div>
           </div>
