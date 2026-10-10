@@ -1,0 +1,44 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Bonisa//Deadlines//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:bonisa-deadline-1@bonisa
+DTSTAMP:20261010T080000Z
+DTSTART;VALUE=DATE:20261102
+DTEND;VALUE=DATE:20261103
+SUMMARY:Bonisa: legal documents live in the app
+DESCRIPTION:Privacy policy, terms, artist agreement, refund policy and POPIA consent live in the app. Owner: Haiden with Alwande.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bonisa: legal documents live in the app
+TRIGGER:-P2D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:bonisa-deadline-2@bonisa
+DTSTAMP:20261010T080000Z
+DTSTART;VALUE=DATE:20261106
+DTEND;VALUE=DATE:20261107
+SUMMARY:Bonisa: real payment tested end to end
+DESCRIPTION:One small real payment through Peach, held, released and refunded. Owner: Haiden.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bonisa: real payment tested end to end
+TRIGGER:-P2D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:bonisa-deadline-3@bonisa
+DTSTAMP:20261010T080000Z
+DTSTART;VALUE=DATE:20261109
+DTEND;VALUE=DATE:20261110
+SUMMARY:Bonisa: 30 verified artists bookable
+DESCRIPTION:At least 30 verified artists visible and bookable before the 14 Nov event. Owner: Alwande.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Bonisa: 30 verified artists bookable
+TRIGGER:-P2D
+END:VALARM
+END:VEVENT
+END:VCALENDAR
