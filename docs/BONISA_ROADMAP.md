@@ -28,6 +28,30 @@ The app is only one wall of the house. These are the other walls. Last updated 8
 - **Amali is not an employee.** She is a helper or ambassador, so a weekly target and a fixed job do not fit. Agree what she earns (for example per verified artist), put it in a short written agreement, and treat any target as a goal, not an obligation
 - **Haiden's newer version of the app:** `http://bonisa.opusintelligence.co.za/get`. I could not open it from this workspace (network blocked), so Part B has not been checked against it. Describe or screenshot it and I will update the ticks
 
+### Launch timeline to the event on Saturday 14 November 2026 (set 10 October)
+
+The event date is **14 November**. Today is Saturday 10 October, so there are **35 days (5 weeks)**. This replaces the earlier 8 week draft.
+
+| Week | Dates | Focus |
+|---|---|---|
+| Now | 10 to 18 Oct | Build content and the artist intake page (checklist, countdown, email capture). Start legal with Haiden. Check the Paystack backup. Oshobi Girl finishes testing the app |
+| 1 | Mon 19 Oct | **Peach answer expected (latest).** Post-launch content starts: "Bonisa is here" |
+| 2 | Mon 26 Oct | **Meet the Artist** series, and "I joined Bonisa" posts from the first verified artists |
+| 3 | Mon 2 Nov | Introduce the **"Honey, it's time"** collaboration. Promo girls explain the Show Me Girl idea. Balissa does the full glam experience content |
+| 4 | Mon 9 Nov | Final week. Daily countdown. Last checks on the three gates |
+| Event | Sat 14 Nov | Launch with the promo girls |
+
+**Amali** is not travelling to the event. She stays in the background and makes the content.
+
+**Dependencies hiding under the content plan** (content can run on time, but these need dates of their own):
+- **Legal live in the app:** aim for Monday 2 November at the latest
+- **Real payment tested end to end:** aim for Friday 6 November. This depends on Peach answering by 19 October. If Peach slips past that, the whole payment plan is at risk
+- **At least 30 verified artists bookable:** aim for Monday 9 November
+
+**Payment backup:** the code has no Paystack work (an earlier note says it is paused), so a backup would be a fresh build. Check where the Paystack account and application stand before 19 October. Rule: only one payment provider is live at a time.
+
+**Check on Monday 19 October:** if Peach has not confirmed, decide that day whether the event goes ahead with bookings, or as an awareness launch with a waiting list.
+
 ### The five streams
 
 **1. Launch events with Favour (event coordinator for Hayden's team)**
