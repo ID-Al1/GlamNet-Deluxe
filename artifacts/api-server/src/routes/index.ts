@@ -15,6 +15,7 @@ import ownerRouter from "./owner";
 import complaintsRouter from "./complaints";
 import artistUpdatesRouter from "./artist-updates";
 import artistContactsRouter from "./artist-contacts";
+import publicWaitlistRouter from "./public-waitlist";
 import brandsRouter from "./brands";
 import campaignPaymentsRouter from "./campaign-payments";
 
@@ -36,6 +37,7 @@ router.use(ownerRouter);
 router.use(complaintsRouter);
 router.use(artistUpdatesRouter);
 router.use(artistContactsRouter);
+router.use(publicWaitlistRouter);
 router.use(brandsRouter);
 router.use(campaignPaymentsRouter);
 
