@@ -87,7 +87,7 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
       <h2>THE STORY</h2>
       <ul>
         <li>The artist is the player. Clients are the ones chasing her</li>
-        <li>The diamond she picks up is Bonisa, and it makes her verified</li>
+        <li>The diamond she picks up is Bonisa. Her phone follows the real signup: pick Artist, pick a specialty, get verified</li>
         <li>Makeup, nails, lashes and hair are her power-ups</li>
         <li>Every client she reaches ends up glammed and booked</li>
       </ul>
@@ -294,14 +294,23 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
       if (e >= 1) {
         for (var b = 0; b < 8; b++) R(124, 20 + b * 16, 72, 16, rgb(mix([26, 11, 61], [120, 40, 160], b / 7)));
         txt('BONISA', 160, 26, 8, C.cyan, 'center', C.pink);
-        if (s > 4.3) sprite(['..HHHHH..','.HHHHHHH.','.HSSSSSH.','.HSESESH.','.HSSSSSH.','..SSMSS..','...SSS...','.CCCCCCC.','CCCCCCCCC'], 142, 42, { H:'#2b0f3f', S:'#a8683f', E:'#07041a', M:'#ff2f7a', C:'#ff5fc8' }, 4);
-        if (s > 5.0) { diamond(184, 46, 6, GEM.cyan, 6); }
-        if (s > 5.2) { R(126, 92, 68, 12, C.green); txt('VERIFIED', 160, 94, 8, '#07041a', 'center'); }
-        if (s > 5.8 && Math.floor(s * 4) % 2 === 0) { R(128, 114, 64, 14, C.pink); txt('GO LIVE', 160, 117, 8, '#fff', 'center'); }
-        else if (s > 5.8) { R(128, 114, 64, 14, '#b3278a'); txt('GO LIVE', 160, 117, 8, '#fff', 'center'); }
+        txt('JOIN AS', 160, 38, 8, C.fg, 'center');
+        if (s > 3.9) {
+          var pick = s > 4.8 ? 1 : 0, bx = [126, 149, 172], nm = ['CLIENT', 'ARTIST', 'BRAND'];
+          for (var q = 0; q < 3; q++) {
+            R(bx[q], 50, 21, 22, q === pick ? C.pink : '#2a1a6e'); outline(bx[q], 50, 21, 22, q === pick ? '#fff' : C.wall);
+            if (q === 0) { R(bx[q] + 8, 54, 5, 5, '#ffd9b0'); R(bx[q] + 6, 60, 9, 7, '#e9e4ff'); }
+            if (q === 1) diamond(bx[q] + 10, 61, 6, GEM.cyan, 6);
+            if (q === 2) { R(bx[q] + 5, 58, 11, 9, '#e9e4ff'); R(bx[q] + 8, 55, 5, 3, '#e9e4ff'); }
+          }
+          txt(nm[pick], 160, 76, 8, pick ? C.pink : C.fg, 'center');
+        }
+        if (s > 5.2) { R(130, 90, 60, 12, C.cyan); txt('MAKEUP', 160, 92, 8, '#07041a', 'center'); }
+        if (s > 5.6) { R(126, 108, 68, 12, C.green); txt('VERIFIED', 160, 110, 8, '#07041a', 'center'); diamond(190, 30, 4, GEM.cyan, 4); }
+        if (s > 6.0) { R(128, 126, 64, 14, Math.floor(s * 4) % 2 === 0 ? C.pink : '#b3278a'); txt('GO LIVE', 160, 129, 8, '#fff', 'center'); }
       }
       ctx.globalAlpha = 1;
-      if (s > 4.3 && s < 6.7) caption(s < 5.2 ? 'BONISA KNOWS WHO SHE IS' : 'NOW SHE IS A VERIFIED ARTIST', s < 5.2 ? C.cyan : C.green);
+      if (s > 3.9 && s < 6.7) caption(s < 5.6 ? 'SHE JOINS AS AN ARTIST' : 'NOW SHE IS A VERIFIED ARTIST', s < 5.6 ? C.cyan : C.green);
     }
     if (s >= 6.3 && s < 6.9) { ctx.fillStyle = 'rgba(255,255,255,' + (1 - (s - 6.3) / 0.6) + ')'; ctx.fillRect(0, 0, W, H); }
     if (s >= 6.7) {
@@ -388,7 +397,7 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
 
   var INFO = [
     ['LEVEL 1  THE STREET', 'Meet the artist. She walks through a neon city where everything is Bonisa, even the salon sign.'],
-    ['LEVEL 2  THE DIAMOND', 'She finds a diamond on the street. The diamond is Bonisa. She picks it up, gets verified on her phone and goes live.'],
+    ['LEVEL 2  THE DIAMOND', 'She finds a diamond on the street. The diamond is Bonisa. She picks it up and signs up on her phone as an Artist, chooses her specialty, gets verified and goes live.'],
     ['LEVEL 3  CLIENTS ARRIVE', 'Verified artists get found. Clients come running from both sides, and they all want her.'],
     ['LEVEL 4  THE CHASE', 'She dodges the crowd with beauty power-ups: lipstick, nails, lashes and a hair flip. Each one turns clients into glammed, happy bookings.'],
     ['LEVEL 5  BOOKED', 'Every booking saves the 82 and 18 split. Her work, her money, her name.']
