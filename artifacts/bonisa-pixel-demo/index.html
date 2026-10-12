@@ -57,10 +57,10 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
 <div class="wrap">
   <header>
     <h1>BONISA PIXEL ARCADE</h1>
-    <p>A retro arcade video that explains Bonisa in five short levels. Press play, or jump to any level.</p>
+    <p>Follow a Bonisa artist through the neon streets as clients chase her. Press play, or jump to any level.</p>
   </header>
 
-  <div class="cabinet"><canvas id="screen" width="320" height="180" role="img" aria-label="Pixel art video about Bonisa: a pink diamond chomper eating diamonds through a neon maze"></canvas></div>
+  <div class="cabinet"><canvas id="screen" width="320" height="180" role="img" aria-label="Pixel art video about Bonisa: a beauty artist finds a diamond, goes live on the app, and dodges clients using makeup, nails, lashes and hair"></canvas></div>
 
   <div class="controls">
     <button id="play" type="button">PAUSE</button>
@@ -78,26 +78,26 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
       <div class="swatches">
         <div class="sw"><i style="background:#07041a"></i>Midnight</div>
         <div class="sw"><i style="background:#5b3df5"></i>Maze violet</div>
-        <div class="sw"><i style="background:#5fb3ff;background:#5ff3ff"></i>Ice diamond</div>
+        <div class="sw"><i style="background:#5ff3ff"></i>Ice diamond</div>
         <div class="sw"><i style="background:#ff5fc8"></i>Hot pink</div>
         <div class="sw"><i style="background:#ffd86b"></i>Pellet gold</div>
       </div>
     </div>
     <div>
-      <h2>THE LOOK</h2>
+      <h2>THE STORY</h2>
       <ul>
-        <li>Pac-Man maze walls frame every screen</li>
-        <li>Diamonds replace the pellets, so the chomper eats gems</li>
-        <li>Neon on midnight for the dark sci-fi mood</li>
-        <li>Everything is drawn on a tiny 320 by 180 grid, then blown up, which makes it chunky</li>
+        <li>The artist is the player. Clients are the ones chasing her</li>
+        <li>The diamond she picks up is Bonisa, and it makes her verified</li>
+        <li>Makeup, nails, lashes and hair are her power-ups</li>
+        <li>Every client she reaches ends up glammed and booked</li>
       </ul>
     </div>
     <div>
-      <h2>WHAT IT TEACHES</h2>
+      <h2>THE LOOK</h2>
       <ul>
-        <li>Only verified artists get in</li>
-        <li>Every booking saves the 82 and 18 split</li>
-        <li>Brands choose from the verified pool</li>
+        <li>Neon purple and pink sunset over a pixel city</li>
+        <li>Pac-Man style maze walls along the street</li>
+        <li>Drawn on a tiny 320 by 180 grid, then blown up for the chunky pixels</li>
       </ul>
     </div>
   </section>
@@ -105,233 +105,320 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
 
 <script>
 (function () {
-  var W = 320, H = 180, DUR = 7, N = 5, TOTAL = DUR * N;
+  var W = 320, H = 180, DURS = [7, 8, 6, 9, 8], N = DURS.length, STARTS = [], TOTAL = 0;
+  DURS.forEach(function (d) { STARTS.push(TOTAL); TOTAL += d; });
   var cv = document.getElementById('screen'), ctx = cv.getContext('2d');
   ctx.imageSmoothingEnabled = false;
-  var C = { bg:'#07041a', wall:'#5b3df5', dim:'#2a1a6e', cyan:'#5ff3ff', pink:'#ff5fc8', gold:'#ffd86b', fg:'#ece8ff', green:'#5dffb0', red:'#ff5a6e' };
-  var GEM = {
-    cyan: ['#b8fbff','#5ff3ff','#1fa8d6'],
-    pink: ['#ffc0ec','#ff5fc8','#b3278a'],
-    gold: ['#fff0a8','#ffd86b','#c9902e']
-  };
+  var C = { bg:'#07041a', wall:'#5b3df5', dim:'#2a1a6e', cyan:'#5ff3ff', pink:'#ff5fc8', gold:'#ffd86b', fg:'#ece8ff', green:'#5dffb0', red:'#ff5a6e', violet:'#b57bff' };
+  var GEM = { cyan:['#b8fbff','#5ff3ff','#1fa8d6'], pink:['#ffc0ec','#ff5fc8','#b3278a'], gold:['#fff0a8','#ffd86b','#c9902e'] };
 
-  /* ---------- drawing helpers ---------- */
+  /* ---------- helpers ---------- */
   function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function ease(v) { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); }
+  function lerp(a, b, k) { return a + (b - a) * k; }
   function txt(s, x, y, size, color, align, shadow) {
-    ctx.font = size + 'px "Press Start 2P", monospace';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = align || 'left';
+    ctx.font = size + 'px "Press Start 2P", monospace'; ctx.textBaseline = 'top'; ctx.textAlign = align || 'left';
     x = Math.round(x); y = Math.round(y);
     if (shadow) { ctx.fillStyle = shadow; ctx.fillText(s, x + Math.max(1, size / 8), y + Math.max(1, size / 8)); }
     ctx.fillStyle = color; ctx.fillText(s, x, y);
   }
+  function outline(x, y, w, h, c) { R(x, y, w, 1, c); R(x, y + h - 1, w, 1, c); R(x, y, 1, h, c); R(x + w - 1, y, 1, h, c); }
   function diamond(cx, cy, r, pal, wr) {
-    wr = wr == null ? r : wr;
-    cx = Math.round(cx); cy = Math.round(cy);
+    wr = wr == null ? r : wr; cx = Math.round(cx); cy = Math.round(cy);
     for (var dy = -r; dy <= r; dy++) {
-      var hw = Math.floor(wr * (1 - Math.abs(dy) / r));
-      if (hw < 0) continue;
+      var hw = Math.floor(wr * (1 - Math.abs(dy) / r)); if (hw < 0) continue;
       var top = dy <= 0;
       R(cx - hw, cy + dy, hw + 1, 1, top ? pal[0] : pal[1]);
       R(cx, cy + dy, hw + 1, 1, top ? pal[1] : pal[2]);
     }
     if (r >= 5 && wr > 2) R(cx - Math.floor(wr * 0.35), cy - Math.floor(r * 0.45), 2, 2, '#fff');
   }
-  function sprite(rows, x, y, pal, s) {
+  function sprite(rows, x, y, pal, s, flip) {
     s = s || 1;
-    for (var j = 0; j < rows.length; j++) for (var i = 0; i < rows[j].length; i++) {
-      var ch = rows[j][i]; if (ch === '.') continue;
-      R(x + i * s, y + j * s, s, s, pal[ch]);
-    }
+    for (var j = 0; j < rows.length; j++) { var row = rows[j];
+      for (var i = 0; i < row.length; i++) {
+        var ch = row[flip ? row.length - 1 - i : i]; if (ch === '.') continue;
+        R(x + i * s, y + j * s, s, s, pal[ch]);
+      } }
   }
-  function outline(x, y, w, h, c) {
-    R(x, y, w, 1, c); R(x, y + h - 1, w, 1, c); R(x, y, 1, h, c); R(x + w - 1, y, 1, h, c);
-  }
-  function chomper(cx, cy, r, t, dir, col) {
-    var mouth = 0.08 + 0.55 * Math.abs(Math.sin(t * 9));
-    for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
-      if (dx * dx + dy * dy > r * r) continue;
-      var ang = Math.atan2(dy, dx * dir);
-      if (Math.abs(ang) < mouth) continue;
-      var shade = (dy > r * 0.35) ? col[2] : (dy < -r * 0.45 ? col[0] : col[1]);
-      R(cx + dx, cy + dy, 1, 1, shade);
-    }
-    R(cx + dir * 2, cy - Math.floor(r * 0.5), 2, 2, '#07041a');
-  }
-  var GHOST = ['...XXXX...','..XXXXXX..','.XXXXXXXX.','.XWWXXWWX.','.XWBXXWBX.','.XXXXXXXX.','.XXXXXXXX.','.XXXXXXXX.','.XX.XX.XX.','..X.XX.X..'];
-  var HEAD = ['..HHHHH..','.HHHHHHH.','.HSSSSSH.','.HSESESH.','.HSSSSSH.','.HSSMSSH.','..SSSSS..','...SSS...','.CCCCCCC.','CCCCCCCCC'];
+  function ring(cx, cy, r, col) { for (var a = 0; a < 6.283; a += 0.05) R(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.55, 2, 2, col); }
+  function sparkle(x, y, sz, col) { R(x - sz, y, sz * 2 + 1, 1, col); R(x, y - sz, 1, sz * 2 + 1, col); }
+  function caption(s, col) { R(0, 164, W, 16, 'rgba(13,5,37,.88)'); txt(s, W / 2, 168, 8, col || C.fg, 'center'); }
 
-  /* ---------- background maze ---------- */
-  function maze(t, dimmed) {
-    R(0, 0, W, H, C.bg);
-    var wc = dimmed ? C.dim : C.wall;
-    outline(3, 3, W - 6, H - 6, wc); outline(5, 5, W - 10, H - 10, C.dim);
-    var blocks = [[16,22,44,14],[W-60,22,44,14],[16,H-36,44,14],[W-60,H-36,44,14],[16,H/2-6,14,12],[W-30,H/2-6,14,12]];
-    blocks.forEach(function (b) { outline(b[0], b[1], b[2], b[3], wc); outline(b[0] + 2, b[1] + 2, b[2] - 4, b[3] - 4, C.dim); });
-    for (var x = 14; x < W - 10; x += 8) {
-      var on = (Math.floor(t * 2) + x / 8) % 2 === 0;
-      if (x % 40 === 6) diamond(x, 11, 2, GEM.gold, 2);
-      else if (on) R(x, 11, 1, 1, C.gold);
-      if (on) R(x, H - 12, 1, 1, C.gold);
+  /* ---------- sprites ---------- */
+  var GIRL_UP = [
+    '...HHHHHH...','..HHhHHHHH..','.HHHHHHHhHH.','.HHSSSSSSHH.','.HHSESSESHH.','.HHSSSSSSHH.',
+    '.HHSSLLSSHH.','.HHHSSSSHHH.','.HH.SSSS.HH.','.HHDDDDDDHH.','.HSDDDDDDSH.','.HSDDDDDDSH.',
+    '..SDDDDDDS..','...DDDDDD...','..KKKKKKKK..','.KKKKKKKKKK.'];
+  var GIRL_LEGS = {
+    stand: ['...SS..SS...','...SS..SS...','...SS..SS...','..BBB..BBB..'],
+    walk:  ['...SS..SS...','..SS....SS..','..SS....SS..','..BB....BB..']
+  };
+  var GIRL_PAL = { H:'#2b0f3f', h:'#ff5fc8', S:'#a8683f', E:'#07041a', L:'#ff2f7a', D:'#ff5fc8', K:'#5b3df5', B:'#5ff3ff' };
+  function girl(x, feet, t, dir, moving, phone) {
+    var f = moving ? (Math.floor(t * 6) % 2 ? 'walk' : 'stand') : 'stand';
+    var bob = (moving && Math.floor(t * 6) % 2) ? 1 : 0;
+    var rows = GIRL_UP.concat(GIRL_LEGS[f]), y = feet - 40 - bob;
+    sprite(rows, x - 12, y, GIRL_PAL, 2, dir < 0);
+    if (phone) {
+      var col = dir > 0 ? 10 : 1, px = x - 12 + col * 2 - 1, py = y + 16;
+      R(px, py, 5, 8, '#0d0525'); R(px + 1, py + 1, 3, 6, Math.floor(t * 4) % 2 ? C.cyan : '#b8fbff');
     }
   }
+  var CLI = ['..HHHHH..','.HHHHHHH.','.HSSSSSH.','.HSESESH.','.HSSSSSH.','..SSMSS..','...SSS...','.CCCCCCC.','CCCCCCCCC','SCCCCCCCS','.CCCCCCC.','..CC.CC..'];
+  var CLI_LEGS = { stand:['..LL.LL..','..BB.BB..'], walk:['..LL..LL.','..BB..BB.'] };
+  var SKIN = ['#8d5a3b','#5c3a26','#c68a5e','#3f2618','#a86f48','#7a4a2e','#d9a07a','#4a2c1a'];
+  var HAIR = ['#1b1030','#2b1a0e','#4a2a14','#1b1030','#6b3a1a','#2b1a0e','#1b1030','#4a2a14'];
+  var CLOTH = ['#5b3df5','#5ff3ff','#ffd86b','#5dffb0','#b57bff','#ff8a5f','#5fa0ff','#ff5a6e'];
+  var HEART = ['.XX.XX.','XXXXXXX','XXXXXXX','.XXXXX.','..XXX..','...X...'];
+  function client(x, feet, i, t, glam, moving) {
+    var f = moving ? (Math.floor(t * 8 + i) % 2 ? 'walk' : 'stand') : 'stand';
+    var pal = { H: glam ? '#ff5fc8' : HAIR[i % 8], S: SKIN[i % 8], E:'#07041a', M: glam ? '#ff2f7a' : '#07041a', C: CLOTH[i % 8], L:'#2a1a6e', B:'#e9e4ff' };
+    var y = feet - 28;
+    sprite(CLI.concat(CLI_LEGS[f]), x - 9, y, pal, 2);
+    if (glam) {
+      diamond(x, y - 8 + Math.round(Math.sin(t * 5 + i)), 4, GEM.cyan, 4);
+      sparkle(x + 12, y + 4 + Math.round(Math.sin(t * 4 + i) * 2), 2, '#fff');
+      sparkle(x - 13, y + 12 + Math.round(Math.cos(t * 4 + i) * 2), 1, C.gold);
+    } else {
+      sprite(HEART, x - 7, y - 11 - Math.round(Math.abs(Math.sin(t * 6 + i)) * 3), { X: C.pink }, 2);
+    }
+  }
+  var ICON = {
+    lipstick: { rows:['..RR..','.RRRR.','.RRRR.','.GGGG.','.GGGG.','.GGGG.','GGGGGG'], pal:{R:'#ff2f7a',G:'#ffd86b'}, col:'#ff2f7a', name:'LIPSTICK' },
+    nails:    { rows:['..WW...','..WW...','.CCCCC.','CCCCCCC','CCWCCCC','CCCCCCC','.CCCCC.'], pal:{W:'#fff',C:'#5ff3ff'}, col:'#5ff3ff', name:'NAILS' },
+    lashes:   { rows:['X.X.XX.X.X','.XXXXXXXX.','..XXPPXX..','...XXXX...'], pal:{X:'#e9e4ff',P:'#b57bff'}, col:'#b57bff', name:'LASHES' },
+    hair:     { rows:['..BBBB..','.BWBWBW.','.BBBBBB.','...GG...','...GG...','...GG...'], pal:{B:'#ff5fc8',W:'#ffc0ec',G:'#ffd86b'}, col:'#ffd86b', name:'HAIR' }
+  };
 
-  /* ---------- scenes (s = seconds into scene) ---------- */
+  /* ---------- world: neon sunset street ---------- */
+  var BLD = [], seed = 7, rx = 0;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  while (rx < 400) { var bw = 14 + Math.floor(rnd() * 18), bh = 18 + Math.floor(rnd() * 38); BLD.push({ x: rx, w: bw, h: bh, k: Math.floor(rnd() * 5) }); rx += bw + 1; }
+  function mix(a, b, k) { return [Math.round(lerp(a[0], b[0], k)), Math.round(lerp(a[1], b[1], k)), Math.round(lerp(a[2], b[2], k))]; }
+  function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
+
+  function salon(lit, t) {
+    var x0 = 196, y0 = 48, w = 108, h = 56;
+    R(x0, y0, w, h, '#2a1250'); outline(x0, y0, w, h, C.wall);
+    R(x0 + 8, y0 + 6, w - 16, 16, '#0d0525'); outline(x0 + 8, y0 + 6, w - 16, 16, lit ? C.pink : '#4a3a7a');
+    txt('BONISA', x0 + w / 2, y0 + 10, 8, lit ? C.cyan : '#6b5a9a', 'center', lit ? C.pink : null);
+    for (var i = 0; i < 12; i++) {
+      var sx = x0 + 4 + i * 8, c1 = i % 2 ? '#fff0fa' : C.pink;
+      R(sx, y0 + 26, 8, 8, c1); R(sx + 1, y0 + 34, 6, 2, c1); R(sx + 2, y0 + 36, 4, 1, c1);
+    }
+    R(x0 + 10, y0 + 40, 40, 14, lit ? '#1b4a7a' : '#0d0525'); outline(x0 + 10, y0 + 40, 40, 14, C.dim);
+    if (lit) { diamond(x0 + 30, y0 + 47, 4, GEM.pink, 4); if (Math.floor(t * 3) % 2) sparkle(x0 + 42, y0 + 44, 2, '#fff'); }
+    R(x0 + 70, y0 + 38, 22, 18, lit ? C.pink : '#4a3a7a'); R(x0 + 72, y0 + 40, 18, 16, '#0d0525'); R(x0 + 86, y0 + 48, 2, 2, C.gold);
+  }
+
+  function world(t, sx, lit) {
+    for (var y = 0; y < 104; y += 4) {
+      var k = y / 104, col = k < 0.6 ? mix([18, 7, 46], [88, 28, 150], k / 0.6) : mix([88, 28, 150], [226, 78, 196], (k - 0.6) / 0.4);
+      R(0, y, W, 4, rgb(col));
+    }
+    for (var s = 0; s < 14; s++) if ((s + Math.floor(t * 2)) % 3) R((s * 53) % W, (s * 17) % 40 + 4, 1, 1, '#ece8ff');
+    var sc = [C.gold, '#ffb888', '#ff8fd0', C.pink];
+    for (var dy = -34; dy <= 0; dy++) {
+      var up = -dy; if (up < 18 && up % 4 < 2) continue;
+      var hw = Math.floor(Math.sqrt(34 * 34 - dy * dy));
+      R(92 - hw, 102 + dy, hw * 2, 1, sc[Math.min(3, Math.floor((34 - up) / 9))]);
+    }
+    var off = -((sx * 0.15) % 400);
+    [0, 400].forEach(function (o) {
+      BLD.forEach(function (b, bi) {
+        var bx = Math.round(b.x + off + o), by = 104 - b.h;
+        R(bx, by, b.w, b.h, '#1c0a40'); R(bx, by, b.w, 1, '#3b1a80');
+        for (var wy = by + 4; wy < 100; wy += 6) for (var wx = bx + 2; wx < bx + b.w - 2; wx += 5)
+          if ((bi * 7 + Math.floor(wy / 6) + Math.floor(wx / 5) + Math.floor(t * 0.8)) % 4 === 0) R(wx, wy, 2, 2, [C.cyan, C.pink, C.gold][(wx + wy) % 3]);
+      });
+    });
+    salon(lit, t);
+    R(0, 104, W, 76, '#150a38'); R(0, 104, W, 2, C.cyan);
+    for (var k2 = -1; k2 < 9; k2++) {
+      var bx2 = Math.round(k2 * 44 - ((sx * 0.6) % 44));
+      outline(bx2, 108, 30, 8, C.wall); outline(bx2 + 2, 110, 26, 4, C.dim);
+    }
+    for (var ln = 0; ln < 3; ln++) { var ly = 124 + ln * 16, so = (sx * 0.8) % 16;
+      for (var dx = -16; dx < W; dx += 16) R(dx + so, ly, 6, 1, C.dim);
+    }
+    var po = (sx * 0.8) % 8;
+    for (var px2 = -8; px2 < W; px2 += 8) R(px2 + po, 162, 2, 2, C.gold);
+    R(0, 0, W, 1, C.wall); R(0, H - 1, W, 1, C.wall); R(0, 0, 1, H, C.wall); R(W - 1, 0, 1, H, C.wall);
+  }
+
+  /* ---------- chase maths (deterministic from scene time) ---------- */
+  function gX(s) { return 160 + 78 * Math.sin(s * 0.85); }
+  function gY(s) { return 146 + 12 * Math.sin(s * 1.7 + 1); }
+  var IT = [1.7, 3.5, 5.3, 7.1], ITEMS = ['lipstick', 'nails', 'lashes', 'hair'];
+  var CL = [ { sp:0,   gl:1.7, side:-1, lane:134 }, { sp:0.2, gl:1.7, side:1, lane:156 }, { sp:1.8, gl:3.5, side:-1, lane:156 }, { sp:2.0, gl:3.5, side:1, lane:136 },
+             { sp:3.6, gl:5.3, side:-1, lane:140 }, { sp:3.8, gl:5.3, side:1, lane:158 }, { sp:5.5, gl:7.1, side:-1, lane:158 }, { sp:5.6, gl:7.1, side:1, lane:134 } ];
+  function clientAt(c, s) {
+    var ts = Math.min(s, c.gl), p = clamp((ts - c.sp) / 1.3, 0, 1), startX = c.side < 0 ? -20 : W + 20, tx = gX(ts) + c.side * 30;
+    return { x: lerp(startX, tx, ease(p)), y: c.lane + Math.sin(ts * 5 + c.sp) * 1.5, moving: s < c.gl && s >= c.sp, glam: s >= c.gl, here: s >= c.sp };
+  }
+
+  /* ---------- scenes ---------- */
   var SC = [];
 
   SC[0] = function (s, t) {
-    maze(t, false);
-    var word = 'BONISA', shown = Math.min(6, Math.floor(s * 5));
-    var cyc = [C.cyan, C.pink, C.cyan][Math.floor(s * 3) % 3];
-    txt(word.slice(0, shown), W / 2 - 72, 36, 24, C.cyan, 'left', C.pink);
-    if (shown < 6 && Math.floor(s * 4) % 2 === 0) R(W / 2 - 72 + shown * 24, 36, 18, 24, C.cyan);
-    if (s > 1.6) txt('VERIFIED BEAUTY ARTISTS', W / 2, 74, 8, C.fg, 'center');
-    if (s > 2.0) txt('SOUTH AFRICA', W / 2, 88, 8, C.gold, 'center');
-    var cx = -16 + s / 6.4 * (W + 40), eaten = 0;
-    for (var i = 0; i < 15; i++) {
-      var px = 20 + i * 20;
-      if (px > cx) diamond(px, 122, 4, GEM[['cyan','pink','gold'][i % 3]], 4); else eaten++;
+    world(t, t * 10, s > 3.2 && (s > 3.9 || Math.floor(s * 18) % 2 === 0));
+    girl(-14 + s * 28, 150, t, 1, true, true);
+    if (s < 2.6) {
+      txt('BONISA', W / 2 - 72, 12, 24, C.cyan, 'left', C.pink);
+      if (s > 0.8) { R(0, 40, W, 12, 'rgba(7,4,26,.6)'); txt('VERIFIED BEAUTY ARTISTS', W / 2, 43, 8, C.fg, 'center'); }
     }
-    chomper(cx, 122, 10, t, 1, GEM.gold);
-    txt('SCORE ' + String(eaten * 100).padStart(4, '0'), 14, 18, 8, C.fg, 'left');
-    if (s > 3) txt('EVERY GIRL LIKES DIAMONDS', W / 2, 150, 8, C.pink, 'center');
+    if (s > 2.8) caption('A WORLD WHERE ARTISTS GET FOUND', C.gold);
   };
 
   SC[1] = function (s, t) {
-    maze(t, true);
-    txt('THE GATE', W / 2, 16, 16, C.cyan, 'center', C.pink);
-    var gx = 168, cx = s < 3.5 ? -30 : -30 + 100 * (s - 3.5);
-    var open = ease((cx - 120) / 40);
-    // lane floor
-    for (var y = 52; y < 134; y += 8) R(gx - 1, y, 2, 4, C.pink);
-    // gate bar slides up when open
-    var gh = Math.round(82 * (1 - open));
-    R(gx - 3, 52, 6, gh, C.pink);
-    for (var gy = 52; gy < 52 + gh; gy += 6) R(gx - 3, gy, 6, 2, '#b3278a');
-    if (open < 1) sprite(['.XXX.','X...X','XXXXX','XXXXX','XXXXX'], gx - 7, 88, { X: C.gold }, 2); // lock
-    // ghosts bounce off the gate
-    [[62, 0], [118, 2.1]].forEach(function (g) {
-      var gxp = 24 + 112 * Math.abs(Math.sin(s * 1.1 + g[1]));
-      var flash = Math.floor(s * 6) % 2 === 0 && gxp > 120;
-      sprite(GHOST, gxp - 10, g[0] - 10, { X: flash ? C.fg : C.red, W: '#fff', B: C.wall }, 2);
-    });
-    // diamonds beyond the gate
-    for (var i = 0; i < 7; i++) { var px = 196 + i * 18; if (px > cx) diamond(px, 93, 4, GEM[['cyan','pink','gold'][i % 3]], 4); }
-    if (cx > -20) {
-      chomper(cx, 93, 10, t, 1, GEM.pink);
-      diamond(cx, 76, 3, GEM.cyan, 3); // verified badge
+    var lit = s > 6.3;
+    world(t, s < 2.5 ? t * 10 : 0, lit);
+    var gx = s < 2.5 ? 30 + s * 55 : 167, hand = [gx + 10, 124];
+    girl(gx, 150, t, 1, s < 2.5, true);
+    var dx0 = 212, dy0 = 144;
+    if (s < 2.5) diamond(dx0, dy0 + Math.round(Math.sin(t * 5) * 2), 8, GEM.cyan, 8), txt('B', dx0, dy0 - 3, 8, '#0d0525', 'center');
+    else if (s < 3.6) {
+      var k = ease((s - 2.5) / 1.0), dxp = lerp(dx0, hand[0], k), dyp = lerp(dy0, hand[1], k) - Math.sin(k * Math.PI) * 14;
+      diamond(dxp, dyp, Math.round(lerp(8, 4, k)), GEM.cyan, Math.round(lerp(8, 4, k)));
     }
-    txt(s < 3.5 ? 'NOT VERIFIED? THE GATE STAYS SHUT' : 'VERIFIED? COME ON IN', W / 2, 150, 8, s < 3.5 ? C.red : C.green, 'center');
+    if (s < 2.5) caption('SHE SPOTS SOMETHING SHINY', C.gold);
+    else if (s < 3.6) caption('THE DIAMOND IS BONISA', C.cyan);
+    if (s >= 3.6 && s < 7.2) {
+      var e = ease((s - 3.6) / 0.7), fade = s > 6.7 ? 1 - (s - 6.7) / 0.5 : 1;
+      ctx.fillStyle = 'rgba(7,4,26,' + (0.65 * e * fade) + ')'; ctx.fillRect(0, 0, W, H);
+      var ax = lerp(hand[0], 120, e), ay = lerp(hand[1], 14, e), aw = lerp(5, 80, e), ah = lerp(8, 140, e);
+      ctx.globalAlpha = fade;
+      R(ax, ay, aw, ah, '#e9e4ff'); R(ax + 2, ay + 2, aw - 4, ah - 4, '#1a0b3d');
+      if (e >= 1) {
+        for (var b = 0; b < 8; b++) R(124, 20 + b * 16, 72, 16, rgb(mix([26, 11, 61], [120, 40, 160], b / 7)));
+        txt('BONISA', 160, 26, 8, C.cyan, 'center', C.pink);
+        if (s > 4.3) sprite(['..HHHHH..','.HHHHHHH.','.HSSSSSH.','.HSESESH.','.HSSSSSH.','..SSMSS..','...SSS...','.CCCCCCC.','CCCCCCCCC'], 142, 42, { H:'#2b0f3f', S:'#a8683f', E:'#07041a', M:'#ff2f7a', C:'#ff5fc8' }, 4);
+        if (s > 5.0) { diamond(184, 46, 6, GEM.cyan, 6); }
+        if (s > 5.2) { R(126, 92, 68, 12, C.green); txt('VERIFIED', 160, 94, 8, '#07041a', 'center'); }
+        if (s > 5.8 && Math.floor(s * 4) % 2 === 0) { R(128, 114, 64, 14, C.pink); txt('GO LIVE', 160, 117, 8, '#fff', 'center'); }
+        else if (s > 5.8) { R(128, 114, 64, 14, '#b3278a'); txt('GO LIVE', 160, 117, 8, '#fff', 'center'); }
+      }
+      ctx.globalAlpha = 1;
+      if (s > 4.3 && s < 6.7) caption(s < 5.2 ? 'BONISA KNOWS WHO SHE IS' : 'NOW SHE IS A VERIFIED ARTIST', s < 5.2 ? C.cyan : C.green);
+    }
+    if (s >= 6.3 && s < 6.9) { ctx.fillStyle = 'rgba(255,255,255,' + (1 - (s - 6.3) / 0.6) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (s >= 6.7) {
+      client(10, 150, 1, t, false, false); client(310, 152, 3, t, false, false);
+      ring(gx, 130, ((s - 6.7) * 120) % 130, C.pink);
+      caption('SHE IS LIVE. CLIENTS CAN FIND HER.', C.green);
+    }
   };
 
   SC[2] = function (s, t) {
-    maze(t, true);
-    txt('BOOKINGS', W / 2, 16, 16, C.cyan, 'center', C.pink);
-    var gx0 = 24, gy0 = 50, cw = 18, ch = 14, hc = 4, hr = 1;
-    txt('CALENDAR', gx0, 38, 8, C.muted, 'left');
-    for (var r = 0; r < 4; r++) for (var c = 0; c < 7; c++) {
-      var x = gx0 + c * cw, y = gy0 + r * ch;
-      outline(x, y, cw - 2, ch - 2, (c === hc && r === hr && s > 1) ? C.cyan : C.dim);
+    world(t, 0, true);
+    var gx = 150, gy = 148, shake = s > 4.2 ? Math.round(Math.sin(t * 40)) : 0;
+    for (var o = 0; o < 4; o++) { var a = t * 2 + o * 1.57; diamond(gx + Math.cos(a) * 26, gy - 56 + Math.sin(a) * 8, 3, GEM[['cyan','pink','gold','cyan'][o]], 3); }
+    var list = [];
+    for (var i = 0; i < 6; i++) {
+      var side = i % 2 ? 1 : -1, tx = gx + side * (46 + Math.floor(i / 2) * 22), sx0 = side < 0 ? -20 : W + 20, p = ease((s - i * 0.3) / 1.6);
+      var near = s > 4.2 ? side * -Math.round((s - 4.2) * 6) : 0;
+      list.push({ x: lerp(sx0, tx, p) + near, y: [136, 148, 158][i % 3], i: i, mv: p < 1 && s > i * 0.3 });
     }
-    var cellX = gx0 + hc * cw + 8, cellY = gy0 + hr * ch + 6;
-    var px = 180, py = 64, bx = 180, by = 70, bw = 120;
-    txt('ONE BOOKING', px, 38, 8, C.muted, 'left');
-    if (s > 1 && s < 2.4) { var k = ease((s - 1.2) / 1.0); diamond(cellX + (px + 8 - cellX) * k, cellY + (by + 5 - cellY - 20 * Math.sin(k * Math.PI)) * k - 0, 4, GEM.cyan, 4); }
-    else if (s <= 1) { /* waiting */ }
-    if (s >= 1 && s < 1.2) diamond(cellX, cellY, 4, GEM.cyan, 4);
-    outline(bx - 1, by - 1, bw + 2, 14, C.fg);
-    var fill = ease((s - 2.4) / 1.2);
-    var a = Math.round(bw * 0.82 * fill), b = Math.round(bw * 0.18 * fill);
-    R(bx, by, a, 12, C.cyan); R(bx + a, by, b, 12, C.pink);
-    for (var y2 = by; y2 < by + 12; y2 += 3) { R(bx, y2, a, 1, '#1fa8d6'); }
-    if (s > 3.4) { txt('ARTIST 82%', bx, 92, 8, C.cyan, 'left'); txt('BONISA 18%', bx, 106, 8, C.pink, 'left'); }
-    if (s > 4.6) txt('SAVED WITH EVERY BOOKING', W / 2, 150, 8, C.gold, 'center');
+    list.concat([{ x: gx + shake, y: gy, girl: true }]).sort(function (a, b) { return a.y - b.y; }).forEach(function (o2) {
+      if (o2.girl) girl(o2.x, o2.y, t, s > 4.2 ? -1 : 1, false, true); else client(o2.x, o2.y, o2.i, t, false, o2.mv);
+    });
+    if (s < 4.2) caption('VERIFIED ARTISTS ATTRACT CLIENTS', C.gold);
+    else { if (Math.floor(s * 5) % 2 === 0) txt('RUN!', W / 2, 40, 24, C.red, 'center', '#fff'); caption('EVERYONE WANTS HER', C.pink); }
   };
 
-  var SKIN = ['#8d5a3b', '#5c3a26', '#c68a5e', '#3f2618', '#a86f48'], HAIR = ['#1b1030', '#ff5fc8', '#5ff3ff', '#2b1a0e', '#ffd86b'], CLOTH = ['#5b3df5', '#ff5fc8', '#5ff3ff', '#ffd86b', '#5dffb0'];
   SC[3] = function (s, t) {
-    maze(t, true);
-    txt('CAMPAIGNS', W / 2, 16, 16, C.cyan, 'center', C.pink);
-    txt('BRANDS PICK FROM A VERIFIED POOL', W / 2, 40, 8, C.fg, 'center');
-    var locked = s > 4, idx = locked ? 2 : Math.floor(s * 3) % 5;
-    for (var i = 0; i < 5; i++) {
-      var x = 44 + i * 52, y = 78;
-      var dim = !locked || i === 2;
-      sprite(HEAD, x, y, { H: HAIR[i], S: SKIN[i], E: '#07041a', M: '#07041a', C: CLOTH[i] }, 3);
-      if (!dim) { ctx.fillStyle = 'rgba(7,4,26,.65)'; ctx.fillRect(x, y, 27, 30); }
-      diamond(x + 13, y - 10, 4, GEM.cyan, 4);
-    }
-    var fx = 44 + idx * 52 - 5, fy = 78 - 20;
-    var blink = !locked || Math.floor(s * 6) % 2 === 0;
-    if (blink) { outline(fx, fy, 37, 56, locked ? C.green : C.gold); outline(fx + 1, fy + 1, 35, 54, locked ? C.green : C.gold); }
-    txt(locked ? 'CAMPAIGN STAFFED' : 'SCANNING VERIFIED ARTISTS', W / 2, 150, 8, locked ? C.green : C.gold, 'center');
+    world(t, t * 40, true);
+    var gx = gX(s), gy = gY(s), dir = Math.cos(s * 0.85) >= 0 ? 1 : -1, objs = [], glammed = 0;
+    CL.forEach(function (c, i) { var p = clientAt(c, s); if (p.here) { objs.push({ x: p.x, y: p.y, i: i, glam: p.glam, mv: p.moving }); if (p.glam) glammed++; } });
+    // power-ups lying in the street before she grabs them
+    IT.forEach(function (it, k) {
+      if (s > it - 1.1 && s < it) { var ix = gX(it), iy = gY(it) - 8, ic = ICON[ITEMS[k]];
+        ring(ix, iy + 6, 6 + Math.round(Math.sin(t * 8) * 2), ic.col);
+        sprite(ic.rows, ix - ic.rows[0].length, iy - ic.rows.length * 2 + Math.round(Math.sin(t * 6) * 2), ic.pal, 2); }
+    });
+    objs.push({ x: gx, y: gy, girl: true });
+    objs.sort(function (a, b) { return a.y - b.y; }).forEach(function (o) {
+      if (o.girl) girl(o.x, o.y, t, dir, true, false); else client(o.x, o.y, o.i, t, o.glam, o.mv);
+    });
+    var label = null;
+    IT.forEach(function (it, k) {
+      var d = s - it;
+      if (d >= 0 && d < 1.0) {
+        var ic = ICON[ITEMS[k]]; ring(gx, gy - 20, d * 140, ic.col); if (d < 0.5) ring(gx, gy - 20, d * 140 - 10, '#fff');
+        label = ic;
+        txt(ic.name + '!', clamp(gx, 50, 270), 22, 8, ic.col, 'center', '#07041a');
+      }
+    });
+    txt('GLAMMED ' + glammed + '/8', 10, 8, 8, C.fg, 'left', '#07041a');
+    if (s < 1.5) caption('DODGE CLIENTS WITH BEAUTY POWER', C.gold);
+    else if (s > 7.6) caption('EVERY CLIENT GLAMMED AND BOOKED', C.green);
+    else if (label) caption(label.name === 'HAIR' ? 'HAIR FLIP' : 'POWER UP: ' + label.name, label.col);
+    else caption('KEEP RUNNING', C.pink);
   };
 
   SC[4] = function (s, t) {
-    maze(t, true);
-    // falling diamonds
-    for (var i = 0; i < 14; i++) {
-      var fx = 12 + (i * 53) % (W - 24), spd = 18 + (i % 4) * 9;
-      var fy = ((s * spd + i * 41) % (H + 20)) - 10;
-      diamond(fx, fy, 3, GEM[['cyan','pink','gold'][i % 3]], 3);
+    world(t, 0, true);
+    var objs = [];
+    for (var i = 0; i < 8; i++) objs.push({ x: 28 + i * 21, y: 150, i: i, hop: Math.abs(Math.sin(t * 4 + i)) * 3 });
+    objs.push({ x: 230, y: 150, girl: true });
+    objs.forEach(function (o) { if (o.girl) girl(o.x, o.y, t, -1, false, true); else client(o.x, o.y - Math.round(o.hop), o.i, t, true, false); });
+    if (s < 2.5) caption('EVERY CLIENT GLAMMED AND BOOKED', C.green);
+    if (s >= 2.5 && s < 5) {
+      R(40, 8, 240, 52, 'rgba(7,4,26,.85)'); outline(40, 8, 240, 52, C.wall);
+      txt('EVERY BOOKING SAVES THE SPLIT', W / 2, 16, 8, C.fg, 'center');
+      var f = ease((s - 2.8) / 1.0), a = Math.round(160 * 0.82 * f), b = Math.round(160 * 0.18 * f);
+      outline(79, 29, 162, 14, C.fg); R(80, 30, a, 12, C.cyan); R(80 + a, 30, b, 12, C.pink);
+      if (s > 3.8) { txt('ARTIST 82%', 80, 47, 8, C.cyan, 'left'); txt('BONISA 18%', 240, 47, 8, C.pink, 'right'); }
+      caption('HER WORK. HER MONEY. HER NAME.', C.gold);
     }
-    var tw = Math.min(1, s / 1.2);
-    txt('EVERY GIRL LIKES', W / 2, 14, 16, C.fg, 'center', C.wall);
-    txt('DIAMONDS', W / 2, 36, 16, C.pink, 'center', '#b3278a');
-    var wr = Math.max(3, Math.round(24 * Math.abs(Math.cos(s * 1.8))));
-    var rr = Math.round(24 + 2 * Math.sin(s * 4));
-    diamond(W / 2, 98, rr, GEM.cyan, wr);
-    // sparkles
-    for (var k = 0; k < 6; k++) {
-      var ph = (s * 1.5 + k / 6) % 1;
-      var sx = W / 2 + Math.cos(k * 1.05) * 44, sy = 98 + Math.sin(k * 1.9) * 28;
-      var sz = Math.round(4 * Math.sin(ph * Math.PI));
-      if (sz > 0) { R(sx - sz, sy, sz * 2 + 1, 1, '#fff'); R(sx, sy - sz, 1, sz * 2 + 1, '#fff'); }
+    if (s >= 5) {
+      var al = Math.min(0.78, (s - 5) / 0.8 * 0.78);
+      ctx.fillStyle = 'rgba(7,4,26,' + al + ')'; ctx.fillRect(0, 0, W, H);
+      for (var j = 0; j < 14; j++) { var fx = 12 + (j * 53) % (W - 24), fy = (((s - 5) * (18 + (j % 4) * 9) + j * 41) % (H + 20)) - 10; diamond(fx, fy, 3, GEM[['cyan','pink','gold'][j % 3]], 3); }
+      txt('EVERY GIRL LIKES', W / 2, 20, 16, C.fg, 'center', C.wall);
+      txt('DIAMONDS', W / 2, 42, 16, C.pink, 'center', '#b3278a');
+      var wr = Math.max(3, Math.round(22 * Math.abs(Math.cos(s * 1.8)))), rr = Math.round(22 + 2 * Math.sin(s * 4));
+      diamond(W / 2, 104, rr, GEM.cyan, wr);
+      for (var k = 0; k < 6; k++) { var ph = (s * 1.5 + k / 6) % 1, sz = Math.round(4 * Math.sin(ph * Math.PI)); if (sz > 0) sparkle(W / 2 + Math.cos(k * 1.05) * 44, 104 + Math.sin(k * 1.9) * 26, sz, '#fff'); }
+      txt('BONISA', W / 2, 150, 16, C.cyan, 'center', C.pink);
     }
-    txt('BONISA', W / 2, 146, 16, C.cyan, 'center', C.pink);
   };
 
-  /* ---------- scene text for the player ---------- */
   var INFO = [
-    ['LEVEL 1  WELCOME', 'Bonisa is South Africa\'s verified network for beauty artists. The chomper eats diamonds the way Pac-Man eats pellets.'],
-    ['LEVEL 2  THE GATE', 'Verification is a gate. Unverified artists bounce off it. A verified artist walks straight through.'],
-    ['LEVEL 3  BOOKINGS', 'When a client books, the money split is saved on the booking: 82% to the artist and 18% to Bonisa.'],
-    ['LEVEL 4  CAMPAIGNS', 'Brands pick artists for their campaigns, and only from the verified pool.'],
-    ['LEVEL 5  THE END', 'Every girl likes diamonds. Bonisa makes sure the artists behind the sparkle are real.']
+    ['LEVEL 1  THE STREET', 'Meet the artist. She walks through a neon city where everything is Bonisa, even the salon sign.'],
+    ['LEVEL 2  THE DIAMOND', 'She finds a diamond on the street. The diamond is Bonisa. She picks it up, gets verified on her phone and goes live.'],
+    ['LEVEL 3  CLIENTS ARRIVE', 'Verified artists get found. Clients come running from both sides, and they all want her.'],
+    ['LEVEL 4  THE CHASE', 'She dodges the crowd with beauty power-ups: lipstick, nails, lashes and a hair flip. Each one turns clients into glammed, happy bookings.'],
+    ['LEVEL 5  BOOKED', 'Every booking saves the 82 and 18 split. Her work, her money, her name.']
   ];
 
   /* ---------- player ---------- */
   var T = 0, playing = true, last = null, lastScene = -1;
   var $ = function (id) { return document.getElementById(id); };
-  var playBtn = $('play'), scrub = $('scrub'), timeEl = $('time'), chips = $('chips');
-  var chipEls = [];
+  var playBtn = $('play'), scrub = $('scrub'), timeEl = $('time'), chips = $('chips'), chipEls = [];
+  scrub.max = TOTAL;
   for (var i = 0; i < N; i++) (function (i) {
     var b = document.createElement('button'); b.type = 'button'; b.textContent = 'LVL ' + (i + 1);
-    b.addEventListener('click', function () { T = i * DUR; draw(); });
+    b.addEventListener('click', function () { T = STARTS[i]; draw(); });
     chips.appendChild(b); chipEls.push(b);
   })(i);
-
   function fmt(v) { v = Math.floor(v); return Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0'); }
 
   function draw() {
-    var sc = Math.min(N - 1, Math.floor(T / DUR)), s = T - sc * DUR;
+    var sc = N - 1; for (var q = 0; q < N; q++) if (T < STARTS[q] + DURS[q]) { sc = q; break; }
+    var s = T - STARTS[sc];
     ctx.clearRect(0, 0, W, H);
     SC[sc](s, T);
-    var fade = Math.min(s, DUR - s);
-    if (fade < 0.4 && !(sc === 0 && s < 0.4 && T < 0.4) ) {
-      var a = 1 - fade / 0.4; a = Math.round(a * 4) / 4;
-      ctx.fillStyle = 'rgba(7,4,26,' + a + ')'; ctx.fillRect(0, 0, W, H);
-    }
+    var fade = Math.min(s, DURS[sc] - s);
+    if (fade < 0.4 && !(T < 0.4)) { var a = Math.round((1 - fade / 0.4) * 4) / 4; ctx.fillStyle = 'rgba(7,4,26,' + a + ')'; ctx.fillRect(0, 0, W, H); }
     if (sc !== lastScene) {
-      lastScene = sc;
-      $('capTitle').textContent = INFO[sc][0]; $('capText').textContent = INFO[sc][1];
+      lastScene = sc; $('capTitle').textContent = INFO[sc][0]; $('capText').textContent = INFO[sc][1];
       chipEls.forEach(function (b, j) { b.classList.toggle('on', j === sc); });
     }
     scrub.value = T; timeEl.textContent = fmt(T) + ' / ' + fmt(TOTAL);
   }
-
   function frame(ts) {
     if (last == null) last = ts;
     var dt = Math.min(0.1, (ts - last) / 1000); last = ts;
@@ -344,9 +431,9 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
   scrub.addEventListener('input', function () { T = parseFloat(scrub.value); draw(); });
 
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) { setPlaying(false); T = 4; }
-  draw();
+  if (reduce) { setPlaying(false); T = STARTS[3] + 4; }
   var go = function () { draw(); requestAnimationFrame(frame); };
+  draw();
   if (document.fonts && document.fonts.load) {
     Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('16px "Press Start 2P"'), document.fonts.load('24px "Press Start 2P"')]).then(go, go);
   } else go();
