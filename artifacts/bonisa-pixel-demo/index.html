@@ -80,6 +80,7 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
         <div class="sw"><i style="background:#5b3df5"></i>Maze violet</div>
         <div class="sw"><i style="background:#5ff3ff"></i>Ice diamond</div>
         <div class="sw"><i style="background:#ff5fc8"></i>Hot pink</div>
+        <div class="sw"><i style="background:#c97585"></i>Dusty rose</div>
         <div class="sw"><i style="background:#ffd86b"></i>Pellet gold</div>
       </div>
     </div>
@@ -97,6 +98,7 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
       <ul>
         <li>Neon purple and pink sunset over a pixel city</li>
         <li>Pac-Man style maze walls along the street</li>
+        <li>Her phone copies the real Bonisa app: dark screen, dusty rose, an on the way banner, a next booking card and a bottom menu</li>
         <li>Black outlines, shaded skin, soft ground shadows and motion trails, like classic pixel art</li>
         <li>A pixel lotus blooms to reveal the diamond, sits in the salon window and holds the diamond at the end</li>
         <li>Drawn on a tiny 320 by 180 grid, then blown up for the chunky pixels</li>
@@ -328,13 +330,13 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
       ctx.globalAlpha = fade;
       R(ax, ay, aw, ah, '#e9e4ff'); R(ax + 2, ay + 2, aw - 4, ah - 4, '#1a0b3d');
       if (e >= 1) {
-        for (var b = 0; b < 8; b++) R(124, 20 + b * 16, 72, 16, rgb(mix([26, 11, 61], [120, 40, 160], b / 7)));
+        for (var b = 0; b < 8; b++) R(124, 20 + b * 16, 72, 16, rgb(mix([16, 11, 14], [58, 30, 40], b / 7)));
         txt('BONISA', 160, 26, 8, C.cyan, 'center', C.pink);
         txt('JOIN AS', 160, 38, 8, C.fg, 'center');
         if (s > 3.9) {
           var pick = s > 4.8 ? 1 : 0, bx = [126, 149, 172], nm = ['CLIENT', 'ARTIST', 'BRAND'];
           for (var q = 0; q < 3; q++) {
-            R(bx[q], 50, 21, 22, q === pick ? C.pink : '#2a1a6e'); outline(bx[q], 50, 21, 22, q === pick ? '#fff' : C.wall);
+            R(bx[q], 50, 21, 22, q === pick ? '#c97585' : '#2a1a22'); outline(bx[q], 50, 21, 22, q === pick ? '#fff' : '#6b3a46');
             if (q === 0) { R(bx[q] + 8, 54, 5, 5, '#ffd9b0'); R(bx[q] + 6, 60, 9, 7, '#e9e4ff'); }
             if (q === 1) diamond(bx[q] + 10, 61, 6, GEM.cyan, 6);
             if (q === 2) { R(bx[q] + 5, 58, 11, 9, '#e9e4ff'); R(bx[q] + 8, 55, 5, 3, '#e9e4ff'); }
@@ -410,13 +412,22 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
     objs.push({ x: 230, y: 150, girl: true });
     objs.forEach(function (o) { if (o.girl) girl(o.x, o.y, t, -1, false, true); else client(o.x, o.y - Math.round(o.hop), o.i, t, true, false); });
     if (s < 2.5) caption('EVERY CLIENT GLAMMED AND BOOKED', C.green);
-    if (s >= 2.5 && s < 5) {
-      R(40, 8, 240, 52, 'rgba(7,4,26,.85)'); outline(40, 8, 240, 52, C.wall);
-      txt('EVERY BOOKING SAVES THE SPLIT', W / 2, 16, 8, C.fg, 'center');
-      var f = ease((s - 2.8) / 1.0), a = Math.round(160 * 0.82 * f), b = Math.round(160 * 0.18 * f);
-      outline(79, 29, 162, 14, C.fg); R(80, 30, a, 12, C.cyan); R(80 + a, 30, b, 12, C.pink);
-      if (s > 3.8) { txt('ARTIST 82%', 80, 47, 8, C.cyan, 'left'); txt('BONISA 18%', 240, 47, 8, C.pink, 'right'); }
-      caption('HER WORK. HER MONEY. HER NAME.', C.gold);
+    if (s >= 2.5 && s < 5.2) {
+      var e4 = ease((s - 2.5) / 0.5), fd = s > 4.8 ? 1 - (s - 4.8) / 0.4 : 1, RO = '#c97585', INK = '#2a0f18';
+      ctx.fillStyle = 'rgba(7,4,26,' + (0.6 * e4 * fd) + ')'; ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = e4 * fd;
+      R(110, 10, 100, 146, '#e9e4ff'); R(112, 12, 96, 142, '#120d10');
+      txt('TODAY', 160, 18, 8, '#e9d9dc', 'center');
+      if (s > 2.9) { R(116, 30, 88, 16, RO); txt('ON THE WAY', 160, 34, 8, INK, 'center'); }
+      if (s > 3.3) {
+        outline(116, 54, 88, 62, '#6b3a46');
+        txt('NEXT UP', 160, 60, 8, '#9b8088', 'center'); txt('SOFT GLAM', 160, 72, 8, '#fff', 'center');
+        R(122, 84, 76, 12, RO); txt('CONFIRMED', 160, 86, 8, INK, 'center'); txt('AT HOME', 160, 102, 8, '#e9d9dc', 'center');
+      }
+      if (s > 3.9) { outline(116, 122, 88, 18, '#6b3a46'); txt('82% TO YOU', 160, 127, 8, C.gold, 'center'); }
+      for (var ni = 0; ni < 5; ni++) R(124 + ni * 16, 146, 6, 5, ni === 0 ? RO : '#6b3a46');
+      ctx.globalAlpha = 1;
+      caption(s < 3.9 ? 'HER APP SHOWS WHO IS ON THE WAY' : 'HER WORK. HER MONEY. HER NAME.', s < 3.9 ? C.pink : C.gold);
     }
     if (s >= 5) {
       var al = Math.min(0.78, (s - 5) / 0.8 * 0.78);
@@ -428,7 +439,8 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
       diamond(W / 2, 100, rr, GEM.cyan, wr);
       lotus(W / 2, 148, 2, true);
       for (var k = 0; k < 6; k++) { var ph = (s * 1.5 + k / 6) % 1, sz = Math.round(4 * Math.sin(ph * Math.PI)); if (sz > 0) sparkle(W / 2 + Math.cos(k * 1.05) * 44, 100 + Math.sin(k * 1.9) * 26, sz, '#fff'); }
-      txt('BONISA', W / 2, 152, 16, C.cyan, 'center', C.pink);
+      txt('BONISA', W / 2, 150, 16, C.cyan, 'center', C.pink);
+      if (s > 6.5) txt('FIND THE ARTIST. BOOK THE MOMENT.', W / 2, 170, 8, C.fg, 'center', '#07041a');
     }
   };
 
@@ -437,7 +449,7 @@ h2 { font-family: var(--display); font-size: 13px; font-weight: normal; margin: 
     ['LEVEL 2  THE DIAMOND', 'She finds a diamond on the street. The diamond is Bonisa. She picks it up and signs up on her phone as an Artist, chooses her specialty, gets verified and goes live.'],
     ['LEVEL 3  CLIENTS ARRIVE', 'Verified artists get found. Clients come running from both sides, and they all want her.'],
     ['LEVEL 4  THE CHASE', 'She dodges the crowd with beauty power-ups: lipstick, nails, lashes and a hair flip. Each one turns clients into glammed, happy bookings.'],
-    ['LEVEL 5  BOOKED', 'Every booking saves the 82 and 18 split. Her work, her money, her name.']
+    ['LEVEL 5  BOOKED', 'Her app shows who is on the way and what is booked. Every booking saves the 82 and 18 split. Her work, her money, her name.']
   ];
 
   /* ---------- player ---------- */
