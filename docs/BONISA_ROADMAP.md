@@ -52,6 +52,13 @@ The event date is **14 November**. Today is Saturday 10 October, so there are **
 
 **Check on Monday 19 October:** if Peach has not confirmed, decide that day whether the event goes ahead with bookings, or as an awareness launch with a waiting list.
 
+### Update (15 October 2026)
+
+- Two versions of the app are live: this repo and Haiden's newer version. The code audit (`docs/BONISA_STATUS_AUDIT.md`) covers this repo only
+- Tier names approved: Rising, Established, Trusted, Elite
+- Security fixes found by the audit (password hashing, login expiry, rate limiting) must be applied to both versions
+- Decide which version the 14 November event points people to
+
 ### The five streams
 
 **1. Launch events with Favour (event coordinator for Hayden's team)**

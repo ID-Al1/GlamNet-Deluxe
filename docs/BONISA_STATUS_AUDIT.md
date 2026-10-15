@@ -79,9 +79,13 @@ Status key: **Done** (confirmed in code), **Partial**, **Not started**, **Blocke
 
 Nothing is proven end to end, because the app was not run against a live database here. The code paths exist for signup, verification, gated browse and booking, 18/82 escrow records, manual payouts, complaints and the owner area. Live payments have never been tested.
 
-## 6. Questions for the owner
+## 6. Owner answers (15 October 2026)
 
-1. Which version is live: this repo or Haiden's newer link?
+1. **Which version is live:** both this repo and Haiden's newer version. Consequence: the audit covers only this repo. Haiden's version is unaudited, security fixes must be applied to both, and we still need to know whether the two share a database or user accounts.
+2. **Tier names approved:** Rising, Established, Trusted and Elite. Cutoffs (40, 70, 85) are still only in the frontend and should move to the server.
+
+## 7. Open questions
+
+1. Do the two versions share one database, one login system and one set of artists?
 2. Are salons and somatologists in scope for launch, given the rule that profiles are individuals?
-3. Are the tier names Rising, Established, Trusted and Elite approved, or placeholders?
-4. Is Haiden's version using the same database as this repo?
+3. Which version will the 14 November event send people to?
