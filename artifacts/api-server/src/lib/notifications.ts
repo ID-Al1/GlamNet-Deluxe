@@ -66,6 +66,9 @@ export type NotificationEvent =
 
   // ── Progression ───────────────────────────────────────────────────────────
   | "tier.changed"              // → artist
+  | "safety.reminder"           // → artist (please confirm you are safe)
+  | "safety.alert"              // → owner (an artist says she needs help)
+  | "tier.lowered"              // → artist (monthly review moved her down)
 
   // ── Owner updates: one-to-many messages from Bonisa ───────────────────────
   | "artist.update"             // → artist
@@ -118,6 +121,9 @@ const CHANNEL_POLICY: Record<NotificationEvent, "whatsapp" | "both"> = {
   "casting.accepted": "both",
   "casting.declined": "both",
   "tier.changed": "both",
+  "tier.lowered": "both",
+  "safety.reminder": "both",
+  "safety.alert": "whatsapp",
   "artist.update": "both",
   "artist.reminder": "both",
   "artist.email": "both",
@@ -306,6 +312,29 @@ function formatMessage(event: NotificationEvent, data: NotificationData): string
         `🏅 *You're now ${data.newTier} on Bonisa*\n\n` +
         `Your reputation has moved you up from ${data.previousTier}.\n\n` +
         `${data.nextGoal ?? "Keep going."}`
+      );
+
+    case "safety.reminder":
+      return (
+        `💛 *Are you safe?*\n\n` +
+        `Your booking with ${data.clientName ?? "your client"} (${data.serviceName ?? "service"}) should be finished. ` +
+        `Please open Bonisa and check in: add a photo and let us know you are safe${data.note ? `. ${data.note}` : ""}.\n\n` +
+        `It takes a minute, and it keeps every Bonisa artist safer.`
+      );
+    case "safety.alert":
+      return (
+        `🚨 *Artist needs help*\n\n` +
+        `${data.artistName} checked in and said she needs help after a booking (${data.serviceName ?? "service"}, ${data.clientName ?? "client"}).\n` +
+        `Check-in code: ${data.note ?? ""}\n\n` +
+        `Contact her now, then open the owner portal, Safety, for the photo and details.`
+      );
+
+    case "tier.lowered":
+      return (
+        `📋 *Your Bonisa tier has changed*\n\n` +
+        `After two monthly reviews, your standing now fits ${data.newTier} (it was ${data.previousTier}).\n\n` +
+        `${data.nextGoal ?? ""}\n` +
+        `Open Bonisa, Reputation, to see why and how to move back up. If anything looks wrong, you can ask us to review it.`
       );
 
     case "artist.update":
@@ -542,6 +571,19 @@ function formatEmail(event: NotificationEvent, data: NotificationData): { subjec
           `we hand out, and it isn't something anyone can buy.\n\n` +
           (data.nextGoal ? `${data.nextGoal}\n\n` : "") +
           `Higher tiers unlock campaigns that are closed to lower ones.` +
+          sign,
+      };
+
+    case "tier.lowered":
+      return {
+        subject: `Your Bonisa tier has changed`,
+        body:
+          `Hi ${who},\n\n` +
+          `After two monthly reviews in a row, your standing now fits ${data.newTier} (it was ${data.previousTier}). ` +
+          `A single bad review or one isolated event never lowers a tier.\n\n` +
+          (data.nextGoal ? `${data.nextGoal}\n\n` : "") +
+          `Open Bonisa and go to Reputation to see exactly what changed and how to move back up. ` +
+          `If any record looks wrong, you can ask us to review it there.` +
           sign,
       };
 

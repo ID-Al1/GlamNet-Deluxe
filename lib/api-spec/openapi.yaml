@@ -19,6 +19,8 @@ tags:
     description: Appointment booking
   - name: messages
     description: Client-stylist messaging
+  - name: reputation
+    description: Artist reputation, tiers, cancellations and safety check-ins
   - name: casting
     description: Brand casting calls
   - name: dashboard
@@ -1588,6 +1590,196 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /reputation/me:
+    get:
+      operationId: getMyReputation
+      tags: [reputation]
+      summary: The signed-in artist's reputation, in plain terms
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistReputation" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /reputation/events/{eventId}/dispute:
+    post:
+      operationId: disputeReputationEvent
+      tags: [reputation]
+      summary: Ask for a cancellation, no-show or conduct record to be reviewed
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/DisputeInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /appointments/{appointmentId}/artist-cancel:
+    post:
+      operationId: artistCancelBooking
+      tags: [reputation]
+      summary: An artist cancels a confirmed booking. Notice decides what it means.
+      parameters:
+        - { name: appointmentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { $ref: "#/components/schemas/ArtistCancelInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ArtistCancelResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /safety/pending:
+    get:
+      operationId: listPendingCheckins
+      tags: [reputation]
+      summary: Jobs the artist has not checked in for yet
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/PendingCheckin" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /appointments/{appointmentId}/safety-checkin:
+    post:
+      operationId: safetyCheckin
+      tags: [reputation]
+      summary: "After a job: a photo, confirm you are safe, get a check-in code"
+      parameters:
+        - { name: appointmentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SafetyCheckinInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/SafetyCheckinResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/reputation:
+    get:
+      operationId: listOwnerReputation
+      tags: [owner]
+      summary: Every verified artist with her tier and score
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerReputationRow" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/reputation/disputes:
+    get:
+      operationId: listOwnerReputationDisputes
+      tags: [owner]
+      summary: Disputes waiting for a decision
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerReputationDispute" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/reputation/{stylistId}:
+    get:
+      operationId: getOwnerArtistReputation
+      tags: [owner]
+      summary: One artist's full standing, events and audit trail
+      parameters:
+        - { name: stylistId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/OwnerArtistReputation" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /owner/reputation/disputes/{disputeId}/resolve:
+    post:
+      operationId: resolveReputationDispute
+      tags: [owner]
+      summary: Uphold or reject a dispute, with a reason
+      parameters:
+        - { name: disputeId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ResolveDisputeInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/reputation/events/{eventId}/reverse:
+    post:
+      operationId: reverseReputationEvent
+      tags: [owner]
+      summary: Take an event out of the score, with a reason
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ReasonInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/reputation/{stylistId}/conduct-case:
+    post:
+      operationId: recordConductCase
+      tags: [owner]
+      summary: Record a reviewed, confirmed conduct case
+      parameters:
+        - { name: stylistId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ConductCaseInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/appointments/{appointmentId}/no-show:
+    post:
+      operationId: recordArtistNoShow
+      tags: [owner]
+      summary: Record a confirmed artist no-show
+      parameters:
+        - { name: appointmentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ReasonInput" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/safety:
+    get:
+      operationId: listOwnerSafetyCheckins
+      tags: [owner]
+      summary: Recent artist safety check-ins
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerSafetyCheckin" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /brand/profile:
     get:
       operationId: getMyBrandProfile
@@ -2552,7 +2744,11 @@ components:
           type: boolean
         reputationScore:
           type: ["number", "null"]
-          description: Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+          description: Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).
+        reputation:
+          oneOf:
+            - $ref: "#/components/schemas/PublicReputation"
+            - type: "null"
 
     MyStylistProfile:
       allOf:
@@ -2571,15 +2767,11 @@ components:
               type: ["object", "null"]
               properties:
                 score:
-                  type: number
-                cancellationRate:
-                  type: number
-                repeatClientRate:
-                  type: number
+                  type: ["number", "null"]
                 completedBookings:
                   type: integer
-                totalBookings:
-                  type: integer
+                building:
+                  type: boolean
             profileReadiness:
               $ref: "#/components/schemas/ProfileReadiness"
 
@@ -3134,6 +3326,260 @@ components:
       type: object
       properties:
         reference: { type: string, maxLength: 200 }
+
+    PublicReputation:
+      type: object
+      required: [tier, tierLabel, building, score, completedBookings, reviewCount]
+      properties:
+        tier: { type: string, enum: [new_talent, rising, signature, elite, icon] }
+        tierLabel: { type: string }
+        building: { type: boolean, description: "True while there is not yet enough evidence to rate her. Shown as Building reputation." }
+        score: { type: integer, nullable: true }
+        completedBookings: { type: integer }
+        reviewCount: { type: integer }
+
+    ReputationCategory:
+      type: object
+      required: [key, label, weightPercent, score, help]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        weightPercent: { type: integer }
+        score: { type: number }
+        help: { type: string }
+
+    ReputationNextTier:
+      type: object
+      required: [tier, label, pointsNeeded, bookingsNeeded, monthsNeeded]
+      properties:
+        tier: { type: string }
+        label: { type: string }
+        pointsNeeded: { type: number }
+        bookingsNeeded: { type: integer }
+        monthsNeeded: { type: integer }
+
+    ReputationEventView:
+      type: object
+      required: [id, type, label, status, createdAt, detail, canDispute, dispute]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        label: { type: string }
+        status: { type: string, enum: [active, under_review, reversed] }
+        createdAt: { type: string, format: date-time }
+        detail: { type: string, nullable: true }
+        canDispute: { type: boolean }
+        dispute:
+          type: object
+          nullable: true
+          required: [status, note]
+          properties:
+            status: { type: string }
+            note: { type: string, nullable: true }
+
+    ReputationHistoryRow:
+      type: object
+      required: [id, from, to, reason, createdAt]
+      properties:
+        id: { type: string }
+        from: { type: string, nullable: true }
+        to: { type: string }
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    ReputationReferral:
+      type: object
+      required: [code, referred, credited, creditCap, bookingsRequired]
+      properties:
+        code: { type: string, nullable: true }
+        referred: { type: integer }
+        credited: { type: integer }
+        creditCap: { type: integer }
+        bookingsRequired: { type: integer }
+
+    ArtistReputation:
+      type: object
+      required: [building, tier, tierLabel, score, provisionalScore, completedBookings, bookingsToRate, reviewCount, monthsSinceVerified, verified, categories, nextTier, history, events, referral, cancellationPolicy]
+      properties:
+        building: { type: boolean }
+        tier: { type: string }
+        tierLabel: { type: string }
+        score: { type: number, nullable: true }
+        provisionalScore: { type: number }
+        completedBookings: { type: integer }
+        bookingsToRate: { type: integer }
+        reviewCount: { type: integer }
+        monthsSinceVerified: { type: integer }
+        verified: { type: boolean }
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/ReputationCategory" }
+        nextTier:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ReputationNextTier"
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/ReputationHistoryRow" }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/ReputationEventView" }
+        referral: { $ref: "#/components/schemas/ReputationReferral" }
+        cancellationPolicy:
+          type: object
+          required: [freeNoticeHours, lateNoticeHours]
+          properties:
+            freeNoticeHours: { type: integer }
+            lateNoticeHours: { type: integer }
+
+    DisputeInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+
+    ArtistCancelInput:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 1000 }
+        emergency: { type: boolean }
+
+    ArtistCancelResult:
+      type: object
+      required: [message, kind, noticeHours, heldForReview, refundDue]
+      properties:
+        message: { type: string }
+        kind: { type: string, enum: [free, late_cancel, last_minute_cancel] }
+        noticeHours: { type: number }
+        heldForReview: { type: boolean }
+        refundDue: { type: number }
+
+    PendingCheckin:
+      type: object
+      required: [appointmentId, clientName, serviceName, date, time]
+      properties:
+        appointmentId: { type: string }
+        clientName: { type: string }
+        serviceName: { type: string }
+        date: { type: string }
+        time: { type: string }
+
+    SafetyCheckinInput:
+      type: object
+      required: [objectPath, mimeType, safe]
+      properties:
+        objectPath: { type: string }
+        mimeType: { type: string }
+        safe: { type: boolean }
+        lastBooking: { type: boolean }
+        note: { type: string, maxLength: 500 }
+
+    SafetyCheckinResult:
+      type: object
+      required: [code, status, message]
+      properties:
+        code: { type: string }
+        status: { type: string, enum: [safe, needs_help] }
+        message: { type: string }
+
+    OwnerReputationRow:
+      type: object
+      required: [stylistId, name, specialty, tier, tierLabel, building, score, completedBookings, openDisputes]
+      properties:
+        stylistId: { type: string }
+        name: { type: string }
+        specialty: { type: string }
+        tier: { type: string }
+        tierLabel: { type: string }
+        building: { type: boolean }
+        score: { type: number, nullable: true }
+        completedBookings: { type: integer }
+        openDisputes: { type: integer }
+
+    OwnerReputationDispute:
+      type: object
+      required: [id, stylistId, artistName, eventId, eventLabel, eventAt, reason, createdAt]
+      properties:
+        id: { type: string }
+        stylistId: { type: string }
+        artistName: { type: string }
+        eventId: { type: string }
+        eventLabel: { type: string }
+        eventAt: { type: string, format: date-time }
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AuditLogRow:
+      type: object
+      required: [id, actor, action, reason, createdAt]
+      properties:
+        id: { type: string }
+        actor: { type: string }
+        action: { type: string }
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    OwnerArtistReputation:
+      allOf:
+        - $ref: "#/components/schemas/ArtistReputation"
+        - type: object
+          required: [name, auditLog, recentBookings]
+          properties:
+            name: { type: string }
+            recentBookings:
+              type: array
+              items:
+                type: object
+                required: [id, clientName, serviceName, date, time, status, noShow, campaign]
+                properties:
+                  id: { type: string }
+                  clientName: { type: string }
+                  serviceName: { type: string }
+                  date: { type: string }
+                  time: { type: string }
+                  status: { type: string }
+                  noShow: { type: boolean }
+                  campaign: { type: boolean }
+            auditLog:
+              type: array
+              items: { $ref: "#/components/schemas/AuditLogRow" }
+
+    ResolveDisputeInput:
+      type: object
+      required: [decision, note]
+      properties:
+        decision: { type: string, enum: [uphold, reject] }
+        note: { type: string, minLength: 5, maxLength: 1000 }
+
+    ReasonInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+
+    ConductCaseInput:
+      type: object
+      required: [severity, reason]
+      properties:
+        severity: { type: string, enum: [minor, serious] }
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+        complaintId: { type: string }
+
+    OwnerSafetyCheckin:
+      type: object
+      required: [id, code, status, isLastBooking, note, artistName, serviceName, clientName, date, createdAt, photoUrl]
+      properties:
+        id: { type: string }
+        code: { type: string }
+        status: { type: string, enum: [safe, needs_help] }
+        isLastBooking: { type: boolean }
+        note: { type: string, nullable: true }
+        artistName: { type: string }
+        serviceName: { type: string }
+        clientName: { type: string }
+        date: { type: string }
+        createdAt: { type: string, format: date-time }
+        photoUrl: { type: string }
 
     CampaignChange:
       type: object

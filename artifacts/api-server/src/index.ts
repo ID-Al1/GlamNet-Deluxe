@@ -6,6 +6,8 @@ import { startEscrowTimeoutJob } from "./lib/escrowTimeout";
 import { startArtistReminderJob } from "./lib/artist-contacts";
 import { startCampaignReminderJob } from "./lib/campaign-payments";
 import { startSeatJob } from "./lib/campaign-seats";
+import { startReputationJob } from "./lib/reputation";
+import { startSafetyReminderJob } from "./lib/safety-reminders";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -59,3 +61,5 @@ startEscrowTimeoutJob();
 startArtistReminderJob();
 startCampaignReminderJob();
 startSeatJob();
+startReputationJob();
+startSafetyReminderJob();

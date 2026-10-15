@@ -24,6 +24,8 @@ import type {
   Appointment,
   AppointmentInput,
   AppointmentUpdate,
+  ArtistCancelInput,
+  ArtistCancelResult,
   ArtistContact,
   ArtistContactBulkEmailInput,
   ArtistContactBulkEmailResult,
@@ -37,6 +39,7 @@ import type {
   ArtistContactSettingsInput,
   ArtistContactTimeline,
   ArtistContactUpdate,
+  ArtistReputation,
   AuthResult,
   BadRequestResponse,
   BankAccountInput,
@@ -58,10 +61,12 @@ import type {
   ComplaintCreateInput,
   ComplaintEvidence,
   ComplaintEvidenceInput,
+  ConductCaseInput,
   ConfirmCampaignPaymentInput,
   ConflictResponse,
   Conversation,
   DecideCastingApplicantInput,
+  DisputeInput,
   ForbiddenResponse,
   GetOwnerArtistManagementParams,
   GetOwnerPayoutsParams,
@@ -90,6 +95,7 @@ import type {
   OwnerArtistAccountStatusResult,
   OwnerArtistManagement,
   OwnerArtistNotSubmitted,
+  OwnerArtistReputation,
   OwnerArtistSummary,
   OwnerArtistUpdate,
   OwnerArtistUpdateInput,
@@ -105,17 +111,25 @@ import type {
   OwnerPendingBrand,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
+  OwnerReputationDispute,
+  OwnerReputationRow,
+  OwnerSafetyCheckin,
   OwnerSeatAttention,
   OwnerUpdateAudienceArtist,
+  PendingCheckin,
   PortfolioItem,
   PortfolioItemInput,
+  ReasonInput,
   ReceiveWaitlistSignup200,
   RejectBrandInput,
   ReleaseSeatsResult,
   RemindDueArtistContacts200,
   RequestCampaignCancellationInput,
+  ResolveDisputeInput,
   RespondInvitationInput,
   RevealArtistBankAccount200,
+  SafetyCheckinInput,
+  SafetyCheckinResult,
   SearchOwnerRegistryParams,
   Service,
   ServiceInput,
@@ -6792,6 +6806,965 @@ export const useMarkSeatRefunded = <TError = ErrorType<UnauthorizedResponse | Fo
       > => {
       return useMutation(getMarkSeatRefundedMutationOptions(options));
     }
+
+export const getGetMyReputationUrl = () => {
+
+
+
+
+  return `/api/reputation/me`
+}
+
+/**
+ * @summary The signed-in artist's reputation, in plain terms
+ */
+export const getMyReputation = async ( options?: RequestInit): Promise<ArtistReputation> => {
+
+  return customFetch<ArtistReputation>(getGetMyReputationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyReputationQueryKey = () => {
+    return [
+    `/api/reputation/me`
+    ] as const;
+    }
+
+
+export const getGetMyReputationQueryOptions = <TData = Awaited<ReturnType<typeof getMyReputation>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyReputation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyReputationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyReputation>>> = ({ signal }) => getMyReputation({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyReputation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyReputationQueryResult = NonNullable<Awaited<ReturnType<typeof getMyReputation>>>
+export type GetMyReputationQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary The signed-in artist's reputation, in plain terms
+ */
+
+export function useGetMyReputation<TData = Awaited<ReturnType<typeof getMyReputation>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyReputation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyReputationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDisputeReputationEventUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/reputation/events/${eventId}/dispute`
+}
+
+/**
+ * @summary Ask for a cancellation, no-show or conduct record to be reviewed
+ */
+export const disputeReputationEvent = async (eventId: string,
+    disputeInput: DisputeInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getDisputeReputationEventUrl(eventId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(disputeInput)
+  }
+);}
+
+
+
+
+export const getDisputeReputationEventMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disputeReputationEvent>>, TError,{eventId: string;data: BodyType<DisputeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disputeReputationEvent>>, TError,{eventId: string;data: BodyType<DisputeInput>}, TContext> => {
+
+const mutationKey = ['disputeReputationEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disputeReputationEvent>>, {eventId: string;data: BodyType<DisputeInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  disputeReputationEvent(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisputeReputationEventMutationResult = NonNullable<Awaited<ReturnType<typeof disputeReputationEvent>>>
+    export type DisputeReputationEventMutationBody = BodyType<DisputeInput>
+    export type DisputeReputationEventMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Ask for a cancellation, no-show or conduct record to be reviewed
+ */
+export const useDisputeReputationEvent = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disputeReputationEvent>>, TError,{eventId: string;data: BodyType<DisputeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disputeReputationEvent>>,
+        TError,
+        {eventId: string;data: BodyType<DisputeInput>},
+        TContext
+      > => {
+      return useMutation(getDisputeReputationEventMutationOptions(options));
+    }
+
+export const getArtistCancelBookingUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/artist-cancel`
+}
+
+/**
+ * @summary An artist cancels a confirmed booking. Notice decides what it means.
+ */
+export const artistCancelBooking = async (appointmentId: string,
+    artistCancelInput?: ArtistCancelInput, options?: RequestInit): Promise<ArtistCancelResult> => {
+
+  return customFetch<ArtistCancelResult>(getArtistCancelBookingUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(artistCancelInput)
+  }
+);}
+
+
+
+
+export const getArtistCancelBookingMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof artistCancelBooking>>, TError,{appointmentId: string;data?: BodyType<ArtistCancelInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof artistCancelBooking>>, TError,{appointmentId: string;data?: BodyType<ArtistCancelInput>}, TContext> => {
+
+const mutationKey = ['artistCancelBooking'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof artistCancelBooking>>, {appointmentId: string;data?: BodyType<ArtistCancelInput>}> = (props) => {
+          const {appointmentId,data} = props ?? {};
+
+          return  artistCancelBooking(appointmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArtistCancelBookingMutationResult = NonNullable<Awaited<ReturnType<typeof artistCancelBooking>>>
+    export type ArtistCancelBookingMutationBody = BodyType<ArtistCancelInput> | undefined
+    export type ArtistCancelBookingMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary An artist cancels a confirmed booking. Notice decides what it means.
+ */
+export const useArtistCancelBooking = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof artistCancelBooking>>, TError,{appointmentId: string;data?: BodyType<ArtistCancelInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof artistCancelBooking>>,
+        TError,
+        {appointmentId: string;data?: BodyType<ArtistCancelInput>},
+        TContext
+      > => {
+      return useMutation(getArtistCancelBookingMutationOptions(options));
+    }
+
+export const getListPendingCheckinsUrl = () => {
+
+
+
+
+  return `/api/safety/pending`
+}
+
+/**
+ * @summary Jobs the artist has not checked in for yet
+ */
+export const listPendingCheckins = async ( options?: RequestInit): Promise<PendingCheckin[]> => {
+
+  return customFetch<PendingCheckin[]>(getListPendingCheckinsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPendingCheckinsQueryKey = () => {
+    return [
+    `/api/safety/pending`
+    ] as const;
+    }
+
+
+export const getListPendingCheckinsQueryOptions = <TData = Awaited<ReturnType<typeof listPendingCheckins>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingCheckins>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPendingCheckinsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingCheckins>>> = ({ signal }) => listPendingCheckins({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPendingCheckins>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPendingCheckinsQueryResult = NonNullable<Awaited<ReturnType<typeof listPendingCheckins>>>
+export type ListPendingCheckinsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Jobs the artist has not checked in for yet
+ */
+
+export function useListPendingCheckins<TData = Awaited<ReturnType<typeof listPendingCheckins>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingCheckins>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPendingCheckinsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSafetyCheckinUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/safety-checkin`
+}
+
+/**
+ * @summary After a job: a photo, confirm you are safe, get a check-in code
+ */
+export const safetyCheckin = async (appointmentId: string,
+    safetyCheckinInput: SafetyCheckinInput, options?: RequestInit): Promise<SafetyCheckinResult> => {
+
+  return customFetch<SafetyCheckinResult>(getSafetyCheckinUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(safetyCheckinInput)
+  }
+);}
+
+
+
+
+export const getSafetyCheckinMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof safetyCheckin>>, TError,{appointmentId: string;data: BodyType<SafetyCheckinInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof safetyCheckin>>, TError,{appointmentId: string;data: BodyType<SafetyCheckinInput>}, TContext> => {
+
+const mutationKey = ['safetyCheckin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof safetyCheckin>>, {appointmentId: string;data: BodyType<SafetyCheckinInput>}> = (props) => {
+          const {appointmentId,data} = props ?? {};
+
+          return  safetyCheckin(appointmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SafetyCheckinMutationResult = NonNullable<Awaited<ReturnType<typeof safetyCheckin>>>
+    export type SafetyCheckinMutationBody = BodyType<SafetyCheckinInput>
+    export type SafetyCheckinMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary After a job: a photo, confirm you are safe, get a check-in code
+ */
+export const useSafetyCheckin = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof safetyCheckin>>, TError,{appointmentId: string;data: BodyType<SafetyCheckinInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof safetyCheckin>>,
+        TError,
+        {appointmentId: string;data: BodyType<SafetyCheckinInput>},
+        TContext
+      > => {
+      return useMutation(getSafetyCheckinMutationOptions(options));
+    }
+
+export const getListOwnerReputationUrl = () => {
+
+
+
+
+  return `/api/owner/reputation`
+}
+
+/**
+ * @summary Every verified artist with her tier and score
+ */
+export const listOwnerReputation = async ( options?: RequestInit): Promise<OwnerReputationRow[]> => {
+
+  return customFetch<OwnerReputationRow[]>(getListOwnerReputationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerReputationQueryKey = () => {
+    return [
+    `/api/owner/reputation`
+    ] as const;
+    }
+
+
+export const getListOwnerReputationQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerReputation>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerReputation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerReputationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerReputation>>> = ({ signal }) => listOwnerReputation({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerReputation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerReputationQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerReputation>>>
+export type ListOwnerReputationQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Every verified artist with her tier and score
+ */
+
+export function useListOwnerReputation<TData = Awaited<ReturnType<typeof listOwnerReputation>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerReputation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerReputationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOwnerReputationDisputesUrl = () => {
+
+
+
+
+  return `/api/owner/reputation/disputes`
+}
+
+/**
+ * @summary Disputes waiting for a decision
+ */
+export const listOwnerReputationDisputes = async ( options?: RequestInit): Promise<OwnerReputationDispute[]> => {
+
+  return customFetch<OwnerReputationDispute[]>(getListOwnerReputationDisputesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerReputationDisputesQueryKey = () => {
+    return [
+    `/api/owner/reputation/disputes`
+    ] as const;
+    }
+
+
+export const getListOwnerReputationDisputesQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerReputationDisputes>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerReputationDisputes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerReputationDisputesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerReputationDisputes>>> = ({ signal }) => listOwnerReputationDisputes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerReputationDisputes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerReputationDisputesQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerReputationDisputes>>>
+export type ListOwnerReputationDisputesQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Disputes waiting for a decision
+ */
+
+export function useListOwnerReputationDisputes<TData = Awaited<ReturnType<typeof listOwnerReputationDisputes>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerReputationDisputes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerReputationDisputesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOwnerArtistReputationUrl = (stylistId: string,) => {
+
+
+
+
+  return `/api/owner/reputation/${stylistId}`
+}
+
+/**
+ * @summary One artist's full standing, events and audit trail
+ */
+export const getOwnerArtistReputation = async (stylistId: string, options?: RequestInit): Promise<OwnerArtistReputation> => {
+
+  return customFetch<OwnerArtistReputation>(getGetOwnerArtistReputationUrl(stylistId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerArtistReputationQueryKey = (stylistId: string,) => {
+    return [
+    `/api/owner/reputation/${stylistId}`
+    ] as const;
+    }
+
+
+export const getGetOwnerArtistReputationQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerArtistReputation>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(stylistId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerArtistReputation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerArtistReputationQueryKey(stylistId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerArtistReputation>>> = ({ signal }) => getOwnerArtistReputation(stylistId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: stylistId !== null && stylistId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerArtistReputation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerArtistReputationQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerArtistReputation>>>
+export type GetOwnerArtistReputationQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary One artist's full standing, events and audit trail
+ */
+
+export function useGetOwnerArtistReputation<TData = Awaited<ReturnType<typeof getOwnerArtistReputation>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ stylistId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerArtistReputation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerArtistReputationQueryOptions(stylistId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getResolveReputationDisputeUrl = (disputeId: string,) => {
+
+
+
+
+  return `/api/owner/reputation/disputes/${disputeId}/resolve`
+}
+
+/**
+ * @summary Uphold or reject a dispute, with a reason
+ */
+export const resolveReputationDispute = async (disputeId: string,
+    resolveDisputeInput: ResolveDisputeInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getResolveReputationDisputeUrl(disputeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(resolveDisputeInput)
+  }
+);}
+
+
+
+
+export const getResolveReputationDisputeMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveReputationDispute>>, TError,{disputeId: string;data: BodyType<ResolveDisputeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolveReputationDispute>>, TError,{disputeId: string;data: BodyType<ResolveDisputeInput>}, TContext> => {
+
+const mutationKey = ['resolveReputationDispute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolveReputationDispute>>, {disputeId: string;data: BodyType<ResolveDisputeInput>}> = (props) => {
+          const {disputeId,data} = props ?? {};
+
+          return  resolveReputationDispute(disputeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolveReputationDisputeMutationResult = NonNullable<Awaited<ReturnType<typeof resolveReputationDispute>>>
+    export type ResolveReputationDisputeMutationBody = BodyType<ResolveDisputeInput>
+    export type ResolveReputationDisputeMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Uphold or reject a dispute, with a reason
+ */
+export const useResolveReputationDispute = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveReputationDispute>>, TError,{disputeId: string;data: BodyType<ResolveDisputeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resolveReputationDispute>>,
+        TError,
+        {disputeId: string;data: BodyType<ResolveDisputeInput>},
+        TContext
+      > => {
+      return useMutation(getResolveReputationDisputeMutationOptions(options));
+    }
+
+export const getReverseReputationEventUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/owner/reputation/events/${eventId}/reverse`
+}
+
+/**
+ * @summary Take an event out of the score, with a reason
+ */
+export const reverseReputationEvent = async (eventId: string,
+    reasonInput: ReasonInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getReverseReputationEventUrl(eventId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reasonInput)
+  }
+);}
+
+
+
+
+export const getReverseReputationEventMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reverseReputationEvent>>, TError,{eventId: string;data: BodyType<ReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reverseReputationEvent>>, TError,{eventId: string;data: BodyType<ReasonInput>}, TContext> => {
+
+const mutationKey = ['reverseReputationEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reverseReputationEvent>>, {eventId: string;data: BodyType<ReasonInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  reverseReputationEvent(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReverseReputationEventMutationResult = NonNullable<Awaited<ReturnType<typeof reverseReputationEvent>>>
+    export type ReverseReputationEventMutationBody = BodyType<ReasonInput>
+    export type ReverseReputationEventMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Take an event out of the score, with a reason
+ */
+export const useReverseReputationEvent = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reverseReputationEvent>>, TError,{eventId: string;data: BodyType<ReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reverseReputationEvent>>,
+        TError,
+        {eventId: string;data: BodyType<ReasonInput>},
+        TContext
+      > => {
+      return useMutation(getReverseReputationEventMutationOptions(options));
+    }
+
+export const getRecordConductCaseUrl = (stylistId: string,) => {
+
+
+
+
+  return `/api/owner/reputation/${stylistId}/conduct-case`
+}
+
+/**
+ * @summary Record a reviewed, confirmed conduct case
+ */
+export const recordConductCase = async (stylistId: string,
+    conductCaseInput: ConductCaseInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getRecordConductCaseUrl(stylistId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(conductCaseInput)
+  }
+);}
+
+
+
+
+export const getRecordConductCaseMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordConductCase>>, TError,{stylistId: string;data: BodyType<ConductCaseInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordConductCase>>, TError,{stylistId: string;data: BodyType<ConductCaseInput>}, TContext> => {
+
+const mutationKey = ['recordConductCase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordConductCase>>, {stylistId: string;data: BodyType<ConductCaseInput>}> = (props) => {
+          const {stylistId,data} = props ?? {};
+
+          return  recordConductCase(stylistId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordConductCaseMutationResult = NonNullable<Awaited<ReturnType<typeof recordConductCase>>>
+    export type RecordConductCaseMutationBody = BodyType<ConductCaseInput>
+    export type RecordConductCaseMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Record a reviewed, confirmed conduct case
+ */
+export const useRecordConductCase = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordConductCase>>, TError,{stylistId: string;data: BodyType<ConductCaseInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordConductCase>>,
+        TError,
+        {stylistId: string;data: BodyType<ConductCaseInput>},
+        TContext
+      > => {
+      return useMutation(getRecordConductCaseMutationOptions(options));
+    }
+
+export const getRecordArtistNoShowUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/owner/appointments/${appointmentId}/no-show`
+}
+
+/**
+ * @summary Record a confirmed artist no-show
+ */
+export const recordArtistNoShow = async (appointmentId: string,
+    reasonInput: ReasonInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getRecordArtistNoShowUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reasonInput)
+  }
+);}
+
+
+
+
+export const getRecordArtistNoShowMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordArtistNoShow>>, TError,{appointmentId: string;data: BodyType<ReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordArtistNoShow>>, TError,{appointmentId: string;data: BodyType<ReasonInput>}, TContext> => {
+
+const mutationKey = ['recordArtistNoShow'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordArtistNoShow>>, {appointmentId: string;data: BodyType<ReasonInput>}> = (props) => {
+          const {appointmentId,data} = props ?? {};
+
+          return  recordArtistNoShow(appointmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordArtistNoShowMutationResult = NonNullable<Awaited<ReturnType<typeof recordArtistNoShow>>>
+    export type RecordArtistNoShowMutationBody = BodyType<ReasonInput>
+    export type RecordArtistNoShowMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Record a confirmed artist no-show
+ */
+export const useRecordArtistNoShow = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordArtistNoShow>>, TError,{appointmentId: string;data: BodyType<ReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordArtistNoShow>>,
+        TError,
+        {appointmentId: string;data: BodyType<ReasonInput>},
+        TContext
+      > => {
+      return useMutation(getRecordArtistNoShowMutationOptions(options));
+    }
+
+export const getListOwnerSafetyCheckinsUrl = () => {
+
+
+
+
+  return `/api/owner/safety`
+}
+
+/**
+ * @summary Recent artist safety check-ins
+ */
+export const listOwnerSafetyCheckins = async ( options?: RequestInit): Promise<OwnerSafetyCheckin[]> => {
+
+  return customFetch<OwnerSafetyCheckin[]>(getListOwnerSafetyCheckinsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerSafetyCheckinsQueryKey = () => {
+    return [
+    `/api/owner/safety`
+    ] as const;
+    }
+
+
+export const getListOwnerSafetyCheckinsQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerSafetyCheckins>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerSafetyCheckins>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerSafetyCheckinsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerSafetyCheckins>>> = ({ signal }) => listOwnerSafetyCheckins({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerSafetyCheckins>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerSafetyCheckinsQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerSafetyCheckins>>>
+export type ListOwnerSafetyCheckinsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Recent artist safety check-ins
+ */
+
+export function useListOwnerSafetyCheckins<TData = Awaited<ReturnType<typeof listOwnerSafetyCheckins>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerSafetyCheckins>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerSafetyCheckinsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetMyBrandProfileUrl = () => {
 

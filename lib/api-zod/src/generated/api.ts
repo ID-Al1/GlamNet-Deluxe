@@ -144,7 +144,15 @@ export const ListStylistsResponseItem = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+  "reputationScore": zod.number().nullish().describe('Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).'),
+  "reputation": zod.union([zod.object({
+  "tier": zod.enum(['new_talent', 'rising', 'signature', 'elite', 'icon']),
+  "tierLabel": zod.string(),
+  "building": zod.boolean().describe('True while there is not yet enough evidence to rate her. Shown as Building reputation.'),
+  "score": zod.number().nullable(),
+  "completedBookings": zod.number(),
+  "reviewCount": zod.number()
+}),zod.null()]).optional()
 })
 export const ListStylistsResponse = zod.array(ListStylistsResponseItem)
 
@@ -185,7 +193,15 @@ export const GetStylistResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+  "reputationScore": zod.number().nullish().describe('Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).'),
+  "reputation": zod.union([zod.object({
+  "tier": zod.enum(['new_talent', 'rising', 'signature', 'elite', 'icon']),
+  "tierLabel": zod.string(),
+  "building": zod.boolean().describe('True while there is not yet enough evidence to rate her. Shown as Building reputation.'),
+  "score": zod.number().nullable(),
+  "completedBookings": zod.number(),
+  "reviewCount": zod.number()
+}),zod.null()]).optional()
 })
 
 
@@ -221,17 +237,23 @@ export const GetMyStylistProfileResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+  "reputationScore": zod.number().nullish().describe('Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).'),
+  "reputation": zod.union([zod.object({
+  "tier": zod.enum(['new_talent', 'rising', 'signature', 'elite', 'icon']),
+  "tierLabel": zod.string(),
+  "building": zod.boolean().describe('True while there is not yet enough evidence to rate her. Shown as Building reputation.'),
+  "score": zod.number().nullable(),
+  "completedBookings": zod.number(),
+  "reviewCount": zod.number()
+}),zod.null()]).optional()
 }).and(zod.object({
   "userId": zod.string(),
   "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "phone": zod.string().nullable(),
   "reputationBreakdown": zod.object({
-  "score": zod.number().optional(),
-  "cancellationRate": zod.number().optional(),
-  "repeatClientRate": zod.number().optional(),
+  "score": zod.number().nullish(),
   "completedBookings": zod.number().optional(),
-  "totalBookings": zod.number().optional()
+  "building": zod.boolean().optional()
 }).nullable(),
   "profileReadiness": zod.object({
   "criteria": zod.array(zod.object({
@@ -293,17 +315,23 @@ export const UpdateMyStylistProfileResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+  "reputationScore": zod.number().nullish().describe('Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).'),
+  "reputation": zod.union([zod.object({
+  "tier": zod.enum(['new_talent', 'rising', 'signature', 'elite', 'icon']),
+  "tierLabel": zod.string(),
+  "building": zod.boolean().describe('True while there is not yet enough evidence to rate her. Shown as Building reputation.'),
+  "score": zod.number().nullable(),
+  "completedBookings": zod.number(),
+  "reviewCount": zod.number()
+}),zod.null()]).optional()
 }).and(zod.object({
   "userId": zod.string(),
   "verificationStatus": zod.enum(['none', 'pending', 'verified']),
   "phone": zod.string().nullable(),
   "reputationBreakdown": zod.object({
-  "score": zod.number().optional(),
-  "cancellationRate": zod.number().optional(),
-  "repeatClientRate": zod.number().optional(),
+  "score": zod.number().nullish(),
   "completedBookings": zod.number().optional(),
-  "totalBookings": zod.number().optional()
+  "building": zod.boolean().optional()
 }).nullable(),
   "profileReadiness": zod.object({
   "criteria": zod.array(zod.object({
@@ -2412,6 +2440,377 @@ export const MarkSeatRefundedResponse = zod.object({
 
 
 /**
+ * @summary The signed-in artist's reputation, in plain terms
+ */
+export const GetMyReputationResponse = zod.object({
+  "building": zod.boolean(),
+  "tier": zod.string(),
+  "tierLabel": zod.string(),
+  "score": zod.number().nullable(),
+  "provisionalScore": zod.number(),
+  "completedBookings": zod.number(),
+  "bookingsToRate": zod.number(),
+  "reviewCount": zod.number(),
+  "monthsSinceVerified": zod.number(),
+  "verified": zod.boolean(),
+  "categories": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "weightPercent": zod.number(),
+  "score": zod.number(),
+  "help": zod.string()
+})),
+  "nextTier": zod.object({
+  "tier": zod.string(),
+  "label": zod.string(),
+  "pointsNeeded": zod.number(),
+  "bookingsNeeded": zod.number(),
+  "monthsNeeded": zod.number()
+}).nullable(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string().nullable(),
+  "to": zod.string(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['active', 'under_review', 'reversed']),
+  "createdAt": zod.coerce.date(),
+  "detail": zod.string().nullable(),
+  "canDispute": zod.boolean(),
+  "dispute": zod.object({
+  "status": zod.string(),
+  "note": zod.string().nullable()
+}).nullable()
+})),
+  "referral": zod.object({
+  "code": zod.string().nullable(),
+  "referred": zod.number(),
+  "credited": zod.number(),
+  "creditCap": zod.number(),
+  "bookingsRequired": zod.number()
+}),
+  "cancellationPolicy": zod.object({
+  "freeNoticeHours": zod.number(),
+  "lateNoticeHours": zod.number()
+})
+})
+
+
+/**
+ * @summary Ask for a cancellation, no-show or conduct record to be reviewed
+ */
+export const DisputeReputationEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const disputeReputationEventBodyReasonMin = 10;
+export const disputeReputationEventBodyReasonMax = 1000;
+
+
+
+export const DisputeReputationEventBody = zod.object({
+  "reason": zod.string().min(disputeReputationEventBodyReasonMin).max(disputeReputationEventBodyReasonMax)
+})
+
+export const DisputeReputationEventResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary An artist cancels a confirmed booking. Notice decides what it means.
+ */
+export const ArtistCancelBookingParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const artistCancelBookingBodyReasonMax = 1000;
+
+
+
+export const ArtistCancelBookingBody = zod.object({
+  "reason": zod.string().max(artistCancelBookingBodyReasonMax).optional(),
+  "emergency": zod.boolean().optional()
+})
+
+export const ArtistCancelBookingResponse = zod.object({
+  "message": zod.string(),
+  "kind": zod.enum(['free', 'late_cancel', 'last_minute_cancel']),
+  "noticeHours": zod.number(),
+  "heldForReview": zod.boolean(),
+  "refundDue": zod.number()
+})
+
+
+/**
+ * @summary Jobs the artist has not checked in for yet
+ */
+export const ListPendingCheckinsResponseItem = zod.object({
+  "appointmentId": zod.string(),
+  "clientName": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "time": zod.string()
+})
+export const ListPendingCheckinsResponse = zod.array(ListPendingCheckinsResponseItem)
+
+
+/**
+ * @summary After a job: a photo, confirm you are safe, get a check-in code
+ */
+export const SafetyCheckinParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const safetyCheckinBodyNoteMax = 500;
+
+
+
+export const SafetyCheckinBody = zod.object({
+  "objectPath": zod.string(),
+  "mimeType": zod.string(),
+  "safe": zod.boolean(),
+  "lastBooking": zod.boolean().optional(),
+  "note": zod.string().max(safetyCheckinBodyNoteMax).optional()
+})
+
+export const SafetyCheckinResponse = zod.object({
+  "code": zod.string(),
+  "status": zod.enum(['safe', 'needs_help']),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Every verified artist with her tier and score
+ */
+export const ListOwnerReputationResponseItem = zod.object({
+  "stylistId": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string(),
+  "tier": zod.string(),
+  "tierLabel": zod.string(),
+  "building": zod.boolean(),
+  "score": zod.number().nullable(),
+  "completedBookings": zod.number(),
+  "openDisputes": zod.number()
+})
+export const ListOwnerReputationResponse = zod.array(ListOwnerReputationResponseItem)
+
+
+/**
+ * @summary Disputes waiting for a decision
+ */
+export const ListOwnerReputationDisputesResponseItem = zod.object({
+  "id": zod.string(),
+  "stylistId": zod.string(),
+  "artistName": zod.string(),
+  "eventId": zod.string(),
+  "eventLabel": zod.string(),
+  "eventAt": zod.coerce.date(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListOwnerReputationDisputesResponse = zod.array(ListOwnerReputationDisputesResponseItem)
+
+
+/**
+ * @summary One artist's full standing, events and audit trail
+ */
+export const GetOwnerArtistReputationParams = zod.object({
+  "stylistId": zod.coerce.string()
+})
+
+export const GetOwnerArtistReputationResponse = zod.object({
+  "building": zod.boolean(),
+  "tier": zod.string(),
+  "tierLabel": zod.string(),
+  "score": zod.number().nullable(),
+  "provisionalScore": zod.number(),
+  "completedBookings": zod.number(),
+  "bookingsToRate": zod.number(),
+  "reviewCount": zod.number(),
+  "monthsSinceVerified": zod.number(),
+  "verified": zod.boolean(),
+  "categories": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "weightPercent": zod.number(),
+  "score": zod.number(),
+  "help": zod.string()
+})),
+  "nextTier": zod.object({
+  "tier": zod.string(),
+  "label": zod.string(),
+  "pointsNeeded": zod.number(),
+  "bookingsNeeded": zod.number(),
+  "monthsNeeded": zod.number()
+}).nullable(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string().nullable(),
+  "to": zod.string(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['active', 'under_review', 'reversed']),
+  "createdAt": zod.coerce.date(),
+  "detail": zod.string().nullable(),
+  "canDispute": zod.boolean(),
+  "dispute": zod.object({
+  "status": zod.string(),
+  "note": zod.string().nullable()
+}).nullable()
+})),
+  "referral": zod.object({
+  "code": zod.string().nullable(),
+  "referred": zod.number(),
+  "credited": zod.number(),
+  "creditCap": zod.number(),
+  "bookingsRequired": zod.number()
+}),
+  "cancellationPolicy": zod.object({
+  "freeNoticeHours": zod.number(),
+  "lateNoticeHours": zod.number()
+})
+}).and(zod.object({
+  "name": zod.string(),
+  "recentBookings": zod.array(zod.object({
+  "id": zod.string(),
+  "clientName": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "time": zod.string(),
+  "status": zod.string(),
+  "noShow": zod.boolean(),
+  "campaign": zod.boolean()
+})),
+  "auditLog": zod.array(zod.object({
+  "id": zod.string(),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Uphold or reject a dispute, with a reason
+ */
+export const ResolveReputationDisputeParams = zod.object({
+  "disputeId": zod.coerce.string()
+})
+
+export const resolveReputationDisputeBodyNoteMin = 5;
+export const resolveReputationDisputeBodyNoteMax = 1000;
+
+
+
+export const ResolveReputationDisputeBody = zod.object({
+  "decision": zod.enum(['uphold', 'reject']),
+  "note": zod.string().min(resolveReputationDisputeBodyNoteMin).max(resolveReputationDisputeBodyNoteMax)
+})
+
+export const ResolveReputationDisputeResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Take an event out of the score, with a reason
+ */
+export const ReverseReputationEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const reverseReputationEventBodyReasonMin = 5;
+export const reverseReputationEventBodyReasonMax = 1000;
+
+
+
+export const ReverseReputationEventBody = zod.object({
+  "reason": zod.string().min(reverseReputationEventBodyReasonMin).max(reverseReputationEventBodyReasonMax)
+})
+
+export const ReverseReputationEventResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Record a reviewed, confirmed conduct case
+ */
+export const RecordConductCaseParams = zod.object({
+  "stylistId": zod.coerce.string()
+})
+
+export const recordConductCaseBodyReasonMin = 10;
+export const recordConductCaseBodyReasonMax = 1000;
+
+
+
+export const RecordConductCaseBody = zod.object({
+  "severity": zod.enum(['minor', 'serious']),
+  "reason": zod.string().min(recordConductCaseBodyReasonMin).max(recordConductCaseBodyReasonMax),
+  "complaintId": zod.string().optional()
+})
+
+export const RecordConductCaseResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Record a confirmed artist no-show
+ */
+export const RecordArtistNoShowParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const recordArtistNoShowBodyReasonMin = 5;
+export const recordArtistNoShowBodyReasonMax = 1000;
+
+
+
+export const RecordArtistNoShowBody = zod.object({
+  "reason": zod.string().min(recordArtistNoShowBodyReasonMin).max(recordArtistNoShowBodyReasonMax)
+})
+
+export const RecordArtistNoShowResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Recent artist safety check-ins
+ */
+export const ListOwnerSafetyCheckinsResponseItem = zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "status": zod.enum(['safe', 'needs_help']),
+  "isLastBooking": zod.boolean(),
+  "note": zod.string().nullable(),
+  "artistName": zod.string(),
+  "serviceName": zod.string(),
+  "clientName": zod.string(),
+  "date": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "photoUrl": zod.string()
+})
+export const ListOwnerSafetyCheckinsResponse = zod.array(ListOwnerSafetyCheckinsResponseItem)
+
+
+/**
  * @summary The signed-in brand's business profile
  */
 export const GetMyBrandProfileResponse = zod.object({
@@ -2655,7 +3054,15 @@ export const GetClientDashboardResponse = zod.object({
   "website": zod.string().nullish(),
   "accentColor": zod.string().nullish(),
   "houseCalls": zod.boolean().optional(),
-  "reputationScore": zod.number().nullish().describe('Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews')
+  "reputationScore": zod.number().nullish().describe('Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).'),
+  "reputation": zod.union([zod.object({
+  "tier": zod.enum(['new_talent', 'rising', 'signature', 'elite', 'icon']),
+  "tierLabel": zod.string(),
+  "building": zod.boolean().describe('True while there is not yet enough evidence to rate her. Shown as Building reputation.'),
+  "score": zod.number().nullable(),
+  "completedBookings": zod.number(),
+  "reviewCount": zod.number()
+}),zod.null()]).optional()
 })).optional()
 })
 

@@ -17,7 +17,9 @@ import {
   ShieldAlert, Banknote, Receipt, RefreshCw, Loader2, AlertCircle, RotateCcw, TrendingUp,
 } from "lucide-react";
 import { frenchGreeting } from "@/components/bonisa-logo";
-import { getReputationTier } from "@/lib/reputation";
+import { TierBadge } from "@/components/reputation-badge";
+import { SafetyCheckinPrompt } from "@/components/safety-checkin";
+import { ArtistCancelDialog } from "@/components/artist-cancel-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -213,8 +215,8 @@ export default function StylistDashboard() {
     enabled: !!token,
   });
 
-  const reputationScore = myProfile?.reputationScore ?? 0;
-  const reputationTier = getReputationTier(reputationScore);
+  const reputation = myProfile?.reputation ?? null;
+  const [cancelling, setCancelling] = useState<{ id: string; serviceName: string; clientName: string; date: string; time: string } | null>(null);
   const completedJobs = myProfile?.reputationBreakdown?.completedBookings ?? 0;
 
   useEffect(() => {
@@ -583,23 +585,18 @@ export default function StylistDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="pb-5">
-                <div className="text-2xl font-serif font-bold">{reputationTier.label}</div>
+                <div className="text-2xl font-serif font-bold">{reputation?.building === false ? reputation.tierLabel : "Building reputation"}</div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  REP {reputationScore} · {completedJobs} completed jobs
+                  {reputation?.score != null ? `REP ${reputation.score} · ` : ""}{completedJobs} completed {completedJobs === 1 ? "job" : "jobs"}
                 </p>
-                {reputationTier.nextLabel && reputationTier.nextScore && (
-                  <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-border">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-700"
-                      style={{ width: `${Math.min(100, (reputationScore / reputationTier.nextScore) * 100)}%` }}
-                    />
-                  </div>
-                )}
+                <Link href="/reputation" className="mt-2 inline-block text-xs font-medium text-primary hover:underline" data-testid="link-reputation">See how it works</Link>
               </CardContent>
             </Card>
           </>
         )}
       </div>
+
+      <SafetyCheckinPrompt />
 
       {/* Quick actions row */}
       {!isLoading && (
@@ -827,6 +824,11 @@ export default function StylistDashboard() {
                                   </Link>
                                 </>
                               )
+                            )}
+                            {new Date(`${apt.date}T${apt.time || "09:00"}:00+02:00`) > new Date() && !(apt as any).campaignId && (
+                              <Button size="sm" variant="ghost" className="h-8 rounded-full text-muted-foreground" onClick={() => setCancelling({ id: String(apt.id), serviceName: String(apt.serviceName ?? ""), clientName: String(apt.clientName ?? ""), date: String(apt.date), time: String(apt.time ?? "09:00") })} data-testid={`button-artist-cancel-${apt.id}`}>
+                                Cancel booking
+                              </Button>
                             )}
                             <Link href={`/messages?clientId=${(apt as any).clientId}`}>
                               <Button size="sm" variant="outline" className="gap-1.5 h-8 rounded-full">
@@ -1412,6 +1414,7 @@ export default function StylistDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+      <ArtistCancelDialog booking={cancelling} onClose={() => setCancelling(null)} />
     </div>
   );
 }

@@ -109,6 +109,24 @@ Rejection requires a written reason, which she receives word for word.
 
 ---
 
+### Reputation and tiers
+
+**Leads with:** the artist's own plain-language standing. New artists read "Building reputation", never a low number.
+
+**The idea:** verification says who she is; reputation shows how she has worked on Bonisa. Five tiers (New Talent, Rising Artist, Signature Artist, Elite Artist, Bonisa Icon) from five parts: reliability 30%, client satisfaction 30%, professionalism 20%, consistency 15%, community 5%. A tier needs the score, the bookings and the time together. The full algorithm and every edge case are in docs/REPUTATION_ALGORITHM.md.
+
+**Fairness rules:** only the artist's own late cancellations and confirmed no-shows count. Client and platform cancellations never do. A disputed record stops counting until the owner decides. Demotion needs two monthly reviews in a row. The owner can never silently change a score: every action needs a written reason and is audited.
+
+**Artists can cancel a booking** with fair notice: 48 hours or more is free, 12 to 48 hours is a late cancellation, under 12 hours is last-minute. A real emergency can be flagged and is reviewed. The client is refunded in full.
+
+**Safety check-in:** after a job, a photo, "I am safe" or "I need help", and "last booking today". A generated code is the proof. "I need help" alerts the owner immediately.
+
+**Forbidden:** letting anyone set a score or tier from a screen. Showing a new artist a low or zero score. Counting a client's cancellation against an artist. Publishing a complaint or an unproven allegation. Paying for a better score.
+
+**Done when:** scores and tiers come from real recorded events, both sides can see and dispute what counts, and the owner can audit and correct everything.
+
+---
+
 ### Brand campaigns
 
 A casting call is now a campaign with real numbers: how many artists, what each is paid, the date and the place. A brand posts it, invites artists or takes applications, picks its team and pays Bonisa.

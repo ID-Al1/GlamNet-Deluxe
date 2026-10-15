@@ -10,9 +10,8 @@
  * @nullable
  */
 export type MyStylistProfileReputationBreakdown = {
-  score?: number;
-  cancellationRate?: number;
-  repeatClientRate?: number;
+  /** @nullable */
+  score?: number | null;
   completedBookings?: number;
-  totalBookings?: number;
+  building?: boolean;
 } | null;

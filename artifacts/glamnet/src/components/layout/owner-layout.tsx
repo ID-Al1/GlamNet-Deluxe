@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ShieldCheck, Banknote, ListTree, Scissors, Send, Contact, Briefcase } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Banknote, ListTree, Scissors, Send, Contact, Briefcase, Award } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function OwnerLayout({ children }: { children: ReactNode }) {
@@ -13,6 +13,7 @@ export function OwnerLayout({ children }: { children: ReactNode }) {
     { href: "/owner/artists", label: "Artists", icon: Scissors, exact: false },
     { href: "/owner/verifications", label: "Verifications", icon: ShieldCheck, exact: false },
     { href: "/owner/campaigns", label: "Campaigns", icon: Briefcase, exact: false },
+    { href: "/owner/reputation", label: "Reputation", icon: Award, exact: false },
     { href: "/owner/contacts", label: "Artist Contacts", icon: Contact, exact: false },
     { href: "/owner/updates", label: "Artist Updates", icon: Send, exact: false },
     { href: "/owner/complaints", label: "Cases", icon: ShieldCheck, exact: false },

@@ -7,6 +7,7 @@ import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod
 import { sendNotification, notify } from "../lib/notifications";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
+import { recomputeLater } from "../lib/reputation";
 import { campaignJobTotal, isCampaignJob, recordPayoutEvent, resolveCampaignCollected, splitAmount, transitionToDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
 import { createPayoutLedgerLines } from "../lib/payout-ledger";
@@ -217,6 +218,8 @@ router.patch("/appointments/:appointmentId", requireAuth, async (req, res) => {
 
   const [appt] = await db.update(appointmentsTable).set({
     ...(data.status && { status: data.status }),
+    // Record who cancelled, so a client cancelling is never held against the artist.
+    ...(data.status === "cancelled" && isClient && { cancelledBy: "client", cancelledAt: new Date() }),
     ...(data.date && { date: data.date }),
     ...(data.time && { time: data.time }),
     ...(data.notes !== undefined && { notes: data.notes }),
@@ -427,6 +430,7 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
   });
 
   if (releasedRows.length > 0) {
+    recomputeLater(appt.stylistId, "Booking completed");
     await recordPayoutEvent({
       appointmentId, type: "released", actorUserId: user.id,
       amount: actualCollected, artistShare: artistPayout, platformShare: platformFee,

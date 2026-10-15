@@ -24,6 +24,8 @@ export const stylistProfilesTable = pgTable("stylist_profiles", {
   // Private identity-verification fields. Never expose these in public profile DTOs.
   idNumber: text("id_number"),
   idDocumentUrl: text("id_document_url"),
+  // The day the owner verified her. Her active time on Bonisa counts from here.
+  verifiedAt: timestamp("verified_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

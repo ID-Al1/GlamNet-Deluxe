@@ -14,7 +14,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec (run after any change to openapi.yaml)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only; see gotchas)
 - Required env: `DATABASE_URL` (Postgres), Stripe credentials via the Replit connector
-- Brand campaigns need `PUBLIC_APP_URL` (the Stripe return link) and the Stripe connector. Run `pnpm --filter @workspace/db run migrate:brand-campaigns:dev` and then `migrate:campaign-seats:dev` (or `db push`) before first use
+- Brand campaigns need `PUBLIC_APP_URL` (the Stripe return link) and the Stripe connector. Run `pnpm --filter @workspace/db run migrate:brand-campaigns:dev` then `migrate:campaign-seats:dev`, then `migrate:reputation:dev` (or `db push`) before first use
 - Optional env for artist contacts: `WAITLIST_WEBHOOK_SECRET` (Vercel waitlist webhook, see docs/WAITLIST_CONNECTION.md), `PUBLIC_APP_URL` (links in reminders)
 
 ## Stack
@@ -95,6 +95,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 
 ## Known gaps (do not treat as done)
 
+- Reputation and tiers: see docs/REPUTATION_ALGORITHM.md. Engine in `lib/reputation*.ts`; a monthly tier review and a safety reminder job start with the server. The referral cash incentive (a percentage) is NOT built: `referralIncentivePercent` is 0 until the owner approves the percentage and who pays it. Punctuality and communication are not scored (not recorded).
 - Brand campaigns: cancelling a paid campaign is a request to Bonisa (owner portal lists it), and seat refunds are paid by the owner in Stripe then marked paid in the portal. Nothing is refunded automatically. No minimum-team setting or per-artist agreement to date/place changes yet. No VAT invoices or 30-day invoice terms for brands yet (card payment only)
 - Brand campaigns: an overdue balance is flagged to the owner and the brand is reminded, but nothing is released or cancelled automatically
 

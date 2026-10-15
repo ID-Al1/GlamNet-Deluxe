@@ -7,7 +7,7 @@ import { ArtistUpdatesBanner } from "@/components/artist-updates-banner";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye, Bell } from "lucide-react";
+import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye, Bell, Award } from "lucide-react";
 
 const NAV_PUBLIC = [
   { href: "/stylists", label: "Find Artists", icon: Users },
@@ -27,6 +27,7 @@ const NAV_AUTH_STYLIST = [
   { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/updates", label: "Updates", icon: Bell },
   { href: "/casting", label: "Casting Calls", icon: Star },
+  { href: "/reputation", label: "Reputation", icon: Award },
   { href: "/profile", label: "Profile", icon: User },
 ];
 

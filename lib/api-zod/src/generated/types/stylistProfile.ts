@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PortfolioItem } from './portfolioItem';
+import type { PublicReputation } from './publicReputation';
 import type { Service } from './service';
 
 export interface StylistProfile {
@@ -31,8 +32,9 @@ export interface StylistProfile {
   accentColor?: string | null;
   houseCalls?: boolean;
   /**
-     * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+     * Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).
      * @nullable
      */
   reputationScore?: number | null;
+  reputation?: PublicReputation | null;
 }

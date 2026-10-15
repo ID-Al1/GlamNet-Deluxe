@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { maybeCompleteReferral } from "./referrals";
 import { wasUploadedBy } from "../lib/upload-registry";
+import { recomputeLater } from "../lib/reputation";
 import { param } from "../lib/params";
 
 /**
@@ -121,6 +122,7 @@ router.post("/reviews", requireAuth, async (req, res) => {
     .where(eq(stylistProfilesTable.id, stylistId));
 
   await maybeCompleteReferral(user.id);
+  recomputeLater(stylistId, "New review");
 
   res.status(201).json({ ...review, createdAt: review.createdAt.toISOString() });
 });
@@ -224,6 +226,7 @@ router.patch("/appointments/:appointmentId/complete", requireAuth, async (req, r
     .returning();
 
   await maybeCompleteReferral(user.id);
+  recomputeLater(updated.stylistId, "Booking completed");
 
   res.json({ ...updated, createdAt: updated.createdAt.toISOString() });
 });

@@ -5,7 +5,7 @@ export function serializePublicStylistProfile(
   profile: typeof stylistProfilesTable.$inferSelect,
   services: typeof servicesTable.$inferSelect[],
   portfolio: typeof portfolioItemsTable.$inferSelect[],
-  reputationScore: number | null = null,
+  reputation: { tier: string; tierLabel: string; building: boolean; score: number | null; completedBookings: number; reviewCount: number } | null = null,
 ) {
   return {
     id: profile.id,
@@ -25,7 +25,9 @@ export function serializePublicStylistProfile(
     website: profile.website ?? null,
     accentColor: profile.accentColor ?? null,
     houseCalls: profile.houseCalls,
-    reputationScore,
+    // A score is only public once there is enough evidence. New artists show "Building reputation", never a low number.
+    reputationScore: reputation?.score ?? null,
+    reputation,
   };
 }
 

@@ -1,3 +1,4 @@
+import { TierBadge } from "@/components/reputation-badge";
 import { useState, useEffect } from "react";
 import { useListStylists } from "@workspace/api-client-react";
 import { Link, useSearch, useLocation } from "wouter";
@@ -125,7 +126,7 @@ export default function StylistsList() {
                       {s.verified && (
                         <div className="flex items-center gap-2 mt-1">
                           <VerifiedBadge variant="pill" size="sm" />
-                          {/* tier slot — render when tier field exists */}
+                          {s.reputation && <TierBadge tier={s.reputation.tier} label={s.reputation.tierLabel} building={s.reputation.building} />}
                         </div>
                       )}
 

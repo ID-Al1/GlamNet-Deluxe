@@ -25,49 +25,12 @@ import {
   GetMyBankDetailsResponse,
 } from "@workspace/api-zod";
 import { serializePublicStylistProfile } from "./stylistHelper";
+import { publicReputationFor } from "../lib/reputation";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
 const MAX_ID_DOCUMENT_BYTES = 10 * 1024 * 1024;
 const ID_DOCUMENT_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
-
-async function computeReputationScore(profileId: string, currentRating: number, reviewCount: number) {
-  const appointments = await db.select({
-    clientId: appointmentsTable.clientId,
-    status: appointmentsTable.status,
-  }).from(appointmentsTable).where(eq(appointmentsTable.stylistId, profileId));
-
-  const total = appointments.length;
-  if (total === 0) return null;
-
-  const cancelled = appointments.filter(a => a.status === "cancelled").length;
-  const completed = appointments.filter(a => a.status === "completed").length;
-
-  const clientCounts: Record<string, number> = {};
-  for (const a of appointments) {
-    clientCounts[a.clientId] = (clientCounts[a.clientId] ?? 0) + 1;
-  }
-  const uniqueClients = Object.keys(clientCounts).length;
-  const repeatClients = Object.values(clientCounts).filter(c => c >= 2).length;
-
-  const cancellationRate = total > 0 ? cancelled / total : 0;
-  const repeatClientRate = uniqueClients > 0 ? repeatClients / uniqueClients : 0;
-
-  const reviewPoints = reviewCount > 0 ? (currentRating / 5) * 35 : 0;
-  const cancellationPoints = (1 - cancellationRate) * 30;
-  const repeatPoints = repeatClientRate * 20;
-  const volumePoints = Math.min(completed / 10, 1) * 15;
-
-  const score = Math.round(reviewPoints + cancellationPoints + repeatPoints + volumePoints);
-
-  return {
-    score,
-    cancellationRate: Math.round(cancellationRate * 100),
-    repeatClientRate: Math.round(repeatClientRate * 100),
-    completedBookings: completed,
-    totalBookings: total,
-  };
-}
 
 export function computeProfileReadiness(
   profile: typeof stylistProfilesTable.$inferSelect,
@@ -154,12 +117,12 @@ async function buildStylistResponse(profileId: string, includePrivateSelfFields 
   if (!profile) return null;
   const services = await db.select().from(servicesTable).where(eq(servicesTable.stylistId, profileId));
   const portfolio = await db.select().from(portfolioItemsTable).where(eq(portfolioItemsTable.stylistId, profileId));
-  const reputation = await computeReputationScore(profile.id, profile.rating ?? 0, profile.reviewCount ?? 0);
+  const reputation = await publicReputationFor(profile.id);
   const publicProfile = serializePublicStylistProfile(
     profile,
     services,
     portfolio,
-    reputation?.score ?? null,
+    reputation,
   );
   if (!includePrivateSelfFields) return publicProfile;
 
@@ -171,7 +134,7 @@ async function buildStylistResponse(profileId: string, includePrivateSelfFields 
     userId: profile.userId,
     phone,
     verificationStatus: profile.verificationStatus,
-    reputationBreakdown: reputation ?? null,
+    reputationBreakdown: { score: reputation.score, completedBookings: reputation.completedBookings, building: reputation.building },
     profileReadiness: readiness,
   };
 }

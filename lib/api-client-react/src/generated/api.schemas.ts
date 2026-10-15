@@ -983,6 +983,27 @@ export interface PortfolioItem {
   imageUrl?: string | null;
 }
 
+export type PublicReputationTier = typeof PublicReputationTier[keyof typeof PublicReputationTier];
+
+
+export const PublicReputationTier = {
+  new_talent: 'new_talent',
+  rising: 'rising',
+  signature: 'signature',
+  elite: 'elite',
+  icon: 'icon',
+} as const;
+
+export interface PublicReputation {
+  tier: PublicReputationTier;
+  tierLabel: string;
+  /** True while there is not yet enough evidence to rate her. Shown as Building reputation. */
+  building: boolean;
+  score: number | null;
+  completedBookings: number;
+  reviewCount: number;
+}
+
 export interface StylistProfile {
   id: string;
   name: string;
@@ -1006,10 +1027,11 @@ export interface StylistProfile {
   accentColor?: string | null;
   houseCalls?: boolean;
   /**
-     * Overall reputation score 0-100 computed from bookings, cancellations, repeat clients and reviews
+     * Public reputation score 0-100. Null while the artist is still building reputation (not enough evidence to rate her fairly).
      * @nullable
      */
   reputationScore?: number | null;
+  reputation?: PublicReputation | null;
 }
 
 export type MyStylistProfileVerificationStatus = typeof MyStylistProfileVerificationStatus[keyof typeof MyStylistProfileVerificationStatus];
@@ -1025,11 +1047,10 @@ export const MyStylistProfileVerificationStatus = {
  * @nullable
  */
 export type MyStylistProfileReputationBreakdown = {
-  score?: number;
-  cancellationRate?: number;
-  repeatClientRate?: number;
+  /** @nullable */
+  score?: number | null;
   completedBookings?: number;
-  totalBookings?: number;
+  building?: boolean;
 } | null;
 
 export interface ProfileReadinessCriterion {
@@ -1574,6 +1595,262 @@ export interface RequestCampaignCancellationInput {
 export interface MarkSeatRefundedInput {
   /** @maxLength 200 */
   reference?: string;
+}
+
+export interface ReputationCategory {
+  key: string;
+  label: string;
+  weightPercent: number;
+  score: number;
+  help: string;
+}
+
+export interface ReputationNextTier {
+  tier: string;
+  label: string;
+  pointsNeeded: number;
+  bookingsNeeded: number;
+  monthsNeeded: number;
+}
+
+export type ReputationEventViewStatus = typeof ReputationEventViewStatus[keyof typeof ReputationEventViewStatus];
+
+
+export const ReputationEventViewStatus = {
+  active: 'active',
+  under_review: 'under_review',
+  reversed: 'reversed',
+} as const;
+
+export type ReputationEventViewDispute = {
+  status: string;
+  note: string | null;
+} | null;
+
+export interface ReputationEventView {
+  id: string;
+  type: string;
+  label: string;
+  status: ReputationEventViewStatus;
+  createdAt: string;
+  detail: string | null;
+  canDispute: boolean;
+  dispute: ReputationEventViewDispute;
+}
+
+export interface ReputationHistoryRow {
+  id: string;
+  from: string | null;
+  to: string;
+  reason: string;
+  createdAt: string;
+}
+
+export interface ReputationReferral {
+  code: string | null;
+  referred: number;
+  credited: number;
+  creditCap: number;
+  bookingsRequired: number;
+}
+
+export type ArtistReputationCancellationPolicy = {
+  freeNoticeHours: number;
+  lateNoticeHours: number;
+};
+
+export interface ArtistReputation {
+  building: boolean;
+  tier: string;
+  tierLabel: string;
+  score: number | null;
+  provisionalScore: number;
+  completedBookings: number;
+  bookingsToRate: number;
+  reviewCount: number;
+  monthsSinceVerified: number;
+  verified: boolean;
+  categories: ReputationCategory[];
+  nextTier: ReputationNextTier | null;
+  history: ReputationHistoryRow[];
+  events: ReputationEventView[];
+  referral: ReputationReferral;
+  cancellationPolicy: ArtistReputationCancellationPolicy;
+}
+
+export interface DisputeInput {
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export interface ArtistCancelInput {
+  /** @maxLength 1000 */
+  reason?: string;
+  emergency?: boolean;
+}
+
+export type ArtistCancelResultKind = typeof ArtistCancelResultKind[keyof typeof ArtistCancelResultKind];
+
+
+export const ArtistCancelResultKind = {
+  free: 'free',
+  late_cancel: 'late_cancel',
+  last_minute_cancel: 'last_minute_cancel',
+} as const;
+
+export interface ArtistCancelResult {
+  message: string;
+  kind: ArtistCancelResultKind;
+  noticeHours: number;
+  heldForReview: boolean;
+  refundDue: number;
+}
+
+export interface PendingCheckin {
+  appointmentId: string;
+  clientName: string;
+  serviceName: string;
+  date: string;
+  time: string;
+}
+
+export interface SafetyCheckinInput {
+  objectPath: string;
+  mimeType: string;
+  safe: boolean;
+  lastBooking?: boolean;
+  /** @maxLength 500 */
+  note?: string;
+}
+
+export type SafetyCheckinResultStatus = typeof SafetyCheckinResultStatus[keyof typeof SafetyCheckinResultStatus];
+
+
+export const SafetyCheckinResultStatus = {
+  safe: 'safe',
+  needs_help: 'needs_help',
+} as const;
+
+export interface SafetyCheckinResult {
+  code: string;
+  status: SafetyCheckinResultStatus;
+  message: string;
+}
+
+export interface OwnerReputationRow {
+  stylistId: string;
+  name: string;
+  specialty: string;
+  tier: string;
+  tierLabel: string;
+  building: boolean;
+  score: number | null;
+  completedBookings: number;
+  openDisputes: number;
+}
+
+export interface OwnerReputationDispute {
+  id: string;
+  stylistId: string;
+  artistName: string;
+  eventId: string;
+  eventLabel: string;
+  eventAt: string;
+  reason: string;
+  createdAt: string;
+}
+
+export interface AuditLogRow {
+  id: string;
+  actor: string;
+  action: string;
+  reason: string;
+  createdAt: string;
+}
+
+export type OwnerArtistReputationRecentBookingsItem = {
+  id: string;
+  clientName: string;
+  serviceName: string;
+  date: string;
+  time: string;
+  status: string;
+  noShow: boolean;
+  campaign: boolean;
+};
+
+export type OwnerArtistReputation = ArtistReputation & {
+  name: string;
+  recentBookings: OwnerArtistReputationRecentBookingsItem[];
+  auditLog: AuditLogRow[];
+};
+
+export type ResolveDisputeInputDecision = typeof ResolveDisputeInputDecision[keyof typeof ResolveDisputeInputDecision];
+
+
+export const ResolveDisputeInputDecision = {
+  uphold: 'uphold',
+  reject: 'reject',
+} as const;
+
+export interface ResolveDisputeInput {
+  decision: ResolveDisputeInputDecision;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  note: string;
+}
+
+export interface ReasonInput {
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type ConductCaseInputSeverity = typeof ConductCaseInputSeverity[keyof typeof ConductCaseInputSeverity];
+
+
+export const ConductCaseInputSeverity = {
+  minor: 'minor',
+  serious: 'serious',
+} as const;
+
+export interface ConductCaseInput {
+  severity: ConductCaseInputSeverity;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  reason: string;
+  complaintId?: string;
+}
+
+export type OwnerSafetyCheckinStatus = typeof OwnerSafetyCheckinStatus[keyof typeof OwnerSafetyCheckinStatus];
+
+
+export const OwnerSafetyCheckinStatus = {
+  safe: 'safe',
+  needs_help: 'needs_help',
+} as const;
+
+export interface OwnerSafetyCheckin {
+  id: string;
+  code: string;
+  status: OwnerSafetyCheckinStatus;
+  isLastBooking: boolean;
+  note: string | null;
+  artistName: string;
+  serviceName: string;
+  clientName: string;
+  date: string;
+  createdAt: string;
+  photoUrl: string;
 }
 
 export type CampaignChangeKind = typeof CampaignChangeKind[keyof typeof CampaignChangeKind];

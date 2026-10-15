@@ -57,6 +57,14 @@ export const appointmentsTable = pgTable("appointments", {
   refundDueAmount: real("refund_due_amount").notNull().default(0),
   refundedAt: timestamp("refunded_at"),
   refundReference: text("refund_reference"),
+  // ── Reputation: who cancelled and how much notice, and artist no-shows ──────
+  // client | artist | platform. Bookings cancelled before this was recorded stay null (counted as neutral).
+  cancelledBy: text("cancelled_by"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancelNoticeHours: real("cancel_notice_hours"),
+  // A confirmed artist no-show, recorded only by the owner after review.
+  noShow: boolean("no_show").notNull().default(false),
+  safetyReminderSentAt: timestamp("safety_reminder_sent_at"),
 });
 
 export type Appointment = typeof appointmentsTable.$inferSelect;

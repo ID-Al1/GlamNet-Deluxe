@@ -490,7 +490,7 @@ router.post("/owner/artists/:profileId/verify", requireOwner, async (req, res) =
     return;
   }
 
-  const [updated] = await db.update(stylistProfilesTable).set({ verified: true, verificationStatus: "verified" })
+  const [updated] = await db.update(stylistProfilesTable).set({ verified: true, verificationStatus: "verified", verifiedAt: new Date() })
     .where(and(eq(stylistProfilesTable.id, profileId), eq(stylistProfilesTable.verificationStatus, "pending"))).returning({ id: stylistProfilesTable.id });
   if (!updated) { res.status(409).json({ error: "Artist verification state changed; reload and try again" }); return; }
 
