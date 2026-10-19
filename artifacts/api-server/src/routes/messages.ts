@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { db, conversationsTable, messagesTable, usersTable, stylistProfilesTable } from "@workspace/db";
-import { eq, and, like } from "drizzle-orm";
+import { db, conversationsTable, messagesTable, usersTable, stylistProfilesTable, appointmentsTable } from "@workspace/db";
+import { eq, and, like, isNotNull, notInArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
 import { SendMessageBody, StartConversationBody } from "@workspace/api-zod";
 import { sendNotification } from "../lib/notifications";
 import { wasUploadedBy } from "../lib/upload-registry";
 import { param } from "../lib/params";
+import { containsContactDetails } from "../lib/contactGuard";
 import { addClient, removeClient, broadcastToUsers, mintSseTicket, consumeSseTicket, type ChatEvent } from "../lib/chatBroadcaster";
 
 const router = Router();
@@ -186,6 +187,27 @@ router.post("/messages/conversations/:conversationId/send", requireAuth, async (
 
   const messageType = (parsed.data as any).messageType ?? "text";
   const mediaUrl: string | null = (parsed.data as any).mediaUrl ?? null;
+
+  // Keep contact details on Bonisa until this client and artist have a paid booking.
+  // Enforced here, not in the form, so no client can bypass it.
+  if (messageType === "text" && containsContactDetails(parsed.data.content)) {
+    const clientUserId = conv.clientId;
+    const [paidBooking] = await db
+      .select({ id: appointmentsTable.id })
+      .from(appointmentsTable)
+      .innerJoin(stylistProfilesTable, eq(appointmentsTable.stylistId, stylistProfilesTable.id))
+      .where(and(
+        eq(appointmentsTable.clientId, clientUserId),
+        eq(stylistProfilesTable.userId, conv.stylistId),
+        isNotNull(appointmentsTable.stripePaymentIntentId),
+        notInArray(appointmentsTable.status, ["cancelled", "declined"]),
+      ))
+      .limit(1);
+    if (!paidBooking) {
+      res.status(422).json({ error: "For your protection, keep phone numbers and contact links on Bonisa until your booking is paid." });
+      return;
+    }
+  }
 
   // Validate media ownership: the mediaUrl must reference an object either
   // minted by this user's session, or already attached to a conversation

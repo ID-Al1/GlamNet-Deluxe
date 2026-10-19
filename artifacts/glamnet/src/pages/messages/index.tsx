@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, MessageCircle, Image, Mic, Square, Play, Pause, Check, CheckCheck, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
+import { toast } from "sonner";
 
 type Message = {
   id: string;
@@ -68,7 +69,10 @@ async function sendMessage(conversationId: string, payload: { content: string; m
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Failed to send");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Failed to send");
+  }
   return res.json();
 }
 
@@ -363,6 +367,7 @@ export default function Messages() {
       qc.invalidateQueries({ queryKey: ["conversations"] });
       inputRef.current?.focus();
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const handleSend = (e: React.FormEvent) => {
