@@ -59,6 +59,13 @@ The event date is **14 November**. Today is Saturday 10 October, so there are **
 - Security fixes found by the audit (password hashing, login expiry, rate limiting) must be applied to both versions
 - Decide which version the 14 November event points people to
 
+### Update (19 October 2026): Peach did not confirm today
+
+- Haiden's earlier message about Peach confirming today was a miscommunication. Peach has **not** confirmed
+- Peach needs the business registered under **Bonisa**. Open question: does this mean a Bonisa trading name under Opus Intelligence (Pty) Ltd, or a separate Bonisa entity? Contracts and the bank account must sit with a legal entity, so settle this before anything is submitted
+- The 6 November payment test is now at risk. The decision day rule applies: the event is planned as an **awareness launch with a waiting list** unless Peach confirms with a firm date soon
+- Ask Peach in writing for a firm date, and for the exact registration papers they need under the Bonisa name
+
 ### The five streams
 
 **1. Launch events with Favour (event coordinator for Hayden's team)**
