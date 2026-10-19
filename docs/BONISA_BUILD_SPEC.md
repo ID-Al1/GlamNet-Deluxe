@@ -118,6 +118,7 @@ Straight from the strategy red lights, restated so nobody has to go looking:
 - Any fake, seeded, sample or placeholder content, anywhere, ever, including demos shown to investors
 - Salons as the primary entity. Bonisa lists individuals
 - A commission below 18% to win artists
+- Artist subscriptions (R99 Basic, R199 Pro) before 50 artists are verified. Alwande's rule, set 2026-10-19
 - Features before the model is proven. If it does not help onboard the First 50, take verified bookings, or pay an artist on time, it waits
 
 ---
