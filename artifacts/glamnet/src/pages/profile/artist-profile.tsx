@@ -178,16 +178,12 @@ export function ArtistProfile() {
   // Compute Missing
   const hasIdentity = identityStatus?.idNumberProvided && identityStatus?.idDocumentProvided;
   const hasBank = !!bankDetails?.maskedAccountNumber || !!(bankDetails as any)?.accountNumber || !!bankDetails?.verificationStatus;
-  const hasBio = (myProfile.bio?.trim().length ?? 0) >= 40;
-  const hasService = (myProfile.services?.length ?? 0) > 0;
-  const hasPortfolio = (myProfile.portfolio?.length ?? 0) > 0;
-
-  const missingList = [];
-  if (!hasIdentity) missingList.push("Identity documents");
-  if (!hasBank) missingList.push("Bank details");
-  if (!hasBio) missingList.push("Bio (min. 40 characters)");
-  if (!hasService) missingList.push("At least one service");
-  if (!hasPortfolio) missingList.push("At least one portfolio item");
+  // One source of truth: the server's checklist (the same one the owner is held to),
+  // plus bank details, which the artist needs before she can be paid.
+  const missingList = [
+    ...checklist.criteria.filter((criterion) => !criterion.met).map((criterion) => criterion.label),
+    ...(hasBank ? [] : ["Bank details"]),
+  ];
 
   const canSubmit = missingList.length === 0 && checklist.verificationStatus === "none";
   const nextChecklistItem = checklist.criteria.find((criterion) => !criterion.met);

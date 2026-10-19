@@ -317,8 +317,21 @@ router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) =
   if (profile.verificationStatus === "verified") {
     res.status(409).json({ error: "Your profile is already verified." }); return;
   }
-  if (!profile.idNumber || !profile.idDocumentUrl) {
-    res.status(400).json({ error: "Add your ID number and identity document before submitting for verification." }); return;
+  // Same checklist the owner is held to on approval, so nobody waits in the
+  // queue for a review that could never end in approval.
+  const [services, portfolio, userRow] = await Promise.all([
+    db.select().from(servicesTable).where(eq(servicesTable.stylistId, profile.id)),
+    db.select().from(portfolioItemsTable).where(eq(portfolioItemsTable.stylistId, profile.id)),
+    db.select().from(usersTable).where(eq(usersTable.id, user.id)).then(r => r[0] ?? null),
+  ]);
+  const readiness = computeProfileReadiness(profile, services, portfolio, userRow?.phone ?? null);
+  const missingItems = readiness.criteria.filter(c => !c.met).map(({ id, label, hint }) => ({ id, label, hint }));
+  if (missingItems.length > 0) {
+    res.status(400).json({
+      error: `Finish these before submitting: ${missingItems.map(i => i.label).join(", ")}.`,
+      missingItems,
+    });
+    return;
   }
 
   await db.update(stylistProfilesTable)
