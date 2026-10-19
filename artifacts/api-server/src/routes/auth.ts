@@ -5,6 +5,10 @@ import { randomUUID, randomBytes } from "crypto";
 import { createHmac, timingSafeEqual } from "crypto";
 import { SignupBody, LoginBody } from "@workspace/api-zod";
 
+// Bump when the privacy policy text changes in a way users must re-accept.
+// Keep in step with PRIVACY_POLICY_VERSION in artifacts/glamnet/src/lib/legal.ts.
+const PRIVACY_POLICY_VERSION = "2026-10-19";
+
 const router = Router();
 function getTokenSecret(): string {
   const secret = process.env["SESSION_SECRET"];
@@ -84,6 +88,11 @@ router.post("/auth/signup", async (req, res) => {
     return;
   }
   const { name, password, role, businessName } = parsed.data;
+  // POPIA: no account is created without recorded consent, enforced here and not only in the form.
+  if (parsed.data.acceptedPrivacyPolicy !== true) {
+    res.status(400).json({ error: "You must accept the privacy policy to create an account" });
+    return;
+  }
   // Normalise email at write time so stored values are always canonical.
   const email = parsed.data.email.trim().toLowerCase();
   const phone = normalizePhone(parsed.data.phone);
@@ -124,6 +133,8 @@ router.post("/auth/signup", async (req, res) => {
     phone,
     businessName: businessName ?? null,
     referralCode: newReferralCode,
+    privacyConsentAt: new Date(),
+    privacyPolicyVersion: PRIVACY_POLICY_VERSION,
   }).returning();
 
   if (role === "stylist") {

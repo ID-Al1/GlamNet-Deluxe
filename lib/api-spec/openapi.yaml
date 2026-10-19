@@ -1699,7 +1699,7 @@ components:
 
     SignupInput:
       type: object
-      required: [name, email, password, role, phone]
+      required: [name, email, password, role, phone, acceptedPrivacyPolicy]
       properties:
         name:
           type: string
@@ -1714,6 +1714,9 @@ components:
           type: string
           minLength: 7
           maxLength: 32
+        acceptedPrivacyPolicy:
+          type: boolean
+          description: Must be true. Records POPIA consent to the current privacy policy.
         role:
           type: string
           enum: [client, stylist, brand]

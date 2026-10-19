@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ export default function Signup() {
   const [businessName, setBusinessName] = useState("");
   const [specialty, setSpecialty] = useState("Makeup");
   const [referralCode, setReferralCode] = useState("");
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const [, setLocation] = useLocation();
@@ -40,6 +42,10 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedPrivacy) {
+      toast.error("Please accept the privacy policy to continue");
+      return;
+    }
     setIsLoading(true);
     try {
       await signup({
@@ -49,6 +55,7 @@ export default function Signup() {
           phone,
           password,
           role,
+          acceptedPrivacyPolicy: true,
           businessName: role === SignupInputRole.brand ? businessName : undefined,
           ...(referralCode ? { referralCode } : {}),
         } as any,
@@ -167,6 +174,14 @@ export default function Signup() {
                 maxLength={20}
               />
             </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Checkbox id="privacy" checked={acceptedPrivacy} onCheckedChange={v => setAcceptedPrivacy(v === true)} className="mt-0.5" />
+            <Label htmlFor="privacy" className="text-sm font-normal leading-snug">
+              I have read and accept the{" "}
+              <Link href="/privacy" className="text-primary hover:underline">privacy policy</Link>.
+            </Label>
           </div>
 
           <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>

@@ -92,7 +92,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 
 - Commission and payout fields missing from the appointments table
 - Verification does not gate browse, booking, or casting applications
-- No POPIA consent capture or privacy policy
+- POPIA: consent at signup and a privacy page exist (branch popia-consent-signup). Still missing: Information Officer email in lib/legal.ts, delete-my-data button, lawyer review of the policy text, consent for accounts created before this change
 - `casting_calls.budget` is free text (campaign spend cannot be totalled)
 - `appointments.stylistId` has no foreign key constraint
 - No minimum service price validation (R600/hr floor for Phase 1)

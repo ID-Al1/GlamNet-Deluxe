@@ -18,6 +18,8 @@ export interface SignupInput {
      * @maxLength 32
      */
   phone: string;
+  /** Must be true. Records POPIA consent to the current privacy policy. */
+  acceptedPrivacyPolicy: boolean;
   role: SignupInputRole;
   /** @nullable */
   businessName?: string | null;

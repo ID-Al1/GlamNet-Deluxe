@@ -17,6 +17,10 @@ export const usersTable = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   accountStatus: text("account_status").notNull().default("active"),
   referralCode: text("referral_code").unique(),
+  // POPIA: when the person accepted the privacy policy, and which version.
+  // Null for accounts created before consent capture existed.
+  privacyConsentAt: timestamp("privacy_consent_at"),
+  privacyPolicyVersion: text("privacy_policy_version"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({ accountStatusCheck: check("users_account_status_check", sql`${t.accountStatus} in ('active', 'suspended')`) }));
 

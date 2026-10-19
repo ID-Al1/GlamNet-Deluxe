@@ -33,6 +33,7 @@ export const SignupBody = zod.object({
   "email": zod.string().email(),
   "password": zod.string().min(signupBodyPasswordMin),
   "phone": zod.string().min(signupBodyPhoneMin).max(signupBodyPhoneMax),
+  "acceptedPrivacyPolicy": zod.boolean().describe('Must be true. Records POPIA consent to the current privacy policy.'),
   "role": zod.enum(['client', 'stylist', 'brand']),
   "businessName": zod.string().nullish()
 })

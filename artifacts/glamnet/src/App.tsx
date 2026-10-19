@@ -31,6 +31,7 @@ const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const ComplaintsList = lazy(() => import("@/pages/complaints/index"));
 const NewComplaint = lazy(() => import("@/pages/complaints/new"));
 const ComplaintDetail = lazy(() => import("@/pages/complaints/[id]"));
+const PrivacyPolicy = lazy(() => import("@/pages/legal/privacy"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const OwnerPortal = lazy(() => import("@/pages/owner/index"));
 const OwnerRegistry = lazy(() => import("@/pages/owner/registry/index"));
@@ -91,6 +92,7 @@ function Router() {
                 <Route path="/" component={Home} />
                 <Route path="/login" component={Login} />
                 <Route path="/signup" component={Signup} />
+                <Route path="/privacy" component={PrivacyPolicy} />
                 <Route path="/profile" component={Profile} />
                 <Route path="/dashboard/artist">
                   <RequireOwner>
