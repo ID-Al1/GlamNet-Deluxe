@@ -37,6 +37,7 @@ interface PendingArtist {
   phone: string | null;
   identityDocumentAvailable: boolean;
   joinedAt: string;
+  submittedAt: string;
 }
 
 interface NotSubmittedArtist {
@@ -267,7 +268,7 @@ export default function OwnerVerifications() {
       {artists !== null && !loadError && artists.length > 0 && (
         <div className="space-y-4">
           {artists.map((a) => {
-            const waiting = daysWaiting(a.joinedAt);
+            const waiting = daysWaiting(a.submittedAt);
             return (
               <Card key={a.profileId} className="bg-card border-border/50">
                 <CardHeader className="pb-3">

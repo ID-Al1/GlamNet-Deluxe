@@ -324,7 +324,7 @@ export function ArtistProfile() {
           </CardTitle>
           <CardDescription>
             {checklist.verificationStatus === "pending"
-              ? "Your profile is being reviewed by the Bonisa team. This usually takes 1-2 business days."
+              ? "Your profile is being reviewed by the Bonisa team. We review every profile within 72 hours."
               : checklist.verificationStatus === "verified"
               ? "Your profile is fully verified and live for bookings."
               : "Complete these steps below to verify your identity and start accepting bookings."}
@@ -332,6 +332,13 @@ export function ArtistProfile() {
         </CardHeader>
         {checklist.verificationStatus === "none" && (
           <CardContent className="space-y-4">
+            {checklist.rejectionReason && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3" data-testid="status-rejection-reason">
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">From the Bonisa team</p>
+                <p className="mt-1 text-sm text-foreground">{checklist.rejectionReason}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Make these changes and submit again. Your profile goes live as soon as it is approved.</p>
+              </div>
+            )}
             <div className="grid gap-2">
               {checklist.criteria.map((c) => (
                 <div key={c.id} className="flex items-start gap-3 p-3 rounded-lg bg-background border border-border/50">

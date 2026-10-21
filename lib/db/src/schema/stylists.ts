@@ -24,6 +24,11 @@ export const stylistProfilesTable = pgTable("stylist_profiles", {
   // Private identity-verification fields. Never expose these in public profile DTOs.
   idNumber: text("id_number"),
   idDocumentUrl: text("id_document_url"),
+  // When she last submitted for review. Null for artists who submitted before
+  // this was recorded; the owner queue falls back to createdAt for them.
+  verificationSubmittedAt: timestamp("verification_submitted_at"),
+  // The owner's written reason from her latest rejection. Cleared on resubmit and on approval.
+  verificationRejectionReason: text("verification_rejection_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -12,6 +12,11 @@ export interface VerificationChecklist {
   /** True when an admin has manually verified this artist */
   verified: boolean;
   verificationStatus: VerificationChecklistVerificationStatus;
+  /**
+     * The Bonisa team's written reason from her latest rejection, if any. Cleared when she resubmits.
+     * @nullable
+     */
+  rejectionReason?: string | null;
   criteria: ProfileReadinessCriterion[];
   completedCount: number;
   totalCount: number;

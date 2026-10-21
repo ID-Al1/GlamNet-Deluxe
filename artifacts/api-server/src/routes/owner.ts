@@ -427,6 +427,7 @@ router.get("/owner/artists/pending", requireOwner, async (req, res) => {
         phone: user?.phone ?? null,
         identityDocumentAvailable: !!p.idDocumentUrl,
         joinedAt: p.createdAt.toISOString(),
+        submittedAt: (p.verificationSubmittedAt ?? p.createdAt).toISOString(),
       };
     }),
   );
@@ -495,7 +496,7 @@ router.post("/owner/artists/:profileId/verify", requireOwner, async (req, res) =
     return;
   }
 
-  const [updated] = await db.update(stylistProfilesTable).set({ verified: true, verificationStatus: "verified" })
+  const [updated] = await db.update(stylistProfilesTable).set({ verified: true, verificationStatus: "verified", verificationRejectionReason: null })
     .where(and(eq(stylistProfilesTable.id, profileId), eq(stylistProfilesTable.verificationStatus, "pending"))).returning({ id: stylistProfilesTable.id });
   if (!updated) { res.status(409).json({ error: "Artist verification state changed; reload and try again" }); return; }
 
@@ -534,7 +535,7 @@ router.post("/owner/artists/:profileId/reject", requireOwner, async (req, res) =
   if (profile.verificationStatus !== "pending") { res.status(409).json({ error: "Only pending artists can be rejected" }); return; }
 
   // Reset to "none" so the artist can address the issues and submit again.
-  const [updated] = await db.update(stylistProfilesTable).set({ verified: false, verificationStatus: "none" })
+  const [updated] = await db.update(stylistProfilesTable).set({ verified: false, verificationStatus: "none", verificationRejectionReason: rejectionReason })
     .where(and(eq(stylistProfilesTable.id, profileId), eq(stylistProfilesTable.verificationStatus, "pending"))).returning({ id: stylistProfilesTable.id });
   if (!updated) { res.status(409).json({ error: "Artist verification state changed; reload and try again" }); return; }
 

@@ -2283,6 +2283,9 @@ components:
         verificationStatus:
           type: string
           enum: [none, pending, verified]
+        rejectionReason:
+          type: ["string", "null"]
+          description: The Bonisa team's written reason from her latest rejection, if any. Cleared when she resubmits.
         criteria:
           type: array
           items:

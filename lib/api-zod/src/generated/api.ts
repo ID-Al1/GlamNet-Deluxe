@@ -527,6 +527,7 @@ export const RequestIdentityDocumentUploadUrlResponse = zod.object({
 export const GetVerificationChecklistResponse = zod.object({
   "verified": zod.boolean().describe('True when an admin has manually verified this artist'),
   "verificationStatus": zod.enum(['none', 'pending', 'verified']),
+  "rejectionReason": zod.string().nullish().describe('The Bonisa team\'s written reason from her latest rejection, if any. Cleared when she resubmits.'),
   "criteria": zod.array(zod.object({
   "id": zod.number(),
   "label": zod.string(),

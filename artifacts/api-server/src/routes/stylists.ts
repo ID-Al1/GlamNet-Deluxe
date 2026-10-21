@@ -335,7 +335,7 @@ router.patch("/stylists/me/verification-submit", requireAuth, async (req, res) =
   }
 
   await db.update(stylistProfilesTable)
-    .set({ verificationStatus: "pending" })
+    .set({ verificationStatus: "pending", verificationSubmittedAt: new Date(), verificationRejectionReason: null })
     .where(eq(stylistProfilesTable.id, profile.id));
 
   // Notify the artist — non-fatal, runs after response is sent
@@ -552,6 +552,7 @@ router.get("/stylists/me/verification-checklist", requireAuth, async (req, res) 
   res.json({
     verified: profile.verified,
     verificationStatus: profile.verificationStatus,
+    rejectionReason: profile.verificationRejectionReason ?? null,
     ...readiness,
   });
 });
