@@ -12,11 +12,11 @@ Target date to be live with legal documents in the app: **Monday 2 November 2026
 
 | Question | Current understanding |
 |---|---|
-| Legal owner | Opus Intelligence (Pty) Ltd, CIPC registered (to confirm current details) |
-| Brand | Bonisa. Open: trading name under Opus, or a separate company (to confirm) |
-| Bank account | Opus account (to confirm) |
+| Legal owner | A new, separate Bonisa company, being registered with CIPC (registration number to follow). Opus Intelligence (Pty) Ltd was the earlier plan |
+| Brand | Bonisa, owned by the new company |
+| Bank account | Needs to be opened in the new company's name (earlier plan was the Opus account) |
 | Payment provider | Peach Payments replaces Stripe. Not yet confirmed or connected |
-| POPIA Information Officer | Not yet named |
+| POPIA Information Officer | Alwande (registration with the Information Regulator still to do, after the company exists) |
 | Artists | Independent contractors, one profile per person, not salons |
 | Ambassadors ("Show Me Girls") | Contractors paid per result, not employees (design stage) |
 | Amali | Helper on content, not an employee |
