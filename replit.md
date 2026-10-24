@@ -60,6 +60,10 @@ South Africa's verified professional network for beauty artists. Artists build a
 7. **Artists are individuals, not salons.** One profile per person; the artist is the brand.
 8. **POPIA compliance is required before the first real booking** — consent capture, privacy policy, data retention position.
 
+## Model portal
+
+Models are a fourth role (public directory, workspace, opportunities, owner review). Read `docs/BONISA_MODEL_PORTAL.md` for what is live, what is not, and the open decisions. Run `pnpm --filter @workspace/db run migrate:model-portal:dev` before first use.
+
 ## Brand
 
 - **Name:** Bonisa. Never GlamNet in user-facing text.

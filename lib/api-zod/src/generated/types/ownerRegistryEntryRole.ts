@@ -13,4 +13,5 @@ export const OwnerRegistryEntryRole = {
   client: 'client',
   stylist: 'stylist',
   brand: 'brand',
+  model: 'model',
 } as const;

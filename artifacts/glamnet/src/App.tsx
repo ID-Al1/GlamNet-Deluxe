@@ -1,10 +1,11 @@
 import { Suspense, lazy, useEffect } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Redirect, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { ThemeProvider } from "@/lib/theme";
+import { ThemeProvider, useTheme } from "@/lib/theme";
+import { Toaster as SonnerToaster } from "sonner";
 import { AppLayout } from "@/components/layout/app-layout";
 import { BonisaSplash } from "@/components/bonisa-splash";
 import { Loader2 } from "lucide-react";
@@ -42,6 +43,23 @@ const OwnerPayouts = lazy(() => import("@/pages/owner/payouts/index"));
 const OwnerPaymentsOverview = lazy(() => import("@/pages/owner/payments-overview/index"));
 const OwnerComplaints = lazy(() => import("@/pages/owner/complaints/index"));
 const OwnerComplaintDetail = lazy(() => import("@/pages/owner/complaints/[id]"));
+const OwnerModels = lazy(() => import("@/pages/owner/models"));
+const OwnerOversight = lazy(() => import("@/pages/owner/oversight"));
+const TalentDirectory = lazy(() => import("@/pages/talent/index"));
+const TalentProfilePage = lazy(() => import("@/pages/talent/[id]"));
+const Opportunities = lazy(() => import("@/pages/opportunities/index"));
+const OpportunityDetail = lazy(() => import("@/pages/opportunities/[id]"));
+const About = lazy(() => import("@/pages/about"));
+const BrandOpportunities = lazy(() => import("@/pages/brand/opportunities"));
+const WorkspaceOverview = lazy(() => import("@/pages/workspace/index"));
+const WorkspacePortfolio = lazy(() => import("@/pages/workspace/portfolio"));
+const WorkspaceBrand = lazy(() => import("@/pages/workspace/brand"));
+const WorkspaceOpportunities = lazy(() => import("@/pages/workspace/opportunities"));
+const WorkspaceApplications = lazy(() => import("@/pages/workspace/applications"));
+const WorkspaceCampaigns = lazy(() => import("@/pages/workspace/campaigns"));
+const WorkspaceEarnings = lazy(() => import("@/pages/workspace/earnings"));
+const WorkspaceContracts = lazy(() => import("@/pages/workspace/contracts"));
+const WorkspaceSettings = lazy(() => import("@/pages/workspace/settings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +81,20 @@ function RequireOwner({ children }: { children: React.ReactNode }) {
   }, [user, navigate]);
   if (!user?.isOwner) return null;
   return <>{children}</>;
+}
+
+/** Sends anyone who is not signed in as `role` away before the page (and its data requests) loads. Screen-level only: the API enforces the same rule. */
+function RequireRole({ role, children }: { role: "model" | "brand"; children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user) return <Redirect to="/login" />;
+  if (user.role !== role) return <Redirect to="/dashboard" />;
+  return <>{children}</>;
+}
+
+/** Most screens call `toast` from sonner, so its display has to be mounted or those messages are never seen. */
+function AppSonner() {
+  const { theme } = useTheme();
+  return <SonnerToaster theme={theme} position="top-center" closeButton />;
 }
 
 function PageLoader() {
@@ -188,6 +220,39 @@ function Router() {
                     </OwnerLayout>
                   </RequireOwner>
                 </Route>
+                <Route path="/talent" component={TalentDirectory} />
+                <Route path="/talent/:id" component={TalentProfilePage} />
+                <Route path="/opportunities" component={Opportunities} />
+                <Route path="/opportunities/:id" component={OpportunityDetail} />
+                <Route path="/about" component={About} />
+                <Route path="/brand/opportunities"><RequireRole role="brand"><BrandOpportunities /></RequireRole></Route>
+                <Route path="/workspace"><RequireRole role="model"><WorkspaceOverview /></RequireRole></Route>
+                <Route path="/workspace/portfolio"><RequireRole role="model"><WorkspacePortfolio /></RequireRole></Route>
+                <Route path="/workspace/brand"><RequireRole role="model"><WorkspaceBrand /></RequireRole></Route>
+                <Route path="/workspace/opportunities"><RequireRole role="model"><WorkspaceOpportunities /></RequireRole></Route>
+                <Route path="/workspace/applications"><RequireRole role="model"><WorkspaceApplications /></RequireRole></Route>
+                <Route path="/workspace/campaigns"><RequireRole role="model"><WorkspaceCampaigns /></RequireRole></Route>
+                <Route path="/workspace/earnings"><RequireRole role="model"><WorkspaceEarnings /></RequireRole></Route>
+                <Route path="/workspace/contracts"><RequireRole role="model"><WorkspaceContracts /></RequireRole></Route>
+                <Route path="/workspace/settings"><RequireRole role="model"><WorkspaceSettings /></RequireRole></Route>
+                <Route path="/owner/models">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerModels />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/oversight">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerOversight />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
                     <Route component={NotFound} />
                   </Switch>
                 </Suspense>
@@ -212,6 +277,7 @@ function App() {
             </WouterRouter>
           </AuthProvider>
           <Toaster />
+          <AppSonner />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

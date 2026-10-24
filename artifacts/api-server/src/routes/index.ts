@@ -13,6 +13,9 @@ import reviewsRouter from "./reviews";
 import storageRouter from "./storage";
 import ownerRouter from "./owner";
 import complaintsRouter from "./complaints";
+import modelsRouter from "./models";
+import opportunitiesRouter from "./opportunities";
+import ownerModelsRouter from "./owner-models";
 
 const router: IRouter = Router();
 
@@ -30,5 +33,8 @@ router.use(reviewsRouter);
 router.use(storageRouter);
 router.use(ownerRouter);
 router.use(complaintsRouter);
+router.use(modelsRouter);
+router.use(opportunitiesRouter);
+router.use(ownerModelsRouter);
 
 export default router;

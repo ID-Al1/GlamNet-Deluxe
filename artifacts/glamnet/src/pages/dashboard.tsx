@@ -26,6 +26,8 @@ export default function DashboardRouter() {
       return <StylistDashboard />;
     case "brand":
       return <BrandDashboard />;
+    case "model":
+      return <Redirect to="/workspace" />;
     default:
       return <div className="p-8 text-center text-destructive">Invalid role</div>;
   }

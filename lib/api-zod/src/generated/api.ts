@@ -33,7 +33,7 @@ export const SignupBody = zod.object({
   "email": zod.string().email(),
   "password": zod.string().min(signupBodyPasswordMin),
   "phone": zod.string().min(signupBodyPhoneMin).max(signupBodyPhoneMax),
-  "role": zod.enum(['client', 'stylist', 'brand']),
+  "role": zod.enum(['client', 'stylist', 'brand', 'model']),
   "businessName": zod.string().nullish()
 })
 
@@ -42,7 +42,7 @@ export const SignupResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.enum(['client', 'stylist', 'brand']),
+  "role": zod.enum(['client', 'stylist', 'brand', 'model']),
   "isOwner": zod.boolean().describe('True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser.\n'),
   "businessName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
@@ -65,7 +65,7 @@ export const LoginResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.enum(['client', 'stylist', 'brand']),
+  "role": zod.enum(['client', 'stylist', 'brand', 'model']),
   "isOwner": zod.boolean().describe('True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser.\n'),
   "businessName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
@@ -90,7 +90,7 @@ export const GetMeResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
-  "role": zod.enum(['client', 'stylist', 'brand']),
+  "role": zod.enum(['client', 'stylist', 'brand', 'model']),
   "isOwner": zod.boolean().describe('True only for the account whose email matches the server-side OWNER_EMAIL secret. Computed server-side and never derived from the frontend — OWNER_EMAIL is never sent to the browser.\n'),
   "businessName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
@@ -809,7 +809,7 @@ export const SearchOwnerRegistryResponseItem = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "phone": zod.string().nullish(),
-  "role": zod.enum(['client', 'stylist', 'brand']),
+  "role": zod.enum(['client', 'stylist', 'brand', 'model']),
   "businessName": zod.string().nullish(),
   "specialty": zod.string().nullish(),
   "verificationStatus": zod.union([zod.literal('none'),zod.literal('pending'),zod.literal('verified'),zod.literal(null)]).nullish(),
@@ -1063,7 +1063,7 @@ export const GetOwnerRegistryProfileResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "phone": zod.string().nullish(),
-  "role": zod.enum(['client', 'stylist', 'brand']),
+  "role": zod.enum(['client', 'stylist', 'brand', 'model']),
   "businessName": zod.string().nullish(),
   "joinedAt": zod.coerce.date(),
   "artist": zod.union([zod.object({
@@ -1614,6 +1614,1145 @@ export const GetBrandDashboardResponse = zod.object({
   "hasApplied": zod.boolean().optional(),
   "createdAt": zod.string()
 }))
+})
+
+
+/**
+ * @summary Public talent directory (published and verified models only)
+ */
+export const ListTalentQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "area": zod.coerce.string().optional(),
+  "availability": zod.enum(['available', 'limited']).optional()
+})
+
+export const ListTalentResponseItem = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string().nullish().describe('Coarse location. Null when the model keeps it private.'),
+  "availability": zod.union([zod.literal('available'),zod.literal('limited'),zod.literal(null)]).nullish(),
+  "skills": zod.array(zod.string()),
+  "verified": zod.boolean().describe('Always true in the public directory. Unverified models are not listed.'),
+  "portraitUrl": zod.string().nullish()
+})
+export const ListTalentResponse = zod.array(ListTalentResponseItem)
+
+
+/**
+ * @summary Public talent profile. Contains only fields the model has chosen to publish.
+ */
+export const GetTalentParams = zod.object({
+  "modelId": zod.coerce.string()
+})
+
+export const GetTalentResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string().nullish(),
+  "availability": zod.union([zod.literal('available'),zod.literal('limited'),zod.literal(null)]).nullish(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "verified": zod.boolean(),
+  "verifiedAt": zod.string().nullish(),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional().describe('Where the audience number came from, e.g. self_reported.'),
+  "statUpdatedAt": zod.string().nullish()
+})),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string()
+}))
+})
+
+
+/**
+ * @summary Send a booking enquiry to a model. The model's contact details are never revealed.
+ */
+export const SendTalentEnquiryParams = zod.object({
+  "modelId": zod.coerce.string()
+})
+
+export const sendTalentEnquiryBodyMessageMin = 10;
+export const sendTalentEnquiryBodyMessageMax = 2000;
+
+
+
+export const SendTalentEnquiryBody = zod.object({
+  "message": zod.string().min(sendTalentEnquiryBodyMessageMin).max(sendTalentEnquiryBodyMessageMax)
+})
+
+export const SendTalentEnquiryResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary The signed-in model's own profile, including private settings
+ */
+export const GetMyModelProfileResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Update the signed-in model's own profile and visibility switches
+ */
+export const updateMyModelProfileBodyProfessionalNameMin = 2;
+export const updateMyModelProfileBodyProfessionalNameMax = 80;
+
+export const updateMyModelProfileBodyCategoryMax = 60;
+
+export const updateMyModelProfileBodyAreaMax = 80;
+
+export const updateMyModelProfileBodyBioMax = 2000;
+
+export const updateMyModelProfileBodySkillsItemMax = 40;
+
+export const updateMyModelProfileBodySkillsMax = 20;
+
+export const updateMyModelProfileBodyServiceCategoriesItemMax = 60;
+
+export const updateMyModelProfileBodyServiceCategoriesMax = 12;
+
+export const updateMyModelProfileBodyStartingRateCentsMin = 0;
+
+export const updateMyModelProfileBodyRateNoteMax = 300;
+
+export const updateMyModelProfileBodyCreativeIdentityMax = 2000;
+
+export const updateMyModelProfileBodyCollaborationPreferencesMax = 2000;
+
+export const updateMyModelProfileBodyCareerGoalsMax = 2000;
+
+
+
+export const UpdateMyModelProfileBody = zod.object({
+  "professionalName": zod.string().min(updateMyModelProfileBodyProfessionalNameMin).max(updateMyModelProfileBodyProfessionalNameMax).optional(),
+  "category": zod.string().max(updateMyModelProfileBodyCategoryMax).optional(),
+  "area": zod.string().max(updateMyModelProfileBodyAreaMax).optional(),
+  "bio": zod.string().max(updateMyModelProfileBodyBioMax).nullish(),
+  "skills": zod.array(zod.string().max(updateMyModelProfileBodySkillsItemMax)).max(updateMyModelProfileBodySkillsMax).optional(),
+  "serviceCategories": zod.array(zod.string().max(updateMyModelProfileBodyServiceCategoriesItemMax)).max(updateMyModelProfileBodyServiceCategoriesMax).optional(),
+  "availability": zod.enum(['available', 'limited', 'unavailable']).optional(),
+  "acceptsEnquiries": zod.boolean().optional(),
+  "startingRateCents": zod.number().min(updateMyModelProfileBodyStartingRateCentsMin).nullish(),
+  "rateNote": zod.string().max(updateMyModelProfileBodyRateNoteMax).nullish(),
+  "creativeIdentity": zod.string().max(updateMyModelProfileBodyCreativeIdentityMax).nullish(),
+  "collaborationPreferences": zod.string().max(updateMyModelProfileBodyCollaborationPreferencesMax).nullish(),
+  "careerGoals": zod.string().max(updateMyModelProfileBodyCareerGoalsMax).nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()).optional()
+})
+
+export const UpdateMyModelProfileResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Publish or unpublish the profile. A published profile is listed only once Bonisa has verified it.
+ */
+export const SetMyModelPublishedBody = zod.object({
+  "published": zod.boolean()
+})
+
+export const SetMyModelPublishedResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Ask Bonisa to review the profile for verification
+ */
+export const RequestMyModelVerificationResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Replace the model's social links and self-reported audience numbers
+ */
+export const replaceMySocialLinksBodyLinksItemUrlMax = 300;
+
+export const replaceMySocialLinksBodyLinksItemHandleMax = 80;
+
+export const replaceMySocialLinksBodyLinksItemFollowerCountMin = 0;
+
+export const replaceMySocialLinksBodyLinksMax = 8;
+
+
+
+export const ReplaceMySocialLinksBody = zod.object({
+  "links": zod.array(zod.object({
+  "platform": zod.enum(['instagram', 'tiktok', 'youtube', 'website', 'other']),
+  "url": zod.string().max(replaceMySocialLinksBodyLinksItemUrlMax),
+  "handle": zod.string().max(replaceMySocialLinksBodyLinksItemHandleMax).nullish(),
+  "followerCount": zod.number().min(replaceMySocialLinksBodyLinksItemFollowerCountMin).nullish(),
+  "isPublic": zod.boolean().optional()
+})).max(replaceMySocialLinksBodyLinksMax)
+})
+
+export const ReplaceMySocialLinksResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Attach an already-uploaded image as a digital or editorial portrait
+ */
+export const registerMyModelPhotoBodyObjectPathRegExp = new RegExp('^/objects/uploads/[A-Za-z0-9-]+$');
+
+
+export const RegisterMyModelPhotoBody = zod.object({
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "objectPath": zod.string().regex(registerMyModelPhotoBodyObjectPathRegExp).describe('Path returned by \/storage\/uploads\/request-url.'),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp'])
+})
+
+export const RegisterMyModelPhotoResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Choose whether a photo is public
+ */
+export const UpdateMyModelPhotoParams = zod.object({
+  "photoId": zod.coerce.string()
+})
+
+export const UpdateMyModelPhotoBody = zod.object({
+  "isPublic": zod.boolean()
+})
+
+export const UpdateMyModelPhotoResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Remove a photo
+ */
+export const DeleteMyModelPhotoParams = zod.object({
+  "photoId": zod.coerce.string()
+})
+
+export const DeleteMyModelPhotoResponse = zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "availability": zod.enum(['available', 'limited', 'unavailable']),
+  "acceptsEnquiries": zod.boolean(),
+  "startingRateCents": zod.number().nullish(),
+  "rateNote": zod.string().nullish(),
+  "creativeIdentity": zod.string().nullish(),
+  "collaborationPreferences": zod.string().nullish(),
+  "careerGoals": zod.string().nullish(),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "verificationRejectionReason": zod.string().nullish(),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+})),
+  "missingForPublish": zod.array(zod.string()).describe('Plain-language list of what is still needed before the profile can be published.'),
+  "isListed": zod.boolean().describe('True only when published AND verified, i.e. visible in the public directory.')
+})
+
+
+/**
+ * @summary Booking enquiries sent to the signed-in model
+ */
+export const ListMyEnquiriesResponseItem = zod.object({
+  "id": zod.string(),
+  "message": zod.string(),
+  "fromName": zod.string(),
+  "fromRole": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListMyEnquiriesResponse = zod.array(ListMyEnquiriesResponseItem)
+
+
+/**
+ * @summary The signed-in model's applications and their outcomes
+ */
+export const ListMyApplicationsResponseItem = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['applied', 'shortlisted', 'accepted', 'passed', 'withdrawn']),
+  "statusNote": zod.string().nullish(),
+  "message": zod.string(),
+  "proposedFeeCents": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "opportunity": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "status": zod.string(),
+  "applicationDeadline": zod.string()
+})
+})
+export const ListMyApplicationsResponse = zod.array(ListMyApplicationsResponseItem)
+
+
+/**
+ * @summary Withdraw an application that has not been accepted
+ */
+export const WithdrawMyApplicationParams = zod.object({
+  "applicationId": zod.coerce.string()
+})
+
+export const WithdrawMyApplicationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Opportunities the model has saved
+ */
+export const ListMySavedOpportunitiesResponseItem = zod.object({
+  "id": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "deliverables": zod.string(),
+  "eligibility": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "location": zod.string(),
+  "isRemote": zod.boolean(),
+  "compensationCents": zod.number().nullish().describe('Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.'),
+  "compensationNote": zod.string(),
+  "expensesNote": zod.string(),
+  "usageRights": zod.string(),
+  "exclusivity": zod.string(),
+  "paymentTerms": zod.string(),
+  "applicationDeadline": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "createdAt": zod.string(),
+  "applicantCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "reportCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "isSaved": zod.boolean().nullish().describe('Only returned to a signed-in model.'),
+  "myApplicationStatus": zod.string().nullish().describe('Only returned to a signed-in model.')
+})
+export const ListMySavedOpportunitiesResponse = zod.array(ListMySavedOpportunitiesResponseItem)
+
+
+/**
+ * @summary Save an opportunity for later
+ */
+export const SaveOpportunityParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const SaveOpportunityResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Remove a saved opportunity
+ */
+export const UnsaveOpportunityParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const UnsaveOpportunityResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Open opportunities. Public; a signed-in model also sees their own saved and applied state.
+ */
+export const ListOpportunitiesQueryParams = zod.object({
+  "type": zod.coerce.string().optional()
+})
+
+export const ListOpportunitiesResponseItem = zod.object({
+  "id": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "deliverables": zod.string(),
+  "eligibility": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "location": zod.string(),
+  "isRemote": zod.boolean(),
+  "compensationCents": zod.number().nullish().describe('Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.'),
+  "compensationNote": zod.string(),
+  "expensesNote": zod.string(),
+  "usageRights": zod.string(),
+  "exclusivity": zod.string(),
+  "paymentTerms": zod.string(),
+  "applicationDeadline": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "createdAt": zod.string(),
+  "applicantCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "reportCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "isSaved": zod.boolean().nullish().describe('Only returned to a signed-in model.'),
+  "myApplicationStatus": zod.string().nullish().describe('Only returned to a signed-in model.')
+})
+export const ListOpportunitiesResponse = zod.array(ListOpportunitiesResponseItem)
+
+
+/**
+ * @summary One opportunity with every material term
+ */
+export const GetOpportunityParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const GetOpportunityResponse = zod.object({
+  "id": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "deliverables": zod.string(),
+  "eligibility": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "location": zod.string(),
+  "isRemote": zod.boolean(),
+  "compensationCents": zod.number().nullish().describe('Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.'),
+  "compensationNote": zod.string(),
+  "expensesNote": zod.string(),
+  "usageRights": zod.string(),
+  "exclusivity": zod.string(),
+  "paymentTerms": zod.string(),
+  "applicationDeadline": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "createdAt": zod.string(),
+  "applicantCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "reportCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "isSaved": zod.boolean().nullish().describe('Only returned to a signed-in model.'),
+  "myApplicationStatus": zod.string().nullish().describe('Only returned to a signed-in model.')
+})
+
+
+/**
+ * @summary Apply as a verified model. Applying does not create an agreement.
+ */
+export const ApplyToOpportunityParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const applyToOpportunityBodyMessageMin = 10;
+export const applyToOpportunityBodyMessageMax = 2000;
+
+export const applyToOpportunityBodyProposedFeeCentsMin = 0;
+
+
+
+export const ApplyToOpportunityBody = zod.object({
+  "message": zod.string().min(applyToOpportunityBodyMessageMin).max(applyToOpportunityBodyMessageMax),
+  "proposedFeeCents": zod.number().min(applyToOpportunityBodyProposedFeeCentsMin).nullish()
+})
+
+export const ApplyToOpportunityResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['applied', 'shortlisted', 'accepted', 'passed', 'withdrawn']),
+  "statusNote": zod.string().nullish(),
+  "message": zod.string(),
+  "proposedFeeCents": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "opportunity": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "status": zod.string(),
+  "applicationDeadline": zod.string()
+})
+})
+
+
+/**
+ * @summary Flag a suspicious or unsafe listing for review
+ */
+export const ReportOpportunityParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const reportOpportunityBodyReasonMin = 5;
+export const reportOpportunityBodyReasonMax = 1000;
+
+
+
+export const ReportOpportunityBody = zod.object({
+  "reason": zod.string().min(reportOpportunityBodyReasonMin).max(reportOpportunityBodyReasonMax)
+})
+
+export const ReportOpportunityResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Opportunities posted by the signed-in brand
+ */
+export const ListMyOpportunitiesResponseItem = zod.object({
+  "id": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "deliverables": zod.string(),
+  "eligibility": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "location": zod.string(),
+  "isRemote": zod.boolean(),
+  "compensationCents": zod.number().nullish().describe('Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.'),
+  "compensationNote": zod.string(),
+  "expensesNote": zod.string(),
+  "usageRights": zod.string(),
+  "exclusivity": zod.string(),
+  "paymentTerms": zod.string(),
+  "applicationDeadline": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "createdAt": zod.string(),
+  "applicantCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "reportCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "isSaved": zod.boolean().nullish().describe('Only returned to a signed-in model.'),
+  "myApplicationStatus": zod.string().nullish().describe('Only returned to a signed-in model.')
+})
+export const ListMyOpportunitiesResponse = zod.array(ListMyOpportunitiesResponseItem)
+
+
+/**
+ * @summary Post an opportunity (brand only)
+ */
+export const createOpportunityBodyTitleMin = 5;
+export const createOpportunityBodyTitleMax = 120;
+
+export const createOpportunityBodyBriefMin = 20;
+export const createOpportunityBodyBriefMax = 4000;
+
+export const createOpportunityBodyDeliverablesMin = 5;
+export const createOpportunityBodyDeliverablesMax = 2000;
+
+export const createOpportunityBodyEligibilityMax = 1000;
+
+export const createOpportunityBodyStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createOpportunityBodyEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createOpportunityBodyLocationMax = 160;
+
+export const createOpportunityBodyCompensationCentsMin = 0;
+
+export const createOpportunityBodyCompensationNoteMax = 500;
+
+export const createOpportunityBodyExpensesNoteMax = 500;
+
+export const createOpportunityBodyUsageRightsMin = 5;
+export const createOpportunityBodyUsageRightsMax = 1500;
+
+export const createOpportunityBodyExclusivityMax = 500;
+
+export const createOpportunityBodyPaymentTermsMin = 5;
+export const createOpportunityBodyPaymentTermsMax = 1000;
+
+export const createOpportunityBodyApplicationDeadlineRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const CreateOpportunityBody = zod.object({
+  "type": zod.enum(['brand_promotion', 'paid_modelling', 'artist_collaboration', 'ugc_content', 'affiliate', 'ambassador', 'event', 'editorial_shoot']),
+  "title": zod.string().min(createOpportunityBodyTitleMin).max(createOpportunityBodyTitleMax),
+  "brief": zod.string().min(createOpportunityBodyBriefMin).max(createOpportunityBodyBriefMax),
+  "deliverables": zod.string().min(createOpportunityBodyDeliverablesMin).max(createOpportunityBodyDeliverablesMax),
+  "eligibility": zod.string().max(createOpportunityBodyEligibilityMax).nullish(),
+  "startDate": zod.string().regex(createOpportunityBodyStartDateRegExp).nullish(),
+  "endDate": zod.string().regex(createOpportunityBodyEndDateRegExp).nullish(),
+  "location": zod.string().max(createOpportunityBodyLocationMax).optional(),
+  "isRemote": zod.boolean().optional(),
+  "compensationCents": zod.number().min(createOpportunityBodyCompensationCentsMin).nullish(),
+  "compensationNote": zod.string().max(createOpportunityBodyCompensationNoteMax).optional(),
+  "expensesNote": zod.string().max(createOpportunityBodyExpensesNoteMax).optional(),
+  "usageRights": zod.string().min(createOpportunityBodyUsageRightsMin).max(createOpportunityBodyUsageRightsMax),
+  "exclusivity": zod.string().max(createOpportunityBodyExclusivityMax).optional(),
+  "paymentTerms": zod.string().min(createOpportunityBodyPaymentTermsMin).max(createOpportunityBodyPaymentTermsMax),
+  "applicationDeadline": zod.string().regex(createOpportunityBodyApplicationDeadlineRegExp)
+})
+
+export const CreateOpportunityResponse = zod.object({
+  "id": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "deliverables": zod.string(),
+  "eligibility": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "location": zod.string(),
+  "isRemote": zod.boolean(),
+  "compensationCents": zod.number().nullish().describe('Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.'),
+  "compensationNote": zod.string(),
+  "expensesNote": zod.string(),
+  "usageRights": zod.string(),
+  "exclusivity": zod.string(),
+  "paymentTerms": zod.string(),
+  "applicationDeadline": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "createdAt": zod.string(),
+  "applicantCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "reportCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "isSaved": zod.boolean().nullish().describe('Only returned to a signed-in model.'),
+  "myApplicationStatus": zod.string().nullish().describe('Only returned to a signed-in model.')
+})
+
+
+/**
+ * @summary Close or reopen your own opportunity. Terms cannot be edited once posted.
+ */
+export const SetOpportunityStatusParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const SetOpportunityStatusBody = zod.object({
+  "status": zod.enum(['open', 'closed'])
+})
+
+export const SetOpportunityStatusResponse = zod.object({
+  "id": zod.string(),
+  "organiserName": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "brief": zod.string(),
+  "deliverables": zod.string(),
+  "eligibility": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "endDate": zod.string().nullish(),
+  "location": zod.string(),
+  "isRemote": zod.boolean(),
+  "compensationCents": zod.number().nullish().describe('Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.'),
+  "compensationNote": zod.string(),
+  "expensesNote": zod.string(),
+  "usageRights": zod.string(),
+  "exclusivity": zod.string(),
+  "paymentTerms": zod.string(),
+  "applicationDeadline": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "createdAt": zod.string(),
+  "applicantCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "reportCount": zod.number().nullish().describe('Only returned to the organiser.'),
+  "isSaved": zod.boolean().nullish().describe('Only returned to a signed-in model.'),
+  "myApplicationStatus": zod.string().nullish().describe('Only returned to a signed-in model.')
+})
+
+
+/**
+ * @summary Applicants to your own opportunity
+ */
+export const ListOpportunityApplicantsParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const ListOpportunityApplicantsResponseItem = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['applied', 'shortlisted', 'accepted', 'passed', 'withdrawn']),
+  "statusNote": zod.string().nullish(),
+  "message": zod.string(),
+  "proposedFeeCents": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "model": zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string().nullish(),
+  "verified": zod.boolean()
+})
+})
+export const ListOpportunityApplicantsResponse = zod.array(ListOpportunityApplicantsResponseItem)
+
+
+/**
+ * @summary Shortlist, accept or pass on an applicant. The model always sees the outcome.
+ */
+export const DecideApplicationParams = zod.object({
+  "applicationId": zod.coerce.string()
+})
+
+export const decideApplicationBodyNoteMax = 1000;
+
+
+
+export const DecideApplicationBody = zod.object({
+  "status": zod.enum(['shortlisted', 'accepted', 'passed']),
+  "note": zod.string().max(decideApplicationBodyNoteMax).nullish()
+})
+
+export const DecideApplicationResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['applied', 'shortlisted', 'accepted', 'passed', 'withdrawn']),
+  "statusNote": zod.string().nullish(),
+  "message": zod.string(),
+  "proposedFeeCents": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "model": zod.object({
+  "id": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string().nullish(),
+  "verified": zod.boolean()
+})
+})
+
+
+/**
+ * @summary Model registry, longest-waiting verification requests first
+ */
+export const ListOwnerModelsResponseItem = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "photoCount": zod.number(),
+  "createdAt": zod.string()
+})
+export const ListOwnerModelsResponse = zod.array(ListOwnerModelsResponseItem)
+
+
+/**
+ * @summary Full model record for review. Viewing it writes an audit event.
+ */
+export const GetOwnerModelParams = zod.object({
+  "modelId": zod.coerce.string()
+})
+
+export const GetOwnerModelResponse = zod.object({
+  "row": zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "photoCount": zod.number(),
+  "createdAt": zod.string()
+}),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "skills": zod.array(zod.string()),
+  "serviceCategories": zod.array(zod.string()),
+  "visibility": zod.record(zod.string(), zod.boolean()),
+  "photos": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
+  "url": zod.string().describe('Authenticated route. Never a public file URL.'),
+  "isPublic": zod.boolean()
+})),
+  "socialLinks": zod.array(zod.object({
+  "id": zod.string(),
+  "platform": zod.string(),
+  "url": zod.string(),
+  "handle": zod.string().nullish(),
+  "followerCount": zod.number().nullish(),
+  "statSource": zod.string().optional(),
+  "statUpdatedAt": zod.string().nullish(),
+  "isPublic": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Verify a model whose request is pending
+ */
+export const VerifyModelParams = zod.object({
+  "modelId": zod.coerce.string()
+})
+
+export const VerifyModelResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "photoCount": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Reject a pending verification. The reason is sent to the model word for word.
+ */
+export const RejectModelParams = zod.object({
+  "modelId": zod.coerce.string()
+})
+
+export const rejectModelBodyReasonMin = 10;
+export const rejectModelBodyReasonMax = 1000;
+
+
+
+export const RejectModelBody = zod.object({
+  "reason": zod.string().min(rejectModelBodyReasonMin).max(rejectModelBodyReasonMax)
+})
+
+export const RejectModelResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "photoCount": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Most recent audit events, newest first
+ */
+export const ListAuditEventsResponseItem = zod.object({
+  "id": zod.string(),
+  "actorUserId": zod.string().nullish(),
+  "actorName": zod.string().nullish(),
+  "actorRole": zod.string(),
+  "action": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListAuditEventsResponse = zod.array(ListAuditEventsResponseItem)
+
+
+/**
+ * @summary Reported opportunities, most reported first
+ */
+export const ListOpportunityReportsResponseItem = zod.object({
+  "opportunityId": zod.string(),
+  "title": zod.string(),
+  "organiserName": zod.string(),
+  "status": zod.string(),
+  "reportCount": zod.number(),
+  "reasons": zod.array(zod.string())
+})
+export const ListOpportunityReportsResponse = zod.array(ListOpportunityReportsResponseItem)
+
+
+/**
+ * @summary Close a reported opportunity
+ */
+export const CloseOpportunityAsOwnerParams = zod.object({
+  "opportunityId": zod.coerce.string()
+})
+
+export const CloseOpportunityAsOwnerResponse = zod.object({
+  "message": zod.string()
 })
 
 

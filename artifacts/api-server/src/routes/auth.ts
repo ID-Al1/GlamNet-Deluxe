@@ -120,7 +120,7 @@ router.post("/auth/signup", async (req, res) => {
     name,
     email,
     passwordHash,
-    role: role as "client" | "stylist" | "brand",
+    role: role as "client" | "stylist" | "brand" | "model",
     phone,
     businessName: businessName ?? null,
     referralCode: newReferralCode,
@@ -135,6 +135,16 @@ router.post("/auth/signup", async (req, res) => {
       specialty: "Makeup",
       location: "",
       area: "",
+    });
+  }
+
+  if (role === "model") {
+    // Starts private: unpublished, unverified, nothing visible until the model chooses.
+    const { modelProfilesTable } = await import("@workspace/db");
+    await db.insert(modelProfilesTable).values({
+      id: randomUUID(),
+      userId: id,
+      professionalName: name,
     });
   }
 

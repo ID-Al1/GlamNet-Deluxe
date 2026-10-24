@@ -6,11 +6,21 @@ import { ArtistVerificationBanner } from "@/components/artist-verification-banne
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye } from "lucide-react";
+import { Menu, X, MessageCircle, LayoutDashboard, Users, Star, LogOut, LogIn, UserPlus, Sun, Moon, Home, Search, Calendar, User, Eye, Sparkles, Briefcase, Images, Send, Wallet, Settings, Info } from "lucide-react";
 
 const NAV_PUBLIC = [
+  { href: "/talent", label: "Discover Talent", icon: Sparkles },
   { href: "/stylists", label: "Find Artists", icon: Users },
+  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/casting", label: "Casting Calls", icon: Star },
+  { href: "/about", label: "About Bonisa", icon: Info },
+];
+
+const NAV_AUTH_MODEL = [
+  { href: "/workspace", label: "Workspace", icon: LayoutDashboard },
+  { href: "/talent", label: "Discover Talent", icon: Sparkles },
+  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
+  { href: "/about", label: "About Bonisa", icon: Info },
 ];
 
 const NAV_AUTH_CLIENT = [
@@ -31,6 +41,8 @@ const NAV_AUTH_STYLIST = [
 const NAV_AUTH_BRAND = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/messages", label: "Messages", icon: MessageCircle },
+  { href: "/talent", label: "Discover Talent", icon: Sparkles },
+  { href: "/brand/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/stylists", label: "Find Artists", icon: Users },
   { href: "/casting", label: "Casting Calls", icon: Star },
   { href: "/profile", label: "Profile", icon: User },
@@ -50,6 +62,14 @@ const BOTTOM_TAB_NAV = [
   { href: "/payments", label: "Bookings", icon: Calendar, matchPattern: /^\/(payments|appointments)/ },
   { href: "/messages", label: "Messages", icon: MessageCircle, matchPattern: /^\/messages/ },
   { href: "/profile", label: "Profile", icon: User, matchPattern: /^\/profile/ },
+];
+
+const BOTTOM_TAB_NAV_MODEL = [
+  { href: "/workspace", label: "Overview", icon: Home, matchPattern: /^\/workspace$/ },
+  { href: "/workspace/portfolio", label: "Portfolio", icon: Images, matchPattern: /^\/workspace\/(portfolio|brand)/ },
+  { href: "/workspace/opportunities", label: "Work", icon: Briefcase, matchPattern: /^\/(workspace\/opportunities|opportunities)/ },
+  { href: "/workspace/applications", label: "Applied", icon: Send, matchPattern: /^\/workspace\/(applications|campaigns)/ },
+  { href: "/workspace/earnings", label: "Earnings", icon: Wallet, matchPattern: /^\/workspace\/(earnings|contracts|settings)/ },
 ];
 
 const BOTTOM_TAB_NAV_OWNER = [
@@ -81,12 +101,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ? NAV_AUTH_STYLIST
     : user.role === "brand"
     ? NAV_AUTH_BRAND
+    : user.role === "model"
+    ? NAV_AUTH_MODEL
     : NAV_AUTH_CLIENT;
-  const bottomTabItems = user?.isOwner ? BOTTOM_TAB_NAV_OWNER : BOTTOM_TAB_NAV;
+  const bottomTabItems = user?.isOwner ? BOTTOM_TAB_NAV_OWNER : user?.role === "model" ? BOTTOM_TAB_NAV_MODEL : BOTTOM_TAB_NAV;
   const roleLabel = user?.isOwner
     ? "Owner"
     : user?.role === "stylist"
     ? "Artist / Barber"
+    : user?.role === "model"
+    ? "Model"
     : user?.role;
     
   // Don't use a transparent header on mobile when logged in because the layout is app-like

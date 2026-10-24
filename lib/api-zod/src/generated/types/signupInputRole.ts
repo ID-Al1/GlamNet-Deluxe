@@ -13,4 +13,5 @@ export const SignupInputRole = {
   client: 'client',
   stylist: 'stylist',
   brand: 'brand',
+  model: 'model',
 } as const;

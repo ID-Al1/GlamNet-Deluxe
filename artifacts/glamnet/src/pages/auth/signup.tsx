@@ -8,14 +8,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { SignupInputRole } from "@workspace/api-client-react";
-import { Palette, User, Briefcase } from "lucide-react";
+import { Palette, User, Briefcase, Sparkles } from "lucide-react";
 
 const SPECIALTIES = ["Makeup", "Hair", "Barber", "Nails", "Lashes", "Brows", "Skincare"];
 
 const ROLES = [
   { value: SignupInputRole.client, icon: User, label: "Client", desc: "Book beauty services" },
   { value: SignupInputRole.stylist, icon: Palette, label: "Artist / Barber", desc: "Offer your services" },
-  { value: SignupInputRole.brand, icon: Briefcase, label: "Brand", desc: "Post casting calls" },
+  { value: SignupInputRole.brand, icon: Briefcase, label: "Brand", desc: "Post casting calls and opportunities" },
+  { value: SignupInputRole.model, icon: Sparkles, label: "Model", desc: "Build a portfolio and find paid work" },
 ];
 
 export default function Signup() {
@@ -56,6 +57,8 @@ export default function Signup() {
       toast.success("Account created — let's set up your profile!");
       if (role === SignupInputRole.stylist) {
         setLocation("/profile/setup");
+      } else if (role === SignupInputRole.model) {
+        setLocation("/workspace/portfolio");
       } else {
         setLocation("/dashboard");
       }
@@ -79,7 +82,7 @@ export default function Signup() {
             {/* Role selection */}
             <div className="space-y-3">
               <Label id="role-group-label">I want to use Bonisa as a:</Label>
-              <RadioGroup value={role} onValueChange={v => setRole(v as SignupInputRole)} aria-labelledby="role-group-label" className="grid grid-cols-3 gap-3">
+              <RadioGroup value={role} onValueChange={v => setRole(v as SignupInputRole)} aria-labelledby="role-group-label" className="grid grid-cols-2 gap-3">
                 {ROLES.map(({ value, icon: Icon, label, desc }) => (
                   <label
                     key={value}

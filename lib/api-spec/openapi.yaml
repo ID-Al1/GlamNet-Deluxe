@@ -23,6 +23,12 @@ tags:
     description: Brand casting calls
   - name: dashboard
     description: Dashboard summaries
+  - name: models
+    description: Model portfolios, profiles and workspace
+  - name: opportunities
+    description: Opportunities, applications and brand posting
+  - name: owner
+    description: Owner-only registry and oversight
 paths:
   /healthz:
     get:
@@ -1178,6 +1184,496 @@ paths:
               schema:
                 $ref: "#/components/schemas/BrandDashboard"
 
+  # ── Model portal ──────────────────────────────────────────────────────────
+  /talent:
+    get:
+      operationId: listTalent
+      tags: [models]
+      summary: Public talent directory (published and verified models only)
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: area, in: query, schema: { type: string } }
+        - { name: availability, in: query, schema: { type: string, enum: [available, limited] } }
+      responses:
+        "200":
+          description: Talent cards
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/TalentCard" } } } }
+
+  /talent/{modelId}:
+    get:
+      operationId: getTalent
+      tags: [models]
+      summary: Public talent profile. Contains only fields the model has chosen to publish.
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Public profile
+          content: { application/json: { schema: { $ref: "#/components/schemas/TalentProfile" } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /talent/{modelId}/enquiries:
+    post:
+      operationId: sendTalentEnquiry
+      tags: [models]
+      summary: Send a booking enquiry to a model. The model's contact details are never revealed.
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/EnquiryInput" } } }
+      responses:
+        "201":
+          description: Sent
+          content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /models/me/profile:
+    get:
+      operationId: getMyModelProfile
+      tags: [models]
+      summary: The signed-in model's own profile, including private settings
+      responses:
+        "200":
+          description: Profile
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateMyModelProfile
+      tags: [models]
+      summary: Update the signed-in model's own profile and visibility switches
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileUpdate" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/publish:
+    post:
+      operationId: setMyModelPublished
+      tags: [models]
+      summary: Publish or unpublish the profile. A published profile is listed only once Bonisa has verified it.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/PublishInput" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/verification-request:
+    post:
+      operationId: requestMyModelVerification
+      tags: [models]
+      summary: Ask Bonisa to review the profile for verification
+      responses:
+        "200":
+          description: Requested
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/social-links:
+    put:
+      operationId: replaceMySocialLinks
+      tags: [models]
+      summary: Replace the model's social links and self-reported audience numbers
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SocialLinksInput" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/photos:
+    post:
+      operationId: registerMyModelPhoto
+      tags: [models]
+      summary: Attach an already-uploaded image as a digital or editorial portrait
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RegisterPhotoInput" } } }
+      responses:
+        "201":
+          description: Saved
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/photos/{photoId}:
+    patch:
+      operationId: updateMyModelPhoto
+      tags: [models]
+      summary: Choose whether a photo is public
+      parameters:
+        - { name: photoId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/PhotoVisibilityInput" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteMyModelPhoto
+      tags: [models]
+      summary: Remove a photo
+      parameters:
+        - { name: photoId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Removed
+          content: { application/json: { schema: { $ref: "#/components/schemas/ModelProfileOwner" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /models/me/enquiries:
+    get:
+      operationId: listMyEnquiries
+      tags: [models]
+      summary: Booking enquiries sent to the signed-in model
+      responses:
+        "200":
+          description: Enquiries
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/ModelEnquiry" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/applications:
+    get:
+      operationId: listMyApplications
+      tags: [models]
+      summary: The signed-in model's applications and their outcomes
+      responses:
+        "200":
+          description: Applications
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/MyApplication" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/applications/{applicationId}/withdraw:
+    post:
+      operationId: withdrawMyApplication
+      tags: [models]
+      summary: Withdraw an application that has not been accepted
+      parameters:
+        - { name: applicationId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Withdrawn
+          content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /models/me/saved-opportunities:
+    get:
+      operationId: listMySavedOpportunities
+      tags: [models]
+      summary: Opportunities the model has saved
+      responses:
+        "200":
+          description: Saved opportunities
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Opportunity" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /models/me/saved-opportunities/{opportunityId}:
+    put:
+      operationId: saveOpportunity
+      tags: [models]
+      summary: Save an opportunity for later
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Saved
+          content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: unsaveOpportunity
+      tags: [models]
+      summary: Remove a saved opportunity
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Removed
+          content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /opportunities:
+    get:
+      operationId: listOpportunities
+      tags: [opportunities]
+      summary: Open opportunities. Public; a signed-in model also sees their own saved and applied state.
+      parameters:
+        - { name: type, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Opportunities
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Opportunity" } } } }
+
+  /opportunities/{opportunityId}:
+    get:
+      operationId: getOpportunity
+      tags: [opportunities]
+      summary: One opportunity with every material term
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Opportunity
+          content: { application/json: { schema: { $ref: "#/components/schemas/Opportunity" } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /opportunities/{opportunityId}/apply:
+    post:
+      operationId: applyToOpportunity
+      tags: [opportunities]
+      summary: Apply as a verified model. Applying does not create an agreement.
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ApplyInput" } } }
+      responses:
+        "201":
+          description: Applied
+          content: { application/json: { schema: { $ref: "#/components/schemas/MyApplication" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /opportunities/{opportunityId}/report:
+    post:
+      operationId: reportOpportunity
+      tags: [opportunities]
+      summary: Flag a suspicious or unsafe listing for review
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ReportInput" } } }
+      responses:
+        "201":
+          description: Reported
+          content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /brand/opportunities:
+    get:
+      operationId: listMyOpportunities
+      tags: [opportunities]
+      summary: Opportunities posted by the signed-in brand
+      responses:
+        "200":
+          description: Opportunities
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Opportunity" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createOpportunity
+      tags: [opportunities]
+      summary: Post an opportunity (brand only)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/OpportunityInput" } } }
+      responses:
+        "201":
+          description: Created
+          content: { application/json: { schema: { $ref: "#/components/schemas/Opportunity" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /brand/opportunities/{opportunityId}:
+    patch:
+      operationId: setOpportunityStatus
+      tags: [opportunities]
+      summary: Close or reopen your own opportunity. Terms cannot be edited once posted.
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/OpportunityStatusInput" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/Opportunity" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /brand/opportunities/{opportunityId}/applications:
+    get:
+      operationId: listOpportunityApplicants
+      tags: [opportunities]
+      summary: Applicants to your own opportunity
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Applicants
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Applicant" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /brand/applications/{applicationId}:
+    patch:
+      operationId: decideApplication
+      tags: [opportunities]
+      summary: Shortlist, accept or pass on an applicant. The model always sees the outcome.
+      parameters:
+        - { name: applicationId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/DecisionInput" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/Applicant" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/models:
+    get:
+      operationId: listOwnerModels
+      tags: [owner]
+      summary: Model registry, longest-waiting verification requests first
+      responses:
+        "200":
+          description: Registry
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OwnerModelRow" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/models/{modelId}:
+    get:
+      operationId: getOwnerModel
+      tags: [owner]
+      summary: Full model record for review. Viewing it writes an audit event.
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Record
+          content: { application/json: { schema: { $ref: "#/components/schemas/OwnerModelDetail" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /owner/models/{modelId}/verify:
+    post:
+      operationId: verifyModel
+      tags: [owner]
+      summary: Verify a model whose request is pending
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Verified
+          content: { application/json: { schema: { $ref: "#/components/schemas/OwnerModelRow" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/models/{modelId}/reject:
+    post:
+      operationId: rejectModel
+      tags: [owner]
+      summary: Reject a pending verification. The reason is sent to the model word for word.
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RejectionInput" } } }
+      responses:
+        "200":
+          description: Rejected
+          content: { application/json: { schema: { $ref: "#/components/schemas/OwnerModelRow" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/audit-events:
+    get:
+      operationId: listAuditEvents
+      tags: [owner]
+      summary: Most recent audit events, newest first
+      responses:
+        "200":
+          description: Events
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/opportunity-reports:
+    get:
+      operationId: listOpportunityReports
+      tags: [owner]
+      summary: Reported opportunities, most reported first
+      responses:
+        "200":
+          description: Reports
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OpportunityReportRow" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/opportunities/{opportunityId}/close:
+    post:
+      operationId: closeOpportunityAsOwner
+      tags: [owner]
+      summary: Close a reported opportunity
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Closed
+          content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
 components:
   schemas:
     ComplaintStatus:
@@ -1515,7 +2011,7 @@ components:
           type: ["string", "null"]
         role:
           type: string
-          enum: [client, stylist, brand]
+          enum: [client, stylist, brand, model]
         businessName:
           type: ["string", "null"]
         specialty:
@@ -1686,7 +2182,7 @@ components:
           type: ["string", "null"]
         role:
           type: string
-          enum: [client, stylist, brand]
+          enum: [client, stylist, brand, model]
         businessName:
           type: ["string", "null"]
         joinedAt:
@@ -1716,7 +2212,7 @@ components:
           maxLength: 32
         role:
           type: string
-          enum: [client, stylist, brand]
+          enum: [client, stylist, brand, model]
         businessName:
           type: ["string", "null"]
 
@@ -1751,7 +2247,7 @@ components:
           type: string
         role:
           type: string
-          enum: [client, stylist, brand]
+          enum: [client, stylist, brand, model]
         isOwner:
           type: boolean
           description: >
@@ -2314,6 +2810,359 @@ components:
         status:
           type: string
           enum: [pending, accepted, rejected]
+
+    # ── Model portal ────────────────────────────────────────────────────────
+    PublishInput:
+      type: object
+      required: [published]
+      properties:
+        published: { type: boolean }
+
+    SocialLinksInput:
+      type: object
+      required: [links]
+      properties:
+        links: { type: array, maxItems: 8, items: { $ref: "#/components/schemas/SocialLinkInput" } }
+
+    PhotoVisibilityInput:
+      type: object
+      required: [isPublic]
+      properties:
+        isPublic: { type: boolean }
+
+    ReportInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+
+    OpportunityStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [open, closed] }
+
+    RejectionInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+
+    PublicSocialLink:
+      type: object
+      required: [platform, url]
+      properties:
+        platform: { type: string }
+        url: { type: string }
+        handle: { type: ["string", "null"] }
+        followerCount: { type: ["integer", "null"] }
+        statSource: { type: string, description: "Where the audience number came from, e.g. self_reported." }
+        statUpdatedAt: { type: ["string", "null"] }
+
+    PublicPhoto:
+      type: object
+      required: [id, kind, url]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [front, left, right, full_length, editorial] }
+        url: { type: string }
+
+    TalentCard:
+      type: object
+      required: [id, professionalName, category, skills, verified]
+      properties:
+        id: { type: string }
+        professionalName: { type: string }
+        category: { type: string }
+        area: { type: ["string", "null"], description: "Coarse location. Null when the model keeps it private." }
+        availability: { type: ["string", "null"], enum: [available, limited, null] }
+        skills: { type: array, items: { type: string } }
+        verified: { type: boolean, description: "Always true in the public directory. Unverified models are not listed." }
+        portraitUrl: { type: ["string", "null"] }
+
+    TalentProfile:
+      type: object
+      required: [id, professionalName, category, skills, serviceCategories, verified, socialLinks, photos, acceptsEnquiries]
+      properties:
+        id: { type: string }
+        professionalName: { type: string }
+        category: { type: string }
+        area: { type: ["string", "null"] }
+        availability: { type: ["string", "null"], enum: [available, limited, null] }
+        bio: { type: ["string", "null"] }
+        skills: { type: array, items: { type: string } }
+        serviceCategories: { type: array, items: { type: string } }
+        verified: { type: boolean }
+        verifiedAt: { type: ["string", "null"] }
+        acceptsEnquiries: { type: boolean }
+        startingRateCents: { type: ["integer", "null"] }
+        rateNote: { type: ["string", "null"] }
+        socialLinks: { type: array, items: { $ref: "#/components/schemas/PublicSocialLink" } }
+        photos: { type: array, items: { $ref: "#/components/schemas/PublicPhoto" } }
+
+    EnquiryInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 10, maxLength: 2000 }
+
+    ModelEnquiry:
+      type: object
+      required: [id, message, fromName, fromRole, createdAt]
+      properties:
+        id: { type: string }
+        message: { type: string }
+        fromName: { type: string }
+        fromRole: { type: string }
+        createdAt: { type: string }
+
+    OwnerPhoto:
+      type: object
+      required: [id, kind, url, isPublic]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [front, left, right, full_length, editorial] }
+        url: { type: string, description: "Authenticated route. Never a public file URL." }
+        isPublic: { type: boolean }
+
+    OwnerSocialLink:
+      type: object
+      required: [id, platform, url, isPublic]
+      properties:
+        id: { type: string }
+        platform: { type: string }
+        url: { type: string }
+        handle: { type: ["string", "null"] }
+        followerCount: { type: ["integer", "null"] }
+        statSource: { type: string }
+        statUpdatedAt: { type: ["string", "null"] }
+        isPublic: { type: boolean }
+
+    ModelProfileOwner:
+      type: object
+      required: [id, professionalName, category, area, skills, serviceCategories, availability, acceptsEnquiries, visibility, isPublished, verificationStatus, photos, socialLinks, missingForPublish, isListed]
+      properties:
+        id: { type: string }
+        professionalName: { type: string }
+        category: { type: string }
+        area: { type: string }
+        bio: { type: ["string", "null"] }
+        skills: { type: array, items: { type: string } }
+        serviceCategories: { type: array, items: { type: string } }
+        availability: { type: string, enum: [available, limited, unavailable] }
+        acceptsEnquiries: { type: boolean }
+        startingRateCents: { type: ["integer", "null"] }
+        rateNote: { type: ["string", "null"] }
+        creativeIdentity: { type: ["string", "null"] }
+        collaborationPreferences: { type: ["string", "null"] }
+        careerGoals: { type: ["string", "null"] }
+        visibility: { type: object, additionalProperties: { type: boolean } }
+        isPublished: { type: boolean }
+        verificationStatus: { type: string, enum: [none, pending, verified, rejected] }
+        verificationRequestedAt: { type: ["string", "null"] }
+        verifiedAt: { type: ["string", "null"] }
+        verificationRejectionReason: { type: ["string", "null"] }
+        photos: { type: array, items: { $ref: "#/components/schemas/OwnerPhoto" } }
+        socialLinks: { type: array, items: { $ref: "#/components/schemas/OwnerSocialLink" } }
+        missingForPublish: { type: array, items: { type: string }, description: "Plain-language list of what is still needed before the profile can be published." }
+        isListed: { type: boolean, description: "True only when published AND verified, i.e. visible in the public directory." }
+
+    ModelProfileUpdate:
+      type: object
+      properties:
+        professionalName: { type: string, minLength: 2, maxLength: 80 }
+        category: { type: string, maxLength: 60 }
+        area: { type: string, maxLength: 80 }
+        bio: { type: ["string", "null"], maxLength: 2000 }
+        skills: { type: array, maxItems: 20, items: { type: string, maxLength: 40 } }
+        serviceCategories: { type: array, maxItems: 12, items: { type: string, maxLength: 60 } }
+        availability: { type: string, enum: [available, limited, unavailable] }
+        acceptsEnquiries: { type: boolean }
+        startingRateCents: { type: ["integer", "null"], minimum: 0 }
+        rateNote: { type: ["string", "null"], maxLength: 300 }
+        creativeIdentity: { type: ["string", "null"], maxLength: 2000 }
+        collaborationPreferences: { type: ["string", "null"], maxLength: 2000 }
+        careerGoals: { type: ["string", "null"], maxLength: 2000 }
+        visibility: { type: object, additionalProperties: { type: boolean } }
+
+    SocialLinkInput:
+      type: object
+      required: [platform, url]
+      properties:
+        platform: { type: string, enum: [instagram, tiktok, youtube, website, other] }
+        url: { type: string, maxLength: 300 }
+        handle: { type: ["string", "null"], maxLength: 80 }
+        followerCount: { type: ["integer", "null"], minimum: 0 }
+        isPublic: { type: boolean }
+
+    RegisterPhotoInput:
+      type: object
+      required: [kind, objectPath, mimeType]
+      properties:
+        kind: { type: string, enum: [front, left, right, full_length, editorial] }
+        objectPath: { type: string, pattern: "^/objects/uploads/[A-Za-z0-9-]+$", description: "Path returned by /storage/uploads/request-url." }
+        mimeType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+
+    Opportunity:
+      type: object
+      required: [id, organiserName, type, title, brief, deliverables, location, isRemote, compensationNote, expensesNote, usageRights, exclusivity, paymentTerms, applicationDeadline, status, createdAt]
+      properties:
+        id: { type: string }
+        organiserName: { type: string }
+        type: { type: string }
+        title: { type: string }
+        brief: { type: string }
+        deliverables: { type: string }
+        eligibility: { type: ["string", "null"] }
+        startDate: { type: ["string", "null"] }
+        endDate: { type: ["string", "null"] }
+        location: { type: string }
+        isRemote: { type: boolean }
+        compensationCents: { type: ["integer", "null"], description: "Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income." }
+        compensationNote: { type: string }
+        expensesNote: { type: string }
+        usageRights: { type: string }
+        exclusivity: { type: string }
+        paymentTerms: { type: string }
+        applicationDeadline: { type: string }
+        status: { type: string, enum: [open, closed] }
+        createdAt: { type: string }
+        applicantCount: { type: ["integer", "null"], description: "Only returned to the organiser." }
+        reportCount: { type: ["integer", "null"], description: "Only returned to the organiser." }
+        isSaved: { type: ["boolean", "null"], description: "Only returned to a signed-in model." }
+        myApplicationStatus: { type: ["string", "null"], description: "Only returned to a signed-in model." }
+
+    OpportunityInput:
+      type: object
+      required: [type, title, brief, deliverables, usageRights, paymentTerms, applicationDeadline]
+      properties:
+        type: { type: string, enum: [brand_promotion, paid_modelling, artist_collaboration, ugc_content, affiliate, ambassador, event, editorial_shoot] }
+        title: { type: string, minLength: 5, maxLength: 120 }
+        brief: { type: string, minLength: 20, maxLength: 4000 }
+        deliverables: { type: string, minLength: 5, maxLength: 2000 }
+        eligibility: { type: ["string", "null"], maxLength: 1000 }
+        startDate: { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        endDate: { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        location: { type: string, maxLength: 160 }
+        isRemote: { type: boolean }
+        compensationCents: { type: ["integer", "null"], minimum: 0 }
+        compensationNote: { type: string, maxLength: 500 }
+        expensesNote: { type: string, maxLength: 500 }
+        usageRights: { type: string, minLength: 5, maxLength: 1500 }
+        exclusivity: { type: string, maxLength: 500 }
+        paymentTerms: { type: string, minLength: 5, maxLength: 1000 }
+        applicationDeadline: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+
+    ApplyInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 10, maxLength: 2000 }
+        proposedFeeCents: { type: ["integer", "null"], minimum: 0 }
+
+    MyApplication:
+      type: object
+      required: [id, status, message, createdAt, updatedAt, opportunity]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [applied, shortlisted, accepted, passed, withdrawn] }
+        statusNote: { type: ["string", "null"] }
+        message: { type: string }
+        proposedFeeCents: { type: ["integer", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        opportunity:
+          type: object
+          required: [id, title, organiserName, type, status, applicationDeadline]
+          properties:
+            id: { type: string }
+            title: { type: string }
+            organiserName: { type: string }
+            type: { type: string }
+            status: { type: string }
+            applicationDeadline: { type: string }
+
+    Applicant:
+      type: object
+      required: [id, status, message, createdAt, updatedAt, model]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [applied, shortlisted, accepted, passed, withdrawn] }
+        statusNote: { type: ["string", "null"] }
+        message: { type: string }
+        proposedFeeCents: { type: ["integer", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        model:
+          type: object
+          required: [id, professionalName, category, verified]
+          properties:
+            id: { type: string }
+            professionalName: { type: string }
+            category: { type: string }
+            area: { type: ["string", "null"] }
+            verified: { type: boolean }
+
+    DecisionInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [shortlisted, accepted, passed] }
+        note: { type: ["string", "null"], maxLength: 1000 }
+
+    OwnerModelRow:
+      type: object
+      required: [id, userId, professionalName, category, area, isPublished, verificationStatus, createdAt, photoCount]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        professionalName: { type: string }
+        category: { type: string }
+        area: { type: string }
+        isPublished: { type: boolean }
+        verificationStatus: { type: string, enum: [none, pending, verified, rejected] }
+        verificationRequestedAt: { type: ["string", "null"] }
+        daysWaiting: { type: ["integer", "null"], description: "Whole days since verification was requested. Three or more is flagged." }
+        photoCount: { type: integer }
+        createdAt: { type: string }
+
+    OwnerModelDetail:
+      type: object
+      required: [row, email, skills, serviceCategories, photos, socialLinks, visibility]
+      properties:
+        row: { $ref: "#/components/schemas/OwnerModelRow" }
+        email: { type: string }
+        phone: { type: ["string", "null"] }
+        bio: { type: ["string", "null"] }
+        skills: { type: array, items: { type: string } }
+        serviceCategories: { type: array, items: { type: string } }
+        visibility: { type: object, additionalProperties: { type: boolean } }
+        photos: { type: array, items: { $ref: "#/components/schemas/OwnerPhoto" } }
+        socialLinks: { type: array, items: { $ref: "#/components/schemas/OwnerSocialLink" } }
+
+    AuditEvent:
+      type: object
+      required: [id, actorRole, action, targetType, targetId, createdAt]
+      properties:
+        id: { type: string }
+        actorUserId: { type: ["string", "null"] }
+        actorName: { type: ["string", "null"] }
+        actorRole: { type: string }
+        action: { type: string }
+        targetType: { type: string }
+        targetId: { type: string }
+        createdAt: { type: string }
+
+    OpportunityReportRow:
+      type: object
+      required: [opportunityId, title, organiserName, status, reportCount, reasons]
+      properties:
+        opportunityId: { type: string }
+        title: { type: string }
+        organiserName: { type: string }
+        status: { type: string }
+        reportCount: { type: integer }
+        reasons: { type: array, items: { type: string } }
 
   responses:
     BadRequest:

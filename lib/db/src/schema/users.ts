@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const roleEnum = pgEnum("role", ["client", "stylist", "brand"]);
+export const roleEnum = pgEnum("role", ["client", "stylist", "brand", "model"]);
 
 export const usersTable = pgTable("users", {
   id: text("id").primaryKey(),

@@ -21,9 +21,12 @@ import type {
 
 import type {
   ApiError,
+  Applicant,
+  ApplyInput,
   Appointment,
   AppointmentInput,
   AppointmentUpdate,
+  AuditEvent,
   AuthResult,
   BadRequestResponse,
   BankAccountInput,
@@ -42,6 +45,8 @@ import type {
   ComplaintEvidenceInput,
   ConflictResponse,
   Conversation,
+  DecisionInput,
+  EnquiryInput,
   ForbiddenResponse,
   GetOwnerArtistManagementParams,
   GetOwnerPayoutsParams,
@@ -50,9 +55,11 @@ import type {
   IdentityVerificationStatus,
   ListAppointmentsParams,
   ListCastingCallsParams,
+  ListOpportunitiesParams,
   ListOwnerArtistsParams,
   ListOwnerComplaintsParams,
   ListStylistsParams,
+  ListTalentParams,
   LoginInput,
   MarkOwnerPayoutInput,
   MediaUploadUrlRequest,
@@ -60,8 +67,16 @@ import type {
   Message,
   MessageInput,
   MessageResponse,
+  ModelEnquiry,
+  ModelProfileOwner,
+  ModelProfileUpdate,
+  MyApplication,
   MyStylistProfile,
   NotFoundResponse,
+  Opportunity,
+  OpportunityInput,
+  OpportunityReportRow,
+  OpportunityStatusInput,
   OwnerArtistAccountStatusInput,
   OwnerArtistAccountStatusResult,
   OwnerArtistManagement,
@@ -72,23 +87,33 @@ import type {
   OwnerComplaintAction,
   OwnerComplaintDetail,
   OwnerIdentitySummary,
+  OwnerModelDetail,
+  OwnerModelRow,
   OwnerPaymentOverview,
   OwnerPayoutBatch,
   OwnerPayoutGroup,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
+  PhotoVisibilityInput,
   PortfolioItem,
   PortfolioItemInput,
+  PublishInput,
+  RegisterPhotoInput,
+  RejectionInput,
+  ReportInput,
   RevealArtistBankAccount200,
   SearchOwnerRegistryParams,
   Service,
   ServiceInput,
   ServiceUpdate,
   SignupInput,
+  SocialLinksInput,
   StartConversationInput,
   StylistDashboard,
   StylistProfile,
   StylistProfileUpdate,
+  TalentCard,
+  TalentProfile,
   UnauthorizedResponse,
   User,
   VerificationChecklist
@@ -4760,4 +4785,2433 @@ export function useGetBrandDashboard<TData = Awaited<ReturnType<typeof getBrandD
 
 
 
+
+export const getListTalentUrl = (params?: ListTalentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/talent?${stringifiedParams}` : `/api/talent`
+}
+
+/**
+ * @summary Public talent directory (published and verified models only)
+ */
+export const listTalent = async (params?: ListTalentParams, options?: RequestInit): Promise<TalentCard[]> => {
+
+  return customFetch<TalentCard[]>(getListTalentUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTalentQueryKey = (params?: ListTalentParams,) => {
+    return [
+    `/api/talent`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTalentQueryOptions = <TData = Awaited<ReturnType<typeof listTalent>>, TError = ErrorType<unknown>>(params?: ListTalentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTalent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTalentQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTalent>>> = ({ signal }) => listTalent(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTalent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTalentQueryResult = NonNullable<Awaited<ReturnType<typeof listTalent>>>
+export type ListTalentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public talent directory (published and verified models only)
+ */
+
+export function useListTalent<TData = Awaited<ReturnType<typeof listTalent>>, TError = ErrorType<unknown>>(
+ params?: ListTalentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTalent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTalentQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTalentUrl = (modelId: string,) => {
+
+
+
+
+  return `/api/talent/${modelId}`
+}
+
+/**
+ * @summary Public talent profile. Contains only fields the model has chosen to publish.
+ */
+export const getTalent = async (modelId: string, options?: RequestInit): Promise<TalentProfile> => {
+
+  return customFetch<TalentProfile>(getGetTalentUrl(modelId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTalentQueryKey = (modelId: string,) => {
+    return [
+    `/api/talent/${modelId}`
+    ] as const;
+    }
+
+
+export const getGetTalentQueryOptions = <TData = Awaited<ReturnType<typeof getTalent>>, TError = ErrorType<NotFoundResponse>>(modelId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTalent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTalentQueryKey(modelId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTalent>>> = ({ signal }) => getTalent(modelId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: modelId !== null && modelId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTalent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTalentQueryResult = NonNullable<Awaited<ReturnType<typeof getTalent>>>
+export type GetTalentQueryError = ErrorType<NotFoundResponse>
+
+
+/**
+ * @summary Public talent profile. Contains only fields the model has chosen to publish.
+ */
+
+export function useGetTalent<TData = Awaited<ReturnType<typeof getTalent>>, TError = ErrorType<NotFoundResponse>>(
+ modelId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTalent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTalentQueryOptions(modelId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendTalentEnquiryUrl = (modelId: string,) => {
+
+
+
+
+  return `/api/talent/${modelId}/enquiries`
+}
+
+/**
+ * @summary Send a booking enquiry to a model. The model's contact details are never revealed.
+ */
+export const sendTalentEnquiry = async (modelId: string,
+    enquiryInput: EnquiryInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getSendTalentEnquiryUrl(modelId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(enquiryInput)
+  }
+);}
+
+
+
+
+export const getSendTalentEnquiryMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendTalentEnquiry>>, TError,{modelId: string;data: BodyType<EnquiryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendTalentEnquiry>>, TError,{modelId: string;data: BodyType<EnquiryInput>}, TContext> => {
+
+const mutationKey = ['sendTalentEnquiry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendTalentEnquiry>>, {modelId: string;data: BodyType<EnquiryInput>}> = (props) => {
+          const {modelId,data} = props ?? {};
+
+          return  sendTalentEnquiry(modelId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendTalentEnquiryMutationResult = NonNullable<Awaited<ReturnType<typeof sendTalentEnquiry>>>
+    export type SendTalentEnquiryMutationBody = BodyType<EnquiryInput>
+    export type SendTalentEnquiryMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Send a booking enquiry to a model. The model's contact details are never revealed.
+ */
+export const useSendTalentEnquiry = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendTalentEnquiry>>, TError,{modelId: string;data: BodyType<EnquiryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendTalentEnquiry>>,
+        TError,
+        {modelId: string;data: BodyType<EnquiryInput>},
+        TContext
+      > => {
+      return useMutation(getSendTalentEnquiryMutationOptions(options));
+    }
+
+export const getGetMyModelProfileUrl = () => {
+
+
+
+
+  return `/api/models/me/profile`
+}
+
+/**
+ * @summary The signed-in model's own profile, including private settings
+ */
+export const getMyModelProfile = async ( options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getGetMyModelProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyModelProfileQueryKey = () => {
+    return [
+    `/api/models/me/profile`
+    ] as const;
+    }
+
+
+export const getGetMyModelProfileQueryOptions = <TData = Awaited<ReturnType<typeof getMyModelProfile>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyModelProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyModelProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyModelProfile>>> = ({ signal }) => getMyModelProfile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyModelProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyModelProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getMyModelProfile>>>
+export type GetMyModelProfileQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary The signed-in model's own profile, including private settings
+ */
+
+export function useGetMyModelProfile<TData = Awaited<ReturnType<typeof getMyModelProfile>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyModelProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyModelProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMyModelProfileUrl = () => {
+
+
+
+
+  return `/api/models/me/profile`
+}
+
+/**
+ * @summary Update the signed-in model's own profile and visibility switches
+ */
+export const updateMyModelProfile = async (modelProfileUpdate: ModelProfileUpdate, options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getUpdateMyModelProfileUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(modelProfileUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateMyModelProfileMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyModelProfile>>, TError,{data: BodyType<ModelProfileUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyModelProfile>>, TError,{data: BodyType<ModelProfileUpdate>}, TContext> => {
+
+const mutationKey = ['updateMyModelProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyModelProfile>>, {data: BodyType<ModelProfileUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyModelProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyModelProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyModelProfile>>>
+    export type UpdateMyModelProfileMutationBody = BodyType<ModelProfileUpdate>
+    export type UpdateMyModelProfileMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Update the signed-in model's own profile and visibility switches
+ */
+export const useUpdateMyModelProfile = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyModelProfile>>, TError,{data: BodyType<ModelProfileUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyModelProfile>>,
+        TError,
+        {data: BodyType<ModelProfileUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyModelProfileMutationOptions(options));
+    }
+
+export const getSetMyModelPublishedUrl = () => {
+
+
+
+
+  return `/api/models/me/publish`
+}
+
+/**
+ * @summary Publish or unpublish the profile. A published profile is listed only once Bonisa has verified it.
+ */
+export const setMyModelPublished = async (publishInput: PublishInput, options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getSetMyModelPublishedUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publishInput)
+  }
+);}
+
+
+
+
+export const getSetMyModelPublishedMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyModelPublished>>, TError,{data: BodyType<PublishInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setMyModelPublished>>, TError,{data: BodyType<PublishInput>}, TContext> => {
+
+const mutationKey = ['setMyModelPublished'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMyModelPublished>>, {data: BodyType<PublishInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setMyModelPublished(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetMyModelPublishedMutationResult = NonNullable<Awaited<ReturnType<typeof setMyModelPublished>>>
+    export type SetMyModelPublishedMutationBody = BodyType<PublishInput>
+    export type SetMyModelPublishedMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Publish or unpublish the profile. A published profile is listed only once Bonisa has verified it.
+ */
+export const useSetMyModelPublished = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyModelPublished>>, TError,{data: BodyType<PublishInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setMyModelPublished>>,
+        TError,
+        {data: BodyType<PublishInput>},
+        TContext
+      > => {
+      return useMutation(getSetMyModelPublishedMutationOptions(options));
+    }
+
+export const getRequestMyModelVerificationUrl = () => {
+
+
+
+
+  return `/api/models/me/verification-request`
+}
+
+/**
+ * @summary Ask Bonisa to review the profile for verification
+ */
+export const requestMyModelVerification = async ( options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getRequestMyModelVerificationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRequestMyModelVerificationMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMyModelVerification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestMyModelVerification>>, TError,void, TContext> => {
+
+const mutationKey = ['requestMyModelVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestMyModelVerification>>, void> = () => {
+
+
+          return  requestMyModelVerification(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestMyModelVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof requestMyModelVerification>>>
+
+    export type RequestMyModelVerificationMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Ask Bonisa to review the profile for verification
+ */
+export const useRequestMyModelVerification = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMyModelVerification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestMyModelVerification>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRequestMyModelVerificationMutationOptions(options));
+    }
+
+export const getReplaceMySocialLinksUrl = () => {
+
+
+
+
+  return `/api/models/me/social-links`
+}
+
+/**
+ * @summary Replace the model's social links and self-reported audience numbers
+ */
+export const replaceMySocialLinks = async (socialLinksInput: SocialLinksInput, options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getReplaceMySocialLinksUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialLinksInput)
+  }
+);}
+
+
+
+
+export const getReplaceMySocialLinksMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMySocialLinks>>, TError,{data: BodyType<SocialLinksInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof replaceMySocialLinks>>, TError,{data: BodyType<SocialLinksInput>}, TContext> => {
+
+const mutationKey = ['replaceMySocialLinks'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replaceMySocialLinks>>, {data: BodyType<SocialLinksInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  replaceMySocialLinks(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReplaceMySocialLinksMutationResult = NonNullable<Awaited<ReturnType<typeof replaceMySocialLinks>>>
+    export type ReplaceMySocialLinksMutationBody = BodyType<SocialLinksInput>
+    export type ReplaceMySocialLinksMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Replace the model's social links and self-reported audience numbers
+ */
+export const useReplaceMySocialLinks = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replaceMySocialLinks>>, TError,{data: BodyType<SocialLinksInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof replaceMySocialLinks>>,
+        TError,
+        {data: BodyType<SocialLinksInput>},
+        TContext
+      > => {
+      return useMutation(getReplaceMySocialLinksMutationOptions(options));
+    }
+
+export const getRegisterMyModelPhotoUrl = () => {
+
+
+
+
+  return `/api/models/me/photos`
+}
+
+/**
+ * @summary Attach an already-uploaded image as a digital or editorial portrait
+ */
+export const registerMyModelPhoto = async (registerPhotoInput: RegisterPhotoInput, options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getRegisterMyModelPhotoUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(registerPhotoInput)
+  }
+);}
+
+
+
+
+export const getRegisterMyModelPhotoMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerMyModelPhoto>>, TError,{data: BodyType<RegisterPhotoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerMyModelPhoto>>, TError,{data: BodyType<RegisterPhotoInput>}, TContext> => {
+
+const mutationKey = ['registerMyModelPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerMyModelPhoto>>, {data: BodyType<RegisterPhotoInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerMyModelPhoto(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterMyModelPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof registerMyModelPhoto>>>
+    export type RegisterMyModelPhotoMutationBody = BodyType<RegisterPhotoInput>
+    export type RegisterMyModelPhotoMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Attach an already-uploaded image as a digital or editorial portrait
+ */
+export const useRegisterMyModelPhoto = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerMyModelPhoto>>, TError,{data: BodyType<RegisterPhotoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerMyModelPhoto>>,
+        TError,
+        {data: BodyType<RegisterPhotoInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterMyModelPhotoMutationOptions(options));
+    }
+
+export const getUpdateMyModelPhotoUrl = (photoId: string,) => {
+
+
+
+
+  return `/api/models/me/photos/${photoId}`
+}
+
+/**
+ * @summary Choose whether a photo is public
+ */
+export const updateMyModelPhoto = async (photoId: string,
+    photoVisibilityInput: PhotoVisibilityInput, options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getUpdateMyModelPhotoUrl(photoId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(photoVisibilityInput)
+  }
+);}
+
+
+
+
+export const getUpdateMyModelPhotoMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyModelPhoto>>, TError,{photoId: string;data: BodyType<PhotoVisibilityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyModelPhoto>>, TError,{photoId: string;data: BodyType<PhotoVisibilityInput>}, TContext> => {
+
+const mutationKey = ['updateMyModelPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyModelPhoto>>, {photoId: string;data: BodyType<PhotoVisibilityInput>}> = (props) => {
+          const {photoId,data} = props ?? {};
+
+          return  updateMyModelPhoto(photoId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyModelPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyModelPhoto>>>
+    export type UpdateMyModelPhotoMutationBody = BodyType<PhotoVisibilityInput>
+    export type UpdateMyModelPhotoMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Choose whether a photo is public
+ */
+export const useUpdateMyModelPhoto = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyModelPhoto>>, TError,{photoId: string;data: BodyType<PhotoVisibilityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyModelPhoto>>,
+        TError,
+        {photoId: string;data: BodyType<PhotoVisibilityInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyModelPhotoMutationOptions(options));
+    }
+
+export const getDeleteMyModelPhotoUrl = (photoId: string,) => {
+
+
+
+
+  return `/api/models/me/photos/${photoId}`
+}
+
+/**
+ * @summary Remove a photo
+ */
+export const deleteMyModelPhoto = async (photoId: string, options?: RequestInit): Promise<ModelProfileOwner> => {
+
+  return customFetch<ModelProfileOwner>(getDeleteMyModelPhotoUrl(photoId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteMyModelPhotoMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyModelPhoto>>, TError,{photoId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMyModelPhoto>>, TError,{photoId: string}, TContext> => {
+
+const mutationKey = ['deleteMyModelPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMyModelPhoto>>, {photoId: string}> = (props) => {
+          const {photoId} = props ?? {};
+
+          return  deleteMyModelPhoto(photoId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMyModelPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMyModelPhoto>>>
+
+    export type DeleteMyModelPhotoMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Remove a photo
+ */
+export const useDeleteMyModelPhoto = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyModelPhoto>>, TError,{photoId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMyModelPhoto>>,
+        TError,
+        {photoId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteMyModelPhotoMutationOptions(options));
+    }
+
+export const getListMyEnquiriesUrl = () => {
+
+
+
+
+  return `/api/models/me/enquiries`
+}
+
+/**
+ * @summary Booking enquiries sent to the signed-in model
+ */
+export const listMyEnquiries = async ( options?: RequestInit): Promise<ModelEnquiry[]> => {
+
+  return customFetch<ModelEnquiry[]>(getListMyEnquiriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyEnquiriesQueryKey = () => {
+    return [
+    `/api/models/me/enquiries`
+    ] as const;
+    }
+
+
+export const getListMyEnquiriesQueryOptions = <TData = Awaited<ReturnType<typeof listMyEnquiries>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyEnquiries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyEnquiriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyEnquiries>>> = ({ signal }) => listMyEnquiries({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyEnquiries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyEnquiriesQueryResult = NonNullable<Awaited<ReturnType<typeof listMyEnquiries>>>
+export type ListMyEnquiriesQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Booking enquiries sent to the signed-in model
+ */
+
+export function useListMyEnquiries<TData = Awaited<ReturnType<typeof listMyEnquiries>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyEnquiries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyEnquiriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMyApplicationsUrl = () => {
+
+
+
+
+  return `/api/models/me/applications`
+}
+
+/**
+ * @summary The signed-in model's applications and their outcomes
+ */
+export const listMyApplications = async ( options?: RequestInit): Promise<MyApplication[]> => {
+
+  return customFetch<MyApplication[]>(getListMyApplicationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyApplicationsQueryKey = () => {
+    return [
+    `/api/models/me/applications`
+    ] as const;
+    }
+
+
+export const getListMyApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listMyApplications>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyApplicationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyApplications>>> = ({ signal }) => listMyApplications({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyApplications>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyApplicationsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyApplications>>>
+export type ListMyApplicationsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary The signed-in model's applications and their outcomes
+ */
+
+export function useListMyApplications<TData = Awaited<ReturnType<typeof listMyApplications>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyApplicationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getWithdrawMyApplicationUrl = (applicationId: string,) => {
+
+
+
+
+  return `/api/models/me/applications/${applicationId}/withdraw`
+}
+
+/**
+ * @summary Withdraw an application that has not been accepted
+ */
+export const withdrawMyApplication = async (applicationId: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getWithdrawMyApplicationUrl(applicationId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getWithdrawMyApplicationMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawMyApplication>>, TError,{applicationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawMyApplication>>, TError,{applicationId: string}, TContext> => {
+
+const mutationKey = ['withdrawMyApplication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawMyApplication>>, {applicationId: string}> = (props) => {
+          const {applicationId} = props ?? {};
+
+          return  withdrawMyApplication(applicationId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawMyApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawMyApplication>>>
+
+    export type WithdrawMyApplicationMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Withdraw an application that has not been accepted
+ */
+export const useWithdrawMyApplication = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawMyApplication>>, TError,{applicationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawMyApplication>>,
+        TError,
+        {applicationId: string},
+        TContext
+      > => {
+      return useMutation(getWithdrawMyApplicationMutationOptions(options));
+    }
+
+export const getListMySavedOpportunitiesUrl = () => {
+
+
+
+
+  return `/api/models/me/saved-opportunities`
+}
+
+/**
+ * @summary Opportunities the model has saved
+ */
+export const listMySavedOpportunities = async ( options?: RequestInit): Promise<Opportunity[]> => {
+
+  return customFetch<Opportunity[]>(getListMySavedOpportunitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMySavedOpportunitiesQueryKey = () => {
+    return [
+    `/api/models/me/saved-opportunities`
+    ] as const;
+    }
+
+
+export const getListMySavedOpportunitiesQueryOptions = <TData = Awaited<ReturnType<typeof listMySavedOpportunities>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMySavedOpportunities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMySavedOpportunitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMySavedOpportunities>>> = ({ signal }) => listMySavedOpportunities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMySavedOpportunities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMySavedOpportunitiesQueryResult = NonNullable<Awaited<ReturnType<typeof listMySavedOpportunities>>>
+export type ListMySavedOpportunitiesQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Opportunities the model has saved
+ */
+
+export function useListMySavedOpportunities<TData = Awaited<ReturnType<typeof listMySavedOpportunities>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMySavedOpportunities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMySavedOpportunitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveOpportunityUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/models/me/saved-opportunities/${opportunityId}`
+}
+
+/**
+ * @summary Save an opportunity for later
+ */
+export const saveOpportunity = async (opportunityId: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getSaveOpportunityUrl(opportunityId),
+  {
+    ...options,
+    method: 'PUT'
+
+
+  }
+);}
+
+
+
+
+export const getSaveOpportunityMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveOpportunity>>, TError,{opportunityId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveOpportunity>>, TError,{opportunityId: string}, TContext> => {
+
+const mutationKey = ['saveOpportunity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveOpportunity>>, {opportunityId: string}> = (props) => {
+          const {opportunityId} = props ?? {};
+
+          return  saveOpportunity(opportunityId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveOpportunityMutationResult = NonNullable<Awaited<ReturnType<typeof saveOpportunity>>>
+
+    export type SaveOpportunityMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Save an opportunity for later
+ */
+export const useSaveOpportunity = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveOpportunity>>, TError,{opportunityId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveOpportunity>>,
+        TError,
+        {opportunityId: string},
+        TContext
+      > => {
+      return useMutation(getSaveOpportunityMutationOptions(options));
+    }
+
+export const getUnsaveOpportunityUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/models/me/saved-opportunities/${opportunityId}`
+}
+
+/**
+ * @summary Remove a saved opportunity
+ */
+export const unsaveOpportunity = async (opportunityId: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getUnsaveOpportunityUrl(opportunityId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnsaveOpportunityMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsaveOpportunity>>, TError,{opportunityId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unsaveOpportunity>>, TError,{opportunityId: string}, TContext> => {
+
+const mutationKey = ['unsaveOpportunity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unsaveOpportunity>>, {opportunityId: string}> = (props) => {
+          const {opportunityId} = props ?? {};
+
+          return  unsaveOpportunity(opportunityId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnsaveOpportunityMutationResult = NonNullable<Awaited<ReturnType<typeof unsaveOpportunity>>>
+
+    export type UnsaveOpportunityMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Remove a saved opportunity
+ */
+export const useUnsaveOpportunity = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsaveOpportunity>>, TError,{opportunityId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unsaveOpportunity>>,
+        TError,
+        {opportunityId: string},
+        TContext
+      > => {
+      return useMutation(getUnsaveOpportunityMutationOptions(options));
+    }
+
+export const getListOpportunitiesUrl = (params?: ListOpportunitiesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/opportunities?${stringifiedParams}` : `/api/opportunities`
+}
+
+/**
+ * @summary Open opportunities. Public; a signed-in model also sees their own saved and applied state.
+ */
+export const listOpportunities = async (params?: ListOpportunitiesParams, options?: RequestInit): Promise<Opportunity[]> => {
+
+  return customFetch<Opportunity[]>(getListOpportunitiesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOpportunitiesQueryKey = (params?: ListOpportunitiesParams,) => {
+    return [
+    `/api/opportunities`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListOpportunitiesQueryOptions = <TData = Awaited<ReturnType<typeof listOpportunities>>, TError = ErrorType<unknown>>(params?: ListOpportunitiesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOpportunities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOpportunitiesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOpportunities>>> = ({ signal }) => listOpportunities(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOpportunities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOpportunitiesQueryResult = NonNullable<Awaited<ReturnType<typeof listOpportunities>>>
+export type ListOpportunitiesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Open opportunities. Public; a signed-in model also sees their own saved and applied state.
+ */
+
+export function useListOpportunities<TData = Awaited<ReturnType<typeof listOpportunities>>, TError = ErrorType<unknown>>(
+ params?: ListOpportunitiesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOpportunities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOpportunitiesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOpportunityUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/opportunities/${opportunityId}`
+}
+
+/**
+ * @summary One opportunity with every material term
+ */
+export const getOpportunity = async (opportunityId: string, options?: RequestInit): Promise<Opportunity> => {
+
+  return customFetch<Opportunity>(getGetOpportunityUrl(opportunityId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOpportunityQueryKey = (opportunityId: string,) => {
+    return [
+    `/api/opportunities/${opportunityId}`
+    ] as const;
+    }
+
+
+export const getGetOpportunityQueryOptions = <TData = Awaited<ReturnType<typeof getOpportunity>>, TError = ErrorType<NotFoundResponse>>(opportunityId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOpportunity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOpportunityQueryKey(opportunityId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOpportunity>>> = ({ signal }) => getOpportunity(opportunityId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: opportunityId !== null && opportunityId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOpportunity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOpportunityQueryResult = NonNullable<Awaited<ReturnType<typeof getOpportunity>>>
+export type GetOpportunityQueryError = ErrorType<NotFoundResponse>
+
+
+/**
+ * @summary One opportunity with every material term
+ */
+
+export function useGetOpportunity<TData = Awaited<ReturnType<typeof getOpportunity>>, TError = ErrorType<NotFoundResponse>>(
+ opportunityId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOpportunity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOpportunityQueryOptions(opportunityId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getApplyToOpportunityUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/opportunities/${opportunityId}/apply`
+}
+
+/**
+ * @summary Apply as a verified model. Applying does not create an agreement.
+ */
+export const applyToOpportunity = async (opportunityId: string,
+    applyInput: ApplyInput, options?: RequestInit): Promise<MyApplication> => {
+
+  return customFetch<MyApplication>(getApplyToOpportunityUrl(opportunityId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(applyInput)
+  }
+);}
+
+
+
+
+export const getApplyToOpportunityMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyToOpportunity>>, TError,{opportunityId: string;data: BodyType<ApplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyToOpportunity>>, TError,{opportunityId: string;data: BodyType<ApplyInput>}, TContext> => {
+
+const mutationKey = ['applyToOpportunity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyToOpportunity>>, {opportunityId: string;data: BodyType<ApplyInput>}> = (props) => {
+          const {opportunityId,data} = props ?? {};
+
+          return  applyToOpportunity(opportunityId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyToOpportunityMutationResult = NonNullable<Awaited<ReturnType<typeof applyToOpportunity>>>
+    export type ApplyToOpportunityMutationBody = BodyType<ApplyInput>
+    export type ApplyToOpportunityMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Apply as a verified model. Applying does not create an agreement.
+ */
+export const useApplyToOpportunity = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyToOpportunity>>, TError,{opportunityId: string;data: BodyType<ApplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyToOpportunity>>,
+        TError,
+        {opportunityId: string;data: BodyType<ApplyInput>},
+        TContext
+      > => {
+      return useMutation(getApplyToOpportunityMutationOptions(options));
+    }
+
+export const getReportOpportunityUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/opportunities/${opportunityId}/report`
+}
+
+/**
+ * @summary Flag a suspicious or unsafe listing for review
+ */
+export const reportOpportunity = async (opportunityId: string,
+    reportInput: ReportInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getReportOpportunityUrl(opportunityId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reportInput)
+  }
+);}
+
+
+
+
+export const getReportOpportunityMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportOpportunity>>, TError,{opportunityId: string;data: BodyType<ReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportOpportunity>>, TError,{opportunityId: string;data: BodyType<ReportInput>}, TContext> => {
+
+const mutationKey = ['reportOpportunity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportOpportunity>>, {opportunityId: string;data: BodyType<ReportInput>}> = (props) => {
+          const {opportunityId,data} = props ?? {};
+
+          return  reportOpportunity(opportunityId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportOpportunityMutationResult = NonNullable<Awaited<ReturnType<typeof reportOpportunity>>>
+    export type ReportOpportunityMutationBody = BodyType<ReportInput>
+    export type ReportOpportunityMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Flag a suspicious or unsafe listing for review
+ */
+export const useReportOpportunity = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportOpportunity>>, TError,{opportunityId: string;data: BodyType<ReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportOpportunity>>,
+        TError,
+        {opportunityId: string;data: BodyType<ReportInput>},
+        TContext
+      > => {
+      return useMutation(getReportOpportunityMutationOptions(options));
+    }
+
+export const getListMyOpportunitiesUrl = () => {
+
+
+
+
+  return `/api/brand/opportunities`
+}
+
+/**
+ * @summary Opportunities posted by the signed-in brand
+ */
+export const listMyOpportunities = async ( options?: RequestInit): Promise<Opportunity[]> => {
+
+  return customFetch<Opportunity[]>(getListMyOpportunitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyOpportunitiesQueryKey = () => {
+    return [
+    `/api/brand/opportunities`
+    ] as const;
+    }
+
+
+export const getListMyOpportunitiesQueryOptions = <TData = Awaited<ReturnType<typeof listMyOpportunities>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyOpportunities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyOpportunitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyOpportunities>>> = ({ signal }) => listMyOpportunities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyOpportunities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyOpportunitiesQueryResult = NonNullable<Awaited<ReturnType<typeof listMyOpportunities>>>
+export type ListMyOpportunitiesQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Opportunities posted by the signed-in brand
+ */
+
+export function useListMyOpportunities<TData = Awaited<ReturnType<typeof listMyOpportunities>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyOpportunities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyOpportunitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateOpportunityUrl = () => {
+
+
+
+
+  return `/api/brand/opportunities`
+}
+
+/**
+ * @summary Post an opportunity (brand only)
+ */
+export const createOpportunity = async (opportunityInput: OpportunityInput, options?: RequestInit): Promise<Opportunity> => {
+
+  return customFetch<Opportunity>(getCreateOpportunityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(opportunityInput)
+  }
+);}
+
+
+
+
+export const getCreateOpportunityMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOpportunity>>, TError,{data: BodyType<OpportunityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOpportunity>>, TError,{data: BodyType<OpportunityInput>}, TContext> => {
+
+const mutationKey = ['createOpportunity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOpportunity>>, {data: BodyType<OpportunityInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOpportunity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOpportunityMutationResult = NonNullable<Awaited<ReturnType<typeof createOpportunity>>>
+    export type CreateOpportunityMutationBody = BodyType<OpportunityInput>
+    export type CreateOpportunityMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Post an opportunity (brand only)
+ */
+export const useCreateOpportunity = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOpportunity>>, TError,{data: BodyType<OpportunityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createOpportunity>>,
+        TError,
+        {data: BodyType<OpportunityInput>},
+        TContext
+      > => {
+      return useMutation(getCreateOpportunityMutationOptions(options));
+    }
+
+export const getSetOpportunityStatusUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/brand/opportunities/${opportunityId}`
+}
+
+/**
+ * @summary Close or reopen your own opportunity. Terms cannot be edited once posted.
+ */
+export const setOpportunityStatus = async (opportunityId: string,
+    opportunityStatusInput: OpportunityStatusInput, options?: RequestInit): Promise<Opportunity> => {
+
+  return customFetch<Opportunity>(getSetOpportunityStatusUrl(opportunityId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(opportunityStatusInput)
+  }
+);}
+
+
+
+
+export const getSetOpportunityStatusMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setOpportunityStatus>>, TError,{opportunityId: string;data: BodyType<OpportunityStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setOpportunityStatus>>, TError,{opportunityId: string;data: BodyType<OpportunityStatusInput>}, TContext> => {
+
+const mutationKey = ['setOpportunityStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setOpportunityStatus>>, {opportunityId: string;data: BodyType<OpportunityStatusInput>}> = (props) => {
+          const {opportunityId,data} = props ?? {};
+
+          return  setOpportunityStatus(opportunityId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetOpportunityStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setOpportunityStatus>>>
+    export type SetOpportunityStatusMutationBody = BodyType<OpportunityStatusInput>
+    export type SetOpportunityStatusMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Close or reopen your own opportunity. Terms cannot be edited once posted.
+ */
+export const useSetOpportunityStatus = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setOpportunityStatus>>, TError,{opportunityId: string;data: BodyType<OpportunityStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setOpportunityStatus>>,
+        TError,
+        {opportunityId: string;data: BodyType<OpportunityStatusInput>},
+        TContext
+      > => {
+      return useMutation(getSetOpportunityStatusMutationOptions(options));
+    }
+
+export const getListOpportunityApplicantsUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/brand/opportunities/${opportunityId}/applications`
+}
+
+/**
+ * @summary Applicants to your own opportunity
+ */
+export const listOpportunityApplicants = async (opportunityId: string, options?: RequestInit): Promise<Applicant[]> => {
+
+  return customFetch<Applicant[]>(getListOpportunityApplicantsUrl(opportunityId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOpportunityApplicantsQueryKey = (opportunityId: string,) => {
+    return [
+    `/api/brand/opportunities/${opportunityId}/applications`
+    ] as const;
+    }
+
+
+export const getListOpportunityApplicantsQueryOptions = <TData = Awaited<ReturnType<typeof listOpportunityApplicants>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(opportunityId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOpportunityApplicants>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOpportunityApplicantsQueryKey(opportunityId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOpportunityApplicants>>> = ({ signal }) => listOpportunityApplicants(opportunityId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: opportunityId !== null && opportunityId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOpportunityApplicants>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOpportunityApplicantsQueryResult = NonNullable<Awaited<ReturnType<typeof listOpportunityApplicants>>>
+export type ListOpportunityApplicantsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Applicants to your own opportunity
+ */
+
+export function useListOpportunityApplicants<TData = Awaited<ReturnType<typeof listOpportunityApplicants>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ opportunityId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOpportunityApplicants>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOpportunityApplicantsQueryOptions(opportunityId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDecideApplicationUrl = (applicationId: string,) => {
+
+
+
+
+  return `/api/brand/applications/${applicationId}`
+}
+
+/**
+ * @summary Shortlist, accept or pass on an applicant. The model always sees the outcome.
+ */
+export const decideApplication = async (applicationId: string,
+    decisionInput: DecisionInput, options?: RequestInit): Promise<Applicant> => {
+
+  return customFetch<Applicant>(getDecideApplicationUrl(applicationId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(decisionInput)
+  }
+);}
+
+
+
+
+export const getDecideApplicationMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideApplication>>, TError,{applicationId: string;data: BodyType<DecisionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof decideApplication>>, TError,{applicationId: string;data: BodyType<DecisionInput>}, TContext> => {
+
+const mutationKey = ['decideApplication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof decideApplication>>, {applicationId: string;data: BodyType<DecisionInput>}> = (props) => {
+          const {applicationId,data} = props ?? {};
+
+          return  decideApplication(applicationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DecideApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof decideApplication>>>
+    export type DecideApplicationMutationBody = BodyType<DecisionInput>
+    export type DecideApplicationMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Shortlist, accept or pass on an applicant. The model always sees the outcome.
+ */
+export const useDecideApplication = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideApplication>>, TError,{applicationId: string;data: BodyType<DecisionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof decideApplication>>,
+        TError,
+        {applicationId: string;data: BodyType<DecisionInput>},
+        TContext
+      > => {
+      return useMutation(getDecideApplicationMutationOptions(options));
+    }
+
+export const getListOwnerModelsUrl = () => {
+
+
+
+
+  return `/api/owner/models`
+}
+
+/**
+ * @summary Model registry, longest-waiting verification requests first
+ */
+export const listOwnerModels = async ( options?: RequestInit): Promise<OwnerModelRow[]> => {
+
+  return customFetch<OwnerModelRow[]>(getListOwnerModelsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnerModelsQueryKey = () => {
+    return [
+    `/api/owner/models`
+    ] as const;
+    }
+
+
+export const getListOwnerModelsQueryOptions = <TData = Awaited<ReturnType<typeof listOwnerModels>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerModels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnerModelsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnerModels>>> = ({ signal }) => listOwnerModels({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnerModels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnerModelsQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnerModels>>>
+export type ListOwnerModelsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Model registry, longest-waiting verification requests first
+ */
+
+export function useListOwnerModels<TData = Awaited<ReturnType<typeof listOwnerModels>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnerModels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnerModelsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOwnerModelUrl = (modelId: string,) => {
+
+
+
+
+  return `/api/owner/models/${modelId}`
+}
+
+/**
+ * @summary Full model record for review. Viewing it writes an audit event.
+ */
+export const getOwnerModel = async (modelId: string, options?: RequestInit): Promise<OwnerModelDetail> => {
+
+  return customFetch<OwnerModelDetail>(getGetOwnerModelUrl(modelId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOwnerModelQueryKey = (modelId: string,) => {
+    return [
+    `/api/owner/models/${modelId}`
+    ] as const;
+    }
+
+
+export const getGetOwnerModelQueryOptions = <TData = Awaited<ReturnType<typeof getOwnerModel>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(modelId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerModel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOwnerModelQueryKey(modelId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOwnerModel>>> = ({ signal }) => getOwnerModel(modelId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: modelId !== null && modelId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOwnerModel>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOwnerModelQueryResult = NonNullable<Awaited<ReturnType<typeof getOwnerModel>>>
+export type GetOwnerModelQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Full model record for review. Viewing it writes an audit event.
+ */
+
+export function useGetOwnerModel<TData = Awaited<ReturnType<typeof getOwnerModel>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ modelId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOwnerModel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOwnerModelQueryOptions(modelId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getVerifyModelUrl = (modelId: string,) => {
+
+
+
+
+  return `/api/owner/models/${modelId}/verify`
+}
+
+/**
+ * @summary Verify a model whose request is pending
+ */
+export const verifyModel = async (modelId: string, options?: RequestInit): Promise<OwnerModelRow> => {
+
+  return customFetch<OwnerModelRow>(getVerifyModelUrl(modelId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getVerifyModelMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyModel>>, TError,{modelId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyModel>>, TError,{modelId: string}, TContext> => {
+
+const mutationKey = ['verifyModel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyModel>>, {modelId: string}> = (props) => {
+          const {modelId} = props ?? {};
+
+          return  verifyModel(modelId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyModelMutationResult = NonNullable<Awaited<ReturnType<typeof verifyModel>>>
+
+    export type VerifyModelMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Verify a model whose request is pending
+ */
+export const useVerifyModel = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyModel>>, TError,{modelId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyModel>>,
+        TError,
+        {modelId: string},
+        TContext
+      > => {
+      return useMutation(getVerifyModelMutationOptions(options));
+    }
+
+export const getRejectModelUrl = (modelId: string,) => {
+
+
+
+
+  return `/api/owner/models/${modelId}/reject`
+}
+
+/**
+ * @summary Reject a pending verification. The reason is sent to the model word for word.
+ */
+export const rejectModel = async (modelId: string,
+    rejectionInput: RejectionInput, options?: RequestInit): Promise<OwnerModelRow> => {
+
+  return customFetch<OwnerModelRow>(getRejectModelUrl(modelId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(rejectionInput)
+  }
+);}
+
+
+
+
+export const getRejectModelMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectModel>>, TError,{modelId: string;data: BodyType<RejectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rejectModel>>, TError,{modelId: string;data: BodyType<RejectionInput>}, TContext> => {
+
+const mutationKey = ['rejectModel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectModel>>, {modelId: string;data: BodyType<RejectionInput>}> = (props) => {
+          const {modelId,data} = props ?? {};
+
+          return  rejectModel(modelId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectModelMutationResult = NonNullable<Awaited<ReturnType<typeof rejectModel>>>
+    export type RejectModelMutationBody = BodyType<RejectionInput>
+    export type RejectModelMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Reject a pending verification. The reason is sent to the model word for word.
+ */
+export const useRejectModel = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectModel>>, TError,{modelId: string;data: BodyType<RejectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rejectModel>>,
+        TError,
+        {modelId: string;data: BodyType<RejectionInput>},
+        TContext
+      > => {
+      return useMutation(getRejectModelMutationOptions(options));
+    }
+
+export const getListAuditEventsUrl = () => {
+
+
+
+
+  return `/api/owner/audit-events`
+}
+
+/**
+ * @summary Most recent audit events, newest first
+ */
+export const listAuditEvents = async ( options?: RequestInit): Promise<AuditEvent[]> => {
+
+  return customFetch<AuditEvent[]>(getListAuditEventsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAuditEventsQueryKey = () => {
+    return [
+    `/api/owner/audit-events`
+    ] as const;
+    }
+
+
+export const getListAuditEventsQueryOptions = <TData = Awaited<ReturnType<typeof listAuditEvents>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAuditEventsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditEvents>>> = ({ signal }) => listAuditEvents({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAuditEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAuditEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listAuditEvents>>>
+export type ListAuditEventsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Most recent audit events, newest first
+ */
+
+export function useListAuditEvents<TData = Awaited<ReturnType<typeof listAuditEvents>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAuditEventsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOpportunityReportsUrl = () => {
+
+
+
+
+  return `/api/owner/opportunity-reports`
+}
+
+/**
+ * @summary Reported opportunities, most reported first
+ */
+export const listOpportunityReports = async ( options?: RequestInit): Promise<OpportunityReportRow[]> => {
+
+  return customFetch<OpportunityReportRow[]>(getListOpportunityReportsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOpportunityReportsQueryKey = () => {
+    return [
+    `/api/owner/opportunity-reports`
+    ] as const;
+    }
+
+
+export const getListOpportunityReportsQueryOptions = <TData = Awaited<ReturnType<typeof listOpportunityReports>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOpportunityReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOpportunityReportsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOpportunityReports>>> = ({ signal }) => listOpportunityReports({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOpportunityReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOpportunityReportsQueryResult = NonNullable<Awaited<ReturnType<typeof listOpportunityReports>>>
+export type ListOpportunityReportsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Reported opportunities, most reported first
+ */
+
+export function useListOpportunityReports<TData = Awaited<ReturnType<typeof listOpportunityReports>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOpportunityReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOpportunityReportsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCloseOpportunityAsOwnerUrl = (opportunityId: string,) => {
+
+
+
+
+  return `/api/owner/opportunities/${opportunityId}/close`
+}
+
+/**
+ * @summary Close a reported opportunity
+ */
+export const closeOpportunityAsOwner = async (opportunityId: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getCloseOpportunityAsOwnerUrl(opportunityId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCloseOpportunityAsOwnerMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeOpportunityAsOwner>>, TError,{opportunityId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof closeOpportunityAsOwner>>, TError,{opportunityId: string}, TContext> => {
+
+const mutationKey = ['closeOpportunityAsOwner'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof closeOpportunityAsOwner>>, {opportunityId: string}> = (props) => {
+          const {opportunityId} = props ?? {};
+
+          return  closeOpportunityAsOwner(opportunityId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CloseOpportunityAsOwnerMutationResult = NonNullable<Awaited<ReturnType<typeof closeOpportunityAsOwner>>>
+
+    export type CloseOpportunityAsOwnerMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Close a reported opportunity
+ */
+export const useCloseOpportunityAsOwner = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeOpportunityAsOwner>>, TError,{opportunityId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof closeOpportunityAsOwner>>,
+        TError,
+        {opportunityId: string},
+        TContext
+      > => {
+      return useMutation(getCloseOpportunityAsOwnerMutationOptions(options));
+    }
 

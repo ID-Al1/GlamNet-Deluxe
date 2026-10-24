@@ -423,6 +423,7 @@ export const OwnerRegistryEntryRole = {
   client: 'client',
   stylist: 'stylist',
   brand: 'brand',
+  model: 'model',
 } as const;
 
 /**
@@ -615,6 +616,7 @@ export const OwnerRegistryProfileRole = {
   client: 'client',
   stylist: 'stylist',
   brand: 'brand',
+  model: 'model',
 } as const;
 
 export interface OwnerRegistryProfile {
@@ -637,6 +639,7 @@ export const SignupInputRole = {
   client: 'client',
   stylist: 'stylist',
   brand: 'brand',
+  model: 'model',
 } as const;
 
 export interface SignupInput {
@@ -667,6 +670,7 @@ export const UserRole = {
   client: 'client',
   stylist: 'stylist',
   brand: 'brand',
+  model: 'model',
 } as const;
 
 export interface User {
@@ -1058,6 +1062,669 @@ export interface VerificationChecklist {
   isFullyReady: boolean;
 }
 
+export interface PublishInput {
+  published: boolean;
+}
+
+export type SocialLinkInputPlatform = typeof SocialLinkInputPlatform[keyof typeof SocialLinkInputPlatform];
+
+
+export const SocialLinkInputPlatform = {
+  instagram: 'instagram',
+  tiktok: 'tiktok',
+  youtube: 'youtube',
+  website: 'website',
+  other: 'other',
+} as const;
+
+export interface SocialLinkInput {
+  platform: SocialLinkInputPlatform;
+  /** @maxLength 300 */
+  url: string;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  handle?: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  followerCount?: number | null;
+  isPublic?: boolean;
+}
+
+export interface SocialLinksInput {
+  /** @maxItems 8 */
+  links: SocialLinkInput[];
+}
+
+export interface PhotoVisibilityInput {
+  isPublic: boolean;
+}
+
+export interface ReportInput {
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type OpportunityStatusInputStatus = typeof OpportunityStatusInputStatus[keyof typeof OpportunityStatusInputStatus];
+
+
+export const OpportunityStatusInputStatus = {
+  open: 'open',
+  closed: 'closed',
+} as const;
+
+export interface OpportunityStatusInput {
+  status: OpportunityStatusInputStatus;
+}
+
+export interface RejectionInput {
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export interface PublicSocialLink {
+  platform: string;
+  url: string;
+  /** @nullable */
+  handle?: string | null;
+  /** @nullable */
+  followerCount?: number | null;
+  /** Where the audience number came from, e.g. self_reported. */
+  statSource?: string;
+  /** @nullable */
+  statUpdatedAt?: string | null;
+}
+
+export type PublicPhotoKind = typeof PublicPhotoKind[keyof typeof PublicPhotoKind];
+
+
+export const PublicPhotoKind = {
+  front: 'front',
+  left: 'left',
+  right: 'right',
+  full_length: 'full_length',
+  editorial: 'editorial',
+} as const;
+
+export interface PublicPhoto {
+  id: string;
+  kind: PublicPhotoKind;
+  url: string;
+}
+
+/**
+ * @nullable
+ */
+export type TalentCardAvailability = typeof TalentCardAvailability[keyof typeof TalentCardAvailability] | null;
+
+
+export const TalentCardAvailability = {
+  available: 'available',
+  limited: 'limited',
+} as const;
+
+export interface TalentCard {
+  id: string;
+  professionalName: string;
+  category: string;
+  /**
+     * Coarse location. Null when the model keeps it private.
+     * @nullable
+     */
+  area?: string | null;
+  /** @nullable */
+  availability?: TalentCardAvailability;
+  skills: string[];
+  /** Always true in the public directory. Unverified models are not listed. */
+  verified: boolean;
+  /** @nullable */
+  portraitUrl?: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type TalentProfileAvailability = typeof TalentProfileAvailability[keyof typeof TalentProfileAvailability] | null;
+
+
+export const TalentProfileAvailability = {
+  available: 'available',
+  limited: 'limited',
+} as const;
+
+export interface TalentProfile {
+  id: string;
+  professionalName: string;
+  category: string;
+  /** @nullable */
+  area?: string | null;
+  /** @nullable */
+  availability?: TalentProfileAvailability;
+  /** @nullable */
+  bio?: string | null;
+  skills: string[];
+  serviceCategories: string[];
+  verified: boolean;
+  /** @nullable */
+  verifiedAt?: string | null;
+  acceptsEnquiries: boolean;
+  /** @nullable */
+  startingRateCents?: number | null;
+  /** @nullable */
+  rateNote?: string | null;
+  socialLinks: PublicSocialLink[];
+  photos: PublicPhoto[];
+}
+
+export interface EnquiryInput {
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  message: string;
+}
+
+export interface ModelEnquiry {
+  id: string;
+  message: string;
+  fromName: string;
+  fromRole: string;
+  createdAt: string;
+}
+
+export type OwnerPhotoKind = typeof OwnerPhotoKind[keyof typeof OwnerPhotoKind];
+
+
+export const OwnerPhotoKind = {
+  front: 'front',
+  left: 'left',
+  right: 'right',
+  full_length: 'full_length',
+  editorial: 'editorial',
+} as const;
+
+export interface OwnerPhoto {
+  id: string;
+  kind: OwnerPhotoKind;
+  /** Authenticated route. Never a public file URL. */
+  url: string;
+  isPublic: boolean;
+}
+
+export interface OwnerSocialLink {
+  id: string;
+  platform: string;
+  url: string;
+  /** @nullable */
+  handle?: string | null;
+  /** @nullable */
+  followerCount?: number | null;
+  statSource?: string;
+  /** @nullable */
+  statUpdatedAt?: string | null;
+  isPublic: boolean;
+}
+
+export type ModelProfileOwnerAvailability = typeof ModelProfileOwnerAvailability[keyof typeof ModelProfileOwnerAvailability];
+
+
+export const ModelProfileOwnerAvailability = {
+  available: 'available',
+  limited: 'limited',
+  unavailable: 'unavailable',
+} as const;
+
+export type ModelProfileOwnerVisibility = {[key: string]: boolean};
+
+export type ModelProfileOwnerVerificationStatus = typeof ModelProfileOwnerVerificationStatus[keyof typeof ModelProfileOwnerVerificationStatus];
+
+
+export const ModelProfileOwnerVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export interface ModelProfileOwner {
+  id: string;
+  professionalName: string;
+  category: string;
+  area: string;
+  /** @nullable */
+  bio?: string | null;
+  skills: string[];
+  serviceCategories: string[];
+  availability: ModelProfileOwnerAvailability;
+  acceptsEnquiries: boolean;
+  /** @nullable */
+  startingRateCents?: number | null;
+  /** @nullable */
+  rateNote?: string | null;
+  /** @nullable */
+  creativeIdentity?: string | null;
+  /** @nullable */
+  collaborationPreferences?: string | null;
+  /** @nullable */
+  careerGoals?: string | null;
+  visibility: ModelProfileOwnerVisibility;
+  isPublished: boolean;
+  verificationStatus: ModelProfileOwnerVerificationStatus;
+  /** @nullable */
+  verificationRequestedAt?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  /** @nullable */
+  verificationRejectionReason?: string | null;
+  photos: OwnerPhoto[];
+  socialLinks: OwnerSocialLink[];
+  /** Plain-language list of what is still needed before the profile can be published. */
+  missingForPublish: string[];
+  /** True only when published AND verified, i.e. visible in the public directory. */
+  isListed: boolean;
+}
+
+export type ModelProfileUpdateAvailability = typeof ModelProfileUpdateAvailability[keyof typeof ModelProfileUpdateAvailability];
+
+
+export const ModelProfileUpdateAvailability = {
+  available: 'available',
+  limited: 'limited',
+  unavailable: 'unavailable',
+} as const;
+
+export type ModelProfileUpdateVisibility = {[key: string]: boolean};
+
+export interface ModelProfileUpdate {
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  professionalName?: string;
+  /** @maxLength 60 */
+  category?: string;
+  /** @maxLength 80 */
+  area?: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  bio?: string | null;
+  /**
+     * @maxItems 20
+     * @items.maxLength 40
+     */
+  skills?: string[];
+  /**
+     * @maxItems 12
+     * @items.maxLength 60
+     */
+  serviceCategories?: string[];
+  availability?: ModelProfileUpdateAvailability;
+  acceptsEnquiries?: boolean;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  startingRateCents?: number | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  rateNote?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  creativeIdentity?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  collaborationPreferences?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  careerGoals?: string | null;
+  visibility?: ModelProfileUpdateVisibility;
+}
+
+export type RegisterPhotoInputKind = typeof RegisterPhotoInputKind[keyof typeof RegisterPhotoInputKind];
+
+
+export const RegisterPhotoInputKind = {
+  front: 'front',
+  left: 'left',
+  right: 'right',
+  full_length: 'full_length',
+  editorial: 'editorial',
+} as const;
+
+export type RegisterPhotoInputMimeType = typeof RegisterPhotoInputMimeType[keyof typeof RegisterPhotoInputMimeType];
+
+
+export const RegisterPhotoInputMimeType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface RegisterPhotoInput {
+  kind: RegisterPhotoInputKind;
+  /**
+     * Path returned by /storage/uploads/request-url.
+     * @pattern ^/objects/uploads/[A-Za-z0-9-]+$
+     */
+  objectPath: string;
+  mimeType: RegisterPhotoInputMimeType;
+}
+
+export type OpportunityStatus = typeof OpportunityStatus[keyof typeof OpportunityStatus];
+
+
+export const OpportunityStatus = {
+  open: 'open',
+  closed: 'closed',
+} as const;
+
+export interface Opportunity {
+  id: string;
+  organiserName: string;
+  type: string;
+  title: string;
+  brief: string;
+  deliverables: string;
+  /** @nullable */
+  eligibility?: string | null;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+  location: string;
+  isRemote: boolean;
+  /**
+     * Offered fee in rand cents. Null means the organiser has not stated an amount. Never a guarantee of income.
+     * @nullable
+     */
+  compensationCents?: number | null;
+  compensationNote: string;
+  expensesNote: string;
+  usageRights: string;
+  exclusivity: string;
+  paymentTerms: string;
+  applicationDeadline: string;
+  status: OpportunityStatus;
+  createdAt: string;
+  /**
+     * Only returned to the organiser.
+     * @nullable
+     */
+  applicantCount?: number | null;
+  /**
+     * Only returned to the organiser.
+     * @nullable
+     */
+  reportCount?: number | null;
+  /**
+     * Only returned to a signed-in model.
+     * @nullable
+     */
+  isSaved?: boolean | null;
+  /**
+     * Only returned to a signed-in model.
+     * @nullable
+     */
+  myApplicationStatus?: string | null;
+}
+
+export type OpportunityInputType = typeof OpportunityInputType[keyof typeof OpportunityInputType];
+
+
+export const OpportunityInputType = {
+  brand_promotion: 'brand_promotion',
+  paid_modelling: 'paid_modelling',
+  artist_collaboration: 'artist_collaboration',
+  ugc_content: 'ugc_content',
+  affiliate: 'affiliate',
+  ambassador: 'ambassador',
+  event: 'event',
+  editorial_shoot: 'editorial_shoot',
+} as const;
+
+export interface OpportunityInput {
+  type: OpportunityInputType;
+  /**
+     * @minLength 5
+     * @maxLength 120
+     */
+  title: string;
+  /**
+     * @minLength 20
+     * @maxLength 4000
+     */
+  brief: string;
+  /**
+     * @minLength 5
+     * @maxLength 2000
+     */
+  deliverables: string;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  eligibility?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  startDate?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  endDate?: string | null;
+  /** @maxLength 160 */
+  location?: string;
+  isRemote?: boolean;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  compensationCents?: number | null;
+  /** @maxLength 500 */
+  compensationNote?: string;
+  /** @maxLength 500 */
+  expensesNote?: string;
+  /**
+     * @minLength 5
+     * @maxLength 1500
+     */
+  usageRights: string;
+  /** @maxLength 500 */
+  exclusivity?: string;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  paymentTerms: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  applicationDeadline: string;
+}
+
+export interface ApplyInput {
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  message: string;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  proposedFeeCents?: number | null;
+}
+
+export type MyApplicationStatus = typeof MyApplicationStatus[keyof typeof MyApplicationStatus];
+
+
+export const MyApplicationStatus = {
+  applied: 'applied',
+  shortlisted: 'shortlisted',
+  accepted: 'accepted',
+  passed: 'passed',
+  withdrawn: 'withdrawn',
+} as const;
+
+export type MyApplicationOpportunity = {
+  id: string;
+  title: string;
+  organiserName: string;
+  type: string;
+  status: string;
+  applicationDeadline: string;
+};
+
+export interface MyApplication {
+  id: string;
+  status: MyApplicationStatus;
+  /** @nullable */
+  statusNote?: string | null;
+  message: string;
+  /** @nullable */
+  proposedFeeCents?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  opportunity: MyApplicationOpportunity;
+}
+
+export type ApplicantStatus = typeof ApplicantStatus[keyof typeof ApplicantStatus];
+
+
+export const ApplicantStatus = {
+  applied: 'applied',
+  shortlisted: 'shortlisted',
+  accepted: 'accepted',
+  passed: 'passed',
+  withdrawn: 'withdrawn',
+} as const;
+
+export type ApplicantModel = {
+  id: string;
+  professionalName: string;
+  category: string;
+  /** @nullable */
+  area?: string | null;
+  verified: boolean;
+};
+
+export interface Applicant {
+  id: string;
+  status: ApplicantStatus;
+  /** @nullable */
+  statusNote?: string | null;
+  message: string;
+  /** @nullable */
+  proposedFeeCents?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  model: ApplicantModel;
+}
+
+export type DecisionInputStatus = typeof DecisionInputStatus[keyof typeof DecisionInputStatus];
+
+
+export const DecisionInputStatus = {
+  shortlisted: 'shortlisted',
+  accepted: 'accepted',
+  passed: 'passed',
+} as const;
+
+export interface DecisionInput {
+  status: DecisionInputStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export type OwnerModelRowVerificationStatus = typeof OwnerModelRowVerificationStatus[keyof typeof OwnerModelRowVerificationStatus];
+
+
+export const OwnerModelRowVerificationStatus = {
+  none: 'none',
+  pending: 'pending',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export interface OwnerModelRow {
+  id: string;
+  userId: string;
+  professionalName: string;
+  category: string;
+  area: string;
+  isPublished: boolean;
+  verificationStatus: OwnerModelRowVerificationStatus;
+  /** @nullable */
+  verificationRequestedAt?: string | null;
+  /**
+     * Whole days since verification was requested. Three or more is flagged.
+     * @nullable
+     */
+  daysWaiting?: number | null;
+  photoCount: number;
+  createdAt: string;
+}
+
+export type OwnerModelDetailVisibility = {[key: string]: boolean};
+
+export interface OwnerModelDetail {
+  row: OwnerModelRow;
+  email: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  skills: string[];
+  serviceCategories: string[];
+  visibility: OwnerModelDetailVisibility;
+  photos: OwnerPhoto[];
+  socialLinks: OwnerSocialLink[];
+}
+
+export interface AuditEvent {
+  id: string;
+  /** @nullable */
+  actorUserId?: string | null;
+  /** @nullable */
+  actorName?: string | null;
+  actorRole: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  createdAt: string;
+}
+
+export interface OpportunityReportRow {
+  opportunityId: string;
+  title: string;
+  organiserName: string;
+  status: string;
+  reportCount: number;
+  reasons: string[];
+}
+
 /**
  * Validation error
  */
@@ -1188,5 +1855,24 @@ status?: ComplaintStatus;
 export type ListCastingCallsParams = {
 specialty?: string;
 brandId?: string;
+};
+
+export type ListTalentParams = {
+q?: string;
+category?: string;
+area?: string;
+availability?: ListTalentAvailability;
+};
+
+export type ListTalentAvailability = typeof ListTalentAvailability[keyof typeof ListTalentAvailability];
+
+
+export const ListTalentAvailability = {
+  available: 'available',
+  limited: 'limited',
+} as const;
+
+export type ListOpportunitiesParams = {
+type?: string;
 };
 
