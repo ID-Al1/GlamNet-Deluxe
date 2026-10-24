@@ -9,6 +9,11 @@ import { CreateCastingCallBody, UpdateCastingCallBody } from "@workspace/api-zod
 
 const router = Router();
 
+function isSiteOwner(email: string): boolean {
+  const ownerEmail = process.env["OWNER_EMAIL"];
+  return !!ownerEmail && email.trim().toLowerCase() === ownerEmail.trim().toLowerCase();
+}
+
 function formatCall(c: typeof castingCallsTable.$inferSelect, hasApplied = false) {
   return {
     id: c.id,
@@ -54,6 +59,7 @@ router.get("/casting", requireAuth, async (req, res) => {
 
 router.post("/casting", requireAuth, async (req, res) => {
   const user = (req as any).user;
+  if (user.role !== "brand") { res.status(403).json({ error: "Only brands can create casting calls." }); return; }
   const parsed = CreateCastingCallBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
 
@@ -85,15 +91,22 @@ router.get("/casting/:castingId", requireAuth, async (req, res) => {
 });
 
 router.patch("/casting/:castingId", requireAuth, async (req, res) => {
+  const user = (req as any).user;
   const parsed = UpdateCastingCallBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
-  const [call] = await db.update(castingCallsTable).set(parsed.data).where(eq(castingCallsTable.id, param(req.params.castingId))).returning();
-  if (!call) { res.status(404).json({ error: "Not found" }); return; }
+  const [existing] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  if (existing.brandId !== user.id && !isSiteOwner(user.email)) { res.status(403).json({ error: "You can only change your own casting calls." }); return; }
+  const [call] = await db.update(castingCallsTable).set(parsed.data).where(eq(castingCallsTable.id, existing.id)).returning();
   res.json(formatCall(call));
 });
 
 router.delete("/casting/:castingId", requireAuth, async (req, res) => {
-  await db.delete(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
+  const user = (req as any).user;
+  const [existing] = await db.select().from(castingCallsTable).where(eq(castingCallsTable.id, param(req.params.castingId)));
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  if (existing.brandId !== user.id && !isSiteOwner(user.email)) { res.status(403).json({ error: "You can only delete your own casting calls." }); return; }
+  await db.delete(castingCallsTable).where(eq(castingCallsTable.id, existing.id));
   res.json({ message: "Deleted" });
 });
 
