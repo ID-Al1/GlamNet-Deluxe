@@ -114,7 +114,7 @@ Rejection requires a written reason, which she receives word for word.
 Straight from the strategy red lights, restated so nobody has to go looking:
 
 - Anything that positions Bonisa against Gumtree, Bark, or a classifieds directory
-- Any second payment provider. Stripe only
+- Any payment provider other than Peach Payments (which replaces Stripe, confirmed by Alwande 2026-10-26; the code still uses Stripe until the swap ships)
 - Any fake, seeded, sample or placeholder content, anywhere, ever, including demos shown to investors
 - Salons as the primary entity. Bonisa lists individuals
 - A commission below 18% to win artists
