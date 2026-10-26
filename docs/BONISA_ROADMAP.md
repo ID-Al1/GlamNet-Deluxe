@@ -66,6 +66,17 @@ The event date is **14 November**. Today is Saturday 10 October, so there are **
 - The 6 November payment test is now at risk. The decision day rule applies: the event is planned as an **awareness launch with a waiting list** unless Peach confirms with a firm date soon
 - Ask Peach in writing for a firm date, and for the exact registration papers they need under the Bonisa name
 
+### Update (26 October 2026): Haiden's reply
+
+- **Live app:** `bonisa.opusintelligence.co.za`. The 19 to 20 Oct batch is deployed but untested on phones. This is now the main version
+- **Not working:** checkout is off. Live tracking is untested on two phones
+- **Login:** Haiden refers to a "Clerk live setup", so login now appears to run on Clerk. He needs a date from Alwande. Clerk must be listed as a data processor in the privacy policy
+- **Company:** Haiden pays the CIPC registration before Wednesday 28 Oct. Then Alwande handles the bank account (Nedbank), the Peach registration under the new company, and Information Officer registration
+- **Domain:** Haiden buys `bonjourbonisa.co.za` this week. It should be registered in the new company's name
+- **14 Nov:** Haiden says not everything will be finished. The one must-have is live payments
+- **Haiden's tasks:** answer the two specs, delete the approved demo data, finish the rename, send documentation
+- **Not answered:** lawyer contact and first drafts, which payment provider is wired in, what live tracking collects, whether the old and new apps share data
+
 ### The five streams
 
 **1. Launch events with Favour (event coordinator for Hayden's team)**
