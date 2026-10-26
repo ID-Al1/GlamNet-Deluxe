@@ -68,6 +68,9 @@ export function ownerProfileDto(p: Profile, photos: Photo[], links: Link[], phot
     verificationRequestedAt: iso(p.verificationRequestedAt),
     verifiedAt: iso(p.verifiedAt),
     verificationRejectionReason: p.verificationRejectionReason,
+    registryNumber: p.registryNumber,
+    isSpotlight: p.spotlightAt !== null,
+    spotlightNote: p.spotlightNote,
     photos: photos.map((ph) => ({ id: ph.id, kind: ph.kind as "front" | "left" | "right" | "full_length" | "editorial", url: photoUrl(ph.id), isPublic: ph.isPublic })),
     socialLinks: links.map((l) => ({
       id: l.id, platform: l.platform, url: l.url, handle: l.handle, followerCount: l.followerCount,
@@ -99,6 +102,9 @@ export function talentCardDto(p: Profile, photos: Photo[]) {
     skills: shows(p, "skills") ? p.skills : [],
     verified: true as const,
     portraitUrl: portrait?.url ?? null,
+    registryNumber: p.registryNumber,
+    isSpotlight: p.spotlightAt !== null,
+    spotlightNote: p.spotlightAt !== null ? p.spotlightNote : null,
   };
 }
 
@@ -115,6 +121,9 @@ export function talentProfileDto(p: Profile, photos: Photo[], links: Link[]) {
     serviceCategories: shows(p, "serviceCategories") ? p.serviceCategories : [],
     verified: true as const,
     verifiedAt: iso(p.verifiedAt),
+    registryNumber: p.registryNumber,
+    isSpotlight: card.isSpotlight,
+    spotlightNote: card.spotlightNote,
     acceptsEnquiries: p.acceptsEnquiries,
     startingRateCents: shows(p, "rates") ? p.startingRateCents : null,
     rateNote: shows(p, "rates") ? p.rateNote : null,

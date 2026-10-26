@@ -75,7 +75,8 @@ router.get("/talent", async (req, res) => {
     cards = cards.filter((c) =>
       [c.professionalName, c.category, c.area ?? "", ...c.skills].some((v) => v.toLowerCase().includes(needle)));
   }
-  cards.sort((a, b) => a.professionalName.localeCompare(b.professionalName));
+  // Spotlight picks are an editorial choice by Bonisa and come first. Everyone else is alphabetical, never ranked.
+  cards.sort((a, b) => Number(b.isSpotlight) - Number(a.isSpotlight) || a.professionalName.localeCompare(b.professionalName));
   res.json(cards);
 });
 

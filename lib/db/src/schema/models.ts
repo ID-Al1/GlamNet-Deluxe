@@ -33,6 +33,11 @@ export const modelProfilesTable = pgTable("model_profiles", {
   verificationRequestedAt: timestamp("verification_requested_at"),
   verifiedAt: timestamp("verified_at"),
   verificationRejectionReason: text("verification_rejection_reason"),
+  // Assigned by Bonisa when verification is granted (e.g. BM-0042). Never reused.
+  registryNumber: text("registry_number").unique(),
+  // Editorial pick by the owner. Not a ranking and not computed from anything.
+  spotlightAt: timestamp("spotlight_at"),
+  spotlightNote: text("spotlight_note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({

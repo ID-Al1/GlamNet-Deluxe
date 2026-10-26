@@ -108,6 +108,7 @@ import type {
   ServiceUpdate,
   SignupInput,
   SocialLinksInput,
+  SpotlightInput,
   StartConversationInput,
   StylistDashboard,
   StylistProfile,
@@ -6989,6 +6990,77 @@ export const useRejectModel = <TError = ErrorType<BadRequestResponse | Unauthori
         TContext
       > => {
       return useMutation(getRejectModelMutationOptions(options));
+    }
+
+export const getSetModelSpotlightUrl = (modelId: string,) => {
+
+
+
+
+  return `/api/owner/models/${modelId}/spotlight`
+}
+
+/**
+ * @summary Feature or un-feature a verified model in the Spotlight. An editorial pick, never a ranking.
+ */
+export const setModelSpotlight = async (modelId: string,
+    spotlightInput: SpotlightInput, options?: RequestInit): Promise<OwnerModelRow> => {
+
+  return customFetch<OwnerModelRow>(getSetModelSpotlightUrl(modelId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(spotlightInput)
+  }
+);}
+
+
+
+
+export const getSetModelSpotlightMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setModelSpotlight>>, TError,{modelId: string;data: BodyType<SpotlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setModelSpotlight>>, TError,{modelId: string;data: BodyType<SpotlightInput>}, TContext> => {
+
+const mutationKey = ['setModelSpotlight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setModelSpotlight>>, {modelId: string;data: BodyType<SpotlightInput>}> = (props) => {
+          const {modelId,data} = props ?? {};
+
+          return  setModelSpotlight(modelId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetModelSpotlightMutationResult = NonNullable<Awaited<ReturnType<typeof setModelSpotlight>>>
+    export type SetModelSpotlightMutationBody = BodyType<SpotlightInput>
+    export type SetModelSpotlightMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Feature or un-feature a verified model in the Spotlight. An editorial pick, never a ranking.
+ */
+export const useSetModelSpotlight = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setModelSpotlight>>, TError,{modelId: string;data: BodyType<SpotlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setModelSpotlight>>,
+        TError,
+        {modelId: string;data: BodyType<SpotlightInput>},
+        TContext
+      > => {
+      return useMutation(getSetModelSpotlightMutationOptions(options));
     }
 
 export const getListAuditEventsUrl = () => {

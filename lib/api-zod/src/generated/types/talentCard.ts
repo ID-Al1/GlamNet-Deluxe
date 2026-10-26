@@ -23,4 +23,13 @@ export interface TalentCard {
   verified: boolean;
   /** @nullable */
   portraitUrl?: string | null;
+  /**
+     * Bonisa ID assigned when verification was granted, e.g. BM-0042.
+     * @nullable
+     */
+  registryNumber?: string | null;
+  /** An editorial pick by Bonisa. Not a ranking. */
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
 }

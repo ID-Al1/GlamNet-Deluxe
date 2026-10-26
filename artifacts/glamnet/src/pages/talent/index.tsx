@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, MapPin, Users } from "lucide-react";
+import { Search, MapPin, Users, Sparkles } from "lucide-react";
 import { useListTalent } from "@workspace/api-client-react";
+import type { TalentCard } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { PortalShell } from "@/components/portal/shell";
 import { AuthedImage } from "@/components/portal/authed-image";
@@ -20,6 +21,8 @@ export default function TalentDirectory() {
   };
   const { data, isLoading, error, refetch } = useListTalent(params);
   const filtered = !!(q.trim() || category || available);
+  const picks = (data ?? []).filter((m) => m.isSpotlight);
+  const rest = (data ?? []).filter((m) => !m.isSpotlight);
 
   return (
     <PortalShell>
@@ -57,29 +60,46 @@ export default function TalentDirectory() {
             : "Models appear here once they have completed their profile, been verified by Bonisa, and chosen to publish."}
         </EmptyBlock>
       ) : (
-        <ul className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {data.map((m) => (
-            <li key={m.id}>
+        <>
+          {picks.length > 0 && (
+            <section className="space-y-4" aria-labelledby="spot-h">
+              <div className="space-y-1">
+                <h2 id="spot-h" className="text-2xl flex items-center gap-2"><Sparkles className="h-5 w-5 text-gold" strokeWidth={1.9} aria-hidden="true" />Bonisa Spotlight</h2>
+                <p className="text-sm text-muted-foreground">Editorial picks chosen by Bonisa. This is not a ranking and is not based on views or popularity.</p>
+              </div>
+              <ul className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">{picks.map((m) => <li key={m.id}><ModelCard m={m} /></li>)}</ul>
+            </section>
+          )}
+          <section className="space-y-4" aria-label="All models">
+            {picks.length > 0 && <h2 className="text-2xl">All models</h2>}
+            <ul className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">{rest.map((m) => <li key={m.id}><ModelCard m={m} /></li>)}</ul>
+          </section>
+        </>
+      )}
+    </PortalShell>
+  );
+}
+
+function ModelCard({ m }: { m: TalentCard }) {
+  return (
               <Link href={`/talent/${m.id}`} className="group block rounded-2xl overflow-hidden border border-border bg-card focus-visible:ring-2 ring-ring">
-                <div className="aspect-[3/4] bg-muted overflow-hidden">
+                <div className="aspect-[3/4] bg-muted overflow-hidden relative">
                   {m.portraitUrl
                     ? <AuthedImage path={m.portraitUrl} alt={`Portrait of ${m.professionalName}`} className="h-full w-full transition-transform duration-300 group-hover:scale-[1.02]" />
                     : <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground px-4 text-center">No public photo</div>}
+                  {m.isSpotlight && <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold px-2.5 py-1"><Sparkles className="h-3 w-3" strokeWidth={1.9} aria-hidden="true" />Spotlight</span>}
                 </div>
                 <div className="p-4 space-y-1.5">
                   <h3 className="font-serif font-bold text-lg leading-tight">{m.professionalName}</h3>
+                  {m.registryNumber && <p className="font-mono text-[11px] tracking-wider text-muted-foreground">{m.registryNumber}</p>}
                   <div className="flex items-center gap-2 flex-wrap">
                     <VerifiedBadge />
                     <span className="text-xs text-muted-foreground">{m.category}</span>
                   </div>
                   {m.area && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3 text-gold" strokeWidth={1.9} aria-hidden="true" />{m.area}</p>}
                   {m.availability && <p className="text-xs font-medium text-primary">{m.availability === "available" ? "Available" : "Limited availability"}</p>}
+                  {m.isSpotlight && m.spotlightNote && <p className="text-xs italic text-foreground/80 pt-1">{m.spotlightNote}</p>}
                 </div>
               </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </PortalShell>
   );
 }

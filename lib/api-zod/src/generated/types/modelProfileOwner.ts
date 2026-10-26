@@ -41,6 +41,11 @@ export interface ModelProfileOwner {
   verifiedAt?: string | null;
   /** @nullable */
   verificationRejectionReason?: string | null;
+  /** @nullable */
+  registryNumber?: string | null;
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
   photos: OwnerPhoto[];
   socialLinks: OwnerSocialLink[];
   /** Plain-language list of what is still needed before the profile can be published. */

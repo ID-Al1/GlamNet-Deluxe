@@ -169,6 +169,7 @@ export * from './signupInputRole';
 export * from './socialLinkInput';
 export * from './socialLinkInputPlatform';
 export * from './socialLinksInput';
+export * from './spotlightInput';
 export * from './startConversationInput';
 export * from './stylistDashboard';
 export * from './stylistProfile';

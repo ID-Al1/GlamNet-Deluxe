@@ -1123,6 +1123,16 @@ export interface OpportunityStatusInput {
   status: OpportunityStatusInputStatus;
 }
 
+export interface SpotlightInput {
+  spotlight: boolean;
+  /**
+     * Short editorial line shown with the pick.
+     * @maxLength 140
+     * @nullable
+     */
+  note?: string | null;
+}
+
 export interface RejectionInput {
   /**
      * @minLength 10
@@ -1188,6 +1198,15 @@ export interface TalentCard {
   verified: boolean;
   /** @nullable */
   portraitUrl?: string | null;
+  /**
+     * Bonisa ID assigned when verification was granted, e.g. BM-0042.
+     * @nullable
+     */
+  registryNumber?: string | null;
+  /** An editorial pick by Bonisa. Not a ranking. */
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
 }
 
 /**
@@ -1216,6 +1235,11 @@ export interface TalentProfile {
   verified: boolean;
   /** @nullable */
   verifiedAt?: string | null;
+  /** @nullable */
+  registryNumber?: string | null;
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
   acceptsEnquiries: boolean;
   /** @nullable */
   startingRateCents?: number | null;
@@ -1325,6 +1349,11 @@ export interface ModelProfileOwner {
   verifiedAt?: string | null;
   /** @nullable */
   verificationRejectionReason?: string | null;
+  /** @nullable */
+  registryNumber?: string | null;
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
   photos: OwnerPhoto[];
   socialLinks: OwnerSocialLink[];
   /** Plain-language list of what is still needed before the profile can be published. */
@@ -1683,6 +1712,11 @@ export interface OwnerModelRow {
      * @nullable
      */
   daysWaiting?: number | null;
+  /** @nullable */
+  registryNumber?: string | null;
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
   photoCount: number;
   createdAt: string;
 }

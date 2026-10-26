@@ -34,6 +34,11 @@ export default function WorkspaceOverview() {
                 <StatusPill status={profile.verificationStatus} kind="verification" />
                 <span className="text-sm text-muted-foreground">{profile.isListed ? "Listed in the public directory" : "Not in the public directory"}</span>
               </div>
+              {profile.registryNumber && (
+                <p className="text-sm text-muted-foreground">Your Bonisa ID is <strong className="font-mono tracking-wider text-foreground">{profile.registryNumber}</strong>. Quote it when a brand asks how to find you.
+                  {profile.isListed && <> <Link href={`/talent/${profile.id}/card`} className="text-primary underline underline-offset-4">View your comp card</Link>.</>}</p>
+              )}
+              {profile.isSpotlight && <p className="text-sm text-primary font-medium">Bonisa has featured you in the Spotlight.{profile.spotlightNote ? ` "${profile.spotlightNote}"` : ""}</p>}
             </header>
 
             <section className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-5" aria-labelledby="setup">

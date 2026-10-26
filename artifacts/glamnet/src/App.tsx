@@ -47,6 +47,7 @@ const OwnerModels = lazy(() => import("@/pages/owner/models"));
 const OwnerOversight = lazy(() => import("@/pages/owner/oversight"));
 const TalentDirectory = lazy(() => import("@/pages/talent/index"));
 const TalentProfilePage = lazy(() => import("@/pages/talent/[id]"));
+const CompCard = lazy(() => import("@/pages/talent/card"));
 const Opportunities = lazy(() => import("@/pages/opportunities/index"));
 const OpportunityDetail = lazy(() => import("@/pages/opportunities/[id]"));
 const About = lazy(() => import("@/pages/about"));
@@ -221,6 +222,7 @@ function Router() {
                   </RequireOwner>
                 </Route>
                 <Route path="/talent" component={TalentDirectory} />
+                <Route path="/talent/:id/card" component={CompCard} />
                 <Route path="/talent/:id" component={TalentProfilePage} />
                 <Route path="/opportunities" component={Opportunities} />
                 <Route path="/opportunities/:id" component={OpportunityDetail} />

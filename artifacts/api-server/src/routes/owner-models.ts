@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   db, usersTable, modelProfilesTable, modelPhotosTable, opportunitiesTable, opportunityReportsTable, auditEventsTable,
 } from "@workspace/db";
-import { RejectModelBody } from "@workspace/api-zod";
+import { RejectModelBody, SetModelSpotlightBody } from "@workspace/api-zod";
 import { requireOwner } from "../lib/auth";
 import { recordAudit } from "../lib/audit";
 import { param } from "../lib/params";
@@ -32,6 +32,9 @@ function rowDto(p: Profile, photoCount: number) {
     verificationStatus: p.verificationStatus as "none" | "pending" | "verified" | "rejected",
     verificationRequestedAt: p.verificationRequestedAt?.toISOString() ?? null,
     daysWaiting: waiting,
+    registryNumber: p.registryNumber,
+    isSpotlight: p.spotlightAt !== null,
+    spotlightNote: p.spotlightNote,
     photoCount,
     createdAt: p.createdAt.toISOString(),
   };
@@ -106,8 +109,11 @@ router.post("/owner/models/:modelId/verify", requireOwner, async (req, res) => {
   const [exists] = await db.select().from(modelProfilesTable).where(eq(modelProfilesTable.id, id));
   if (!exists) { res.status(404).json({ error: "Not found" }); return; }
   // Only from pending, so a replayed click cannot overwrite a later decision.
+  // The Bonisa ID is issued here, in the same statement as the decision. Numbers come
+  // from a database sequence, so a number is never reused (a failed attempt may skip one).
   const [p] = await db.update(modelProfilesTable).set({
     verificationStatus: "verified", verifiedAt: new Date(), verificationRejectionReason: null, updatedAt: new Date(),
+    registryNumber: sql<string>`coalesce(${modelProfilesTable.registryNumber}, 'BM-' || lpad(nextval('model_registry_seq')::text, 4, '0'))`,
   }).where(and(eq(modelProfilesTable.id, id), eq(modelProfilesTable.verificationStatus, "pending"))).returning();
   if (!p) { res.status(409).json({ error: "This model is not waiting for verification." }); return; }
   await recordAudit({ id: owner.id, role: "owner" }, "model.verified", "model_profile", id);
@@ -127,6 +133,24 @@ router.post("/owner/models/:modelId/reject", requireOwner, async (req, res) => {
   }).where(and(eq(modelProfilesTable.id, id), eq(modelProfilesTable.verificationStatus, "pending"))).returning();
   if (!p) { res.status(409).json({ error: "This model is not waiting for verification." }); return; }
   await recordAudit({ id: owner.id, role: "owner" }, "model.verification_rejected", "model_profile", id);
+  const counts = await photoCounts([id]);
+  res.json(rowDto(p, counts.get(id) ?? 0));
+});
+
+router.post("/owner/models/:modelId/spotlight", requireOwner, async (req, res) => {
+  const owner = (req as any).user;
+  const parsed = SetModelSpotlightBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Validation error" }); return; }
+  const id = param(req.params.modelId);
+  const [exists] = await db.select().from(modelProfilesTable).where(eq(modelProfilesTable.id, id));
+  if (!exists) { res.status(404).json({ error: "Not found" }); return; }
+  // Only a verified model can be featured. Un-featuring is always allowed.
+  const [p] = await db.update(modelProfilesTable).set(parsed.data.spotlight
+    ? { spotlightAt: new Date(), spotlightNote: parsed.data.note?.trim() || null, updatedAt: new Date() }
+    : { spotlightAt: null, spotlightNote: null, updatedAt: new Date() })
+    .where(parsed.data.spotlight ? and(eq(modelProfilesTable.id, id), eq(modelProfilesTable.verificationStatus, "verified")) : eq(modelProfilesTable.id, id)).returning();
+  if (!p) { res.status(409).json({ error: "Only verified models can be featured in the Spotlight." }); return; }
+  await recordAudit({ id: owner.id, role: "owner" }, parsed.data.spotlight ? "model.spotlight_added" : "model.spotlight_removed", "model_profile", id);
   const counts = await photoCounts([id]);
   res.json(rowDto(p, counts.get(id) ?? 0));
 });

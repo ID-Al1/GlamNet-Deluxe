@@ -262,3 +262,15 @@
 @media (prefers-reduced-motion: reduce) {
   .portal-theme *, .portal-theme *::before, .portal-theme *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Comp card: print only the card. */
+@media print {
+  body:has(.comp-card-sheet) header,
+  body:has(.comp-card-sheet) footer,
+  body:has(.comp-card-sheet) .no-print { display: none !important; }
+  body:has(.comp-card-sheet) .comp-card-sheet { border: none; box-shadow: none; max-width: none; padding: 0; }
+  body:has(.comp-card-sheet) .portal-theme > div { padding: 0; }
+  body:has(.comp-card-sheet) .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
+  body:has(.comp-card-sheet), body:has(.comp-card-sheet) .portal-theme { background: #fff !important; }
+  @page { margin: 14mm; }
+}

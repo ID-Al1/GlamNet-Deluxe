@@ -24,6 +24,11 @@ export interface TalentProfile {
   verified: boolean;
   /** @nullable */
   verifiedAt?: string | null;
+  /** @nullable */
+  registryNumber?: string | null;
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
   acceptsEnquiries: boolean;
   /** @nullable */
   startingRateCents?: number | null;

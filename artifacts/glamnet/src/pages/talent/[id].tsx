@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ExternalLink, MapPin, Send } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, MapPin, Send, Sparkles } from "lucide-react";
 import { useGetTalent, useSendTalentEnquiry } from "@workspace/api-client-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -66,7 +66,10 @@ export default function TalentProfilePage() {
             <div className="flex items-center gap-3 flex-wrap">
               <VerifiedBadge size="md" />
               {m.verifiedAt && <span className="text-xs text-muted-foreground">Verified by Bonisa on {formatDay(m.verifiedAt)}</span>}
+              {m.isSpotlight && <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold px-3 py-1"><Sparkles className="h-3.5 w-3.5" strokeWidth={1.9} aria-hidden="true" />Bonisa Spotlight</span>}
             </div>
+            {m.registryNumber && <p className="font-mono text-sm tracking-wider text-muted-foreground">Bonisa ID {m.registryNumber}</p>}
+            {m.isSpotlight && m.spotlightNote && <p className="italic text-foreground/85">"{m.spotlightNote}" <span className="not-italic text-xs text-muted-foreground">An editorial pick by Bonisa, not a ranking.</span></p>}
             <h1 className="text-4xl sm:text-5xl font-serif font-bold tracking-tight">{m.professionalName}</h1>
             <p className="text-lg text-muted-foreground flex items-center gap-3 flex-wrap">
               <span>{m.category}</span>
@@ -74,6 +77,8 @@ export default function TalentProfilePage() {
               {m.availability && <span className="text-primary font-medium">{m.availability === "available" ? "Available" : "Limited availability"}</span>}
             </p>
           </header>
+
+          <div><Link href={`/talent/${m.id}/card`}><Button variant="outline" className="gap-2"><FileText className="h-4 w-4" strokeWidth={1.9} aria-hidden="true" />View comp card</Button></Link></div>
 
           {m.bio && <section className="space-y-2"><h2 className="text-xl">About</h2><p className="whitespace-pre-line text-foreground/90 leading-relaxed">{m.bio}</p></section>}
 

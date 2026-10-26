@@ -22,6 +22,11 @@ export interface OwnerModelRow {
      * @nullable
      */
   daysWaiting?: number | null;
+  /** @nullable */
+  registryNumber?: string | null;
+  isSpotlight?: boolean;
+  /** @nullable */
+  spotlightNote?: string | null;
   photoCount: number;
   createdAt: string;
 }

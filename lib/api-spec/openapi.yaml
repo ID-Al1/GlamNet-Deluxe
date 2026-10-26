@@ -1635,6 +1635,26 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /owner/models/{modelId}/spotlight:
+    post:
+      operationId: setModelSpotlight
+      tags: [owner]
+      summary: Feature or un-feature a verified model in the Spotlight. An editorial pick, never a ranking.
+      parameters:
+        - { name: modelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SpotlightInput" } } }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/OwnerModelRow" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /owner/audit-events:
     get:
       operationId: listAuditEvents
@@ -2842,6 +2862,13 @@ components:
       properties:
         status: { type: string, enum: [open, closed] }
 
+    SpotlightInput:
+      type: object
+      required: [spotlight]
+      properties:
+        spotlight: { type: boolean }
+        note: { type: ["string", "null"], maxLength: 140, description: "Short editorial line shown with the pick." }
+
     RejectionInput:
       type: object
       required: [reason]
@@ -2879,6 +2906,9 @@ components:
         skills: { type: array, items: { type: string } }
         verified: { type: boolean, description: "Always true in the public directory. Unverified models are not listed." }
         portraitUrl: { type: ["string", "null"] }
+        registryNumber: { type: ["string", "null"], description: "Bonisa ID assigned when verification was granted, e.g. BM-0042." }
+        isSpotlight: { type: boolean, description: "An editorial pick by Bonisa. Not a ranking." }
+        spotlightNote: { type: ["string", "null"] }
 
     TalentProfile:
       type: object
@@ -2894,6 +2924,9 @@ components:
         serviceCategories: { type: array, items: { type: string } }
         verified: { type: boolean }
         verifiedAt: { type: ["string", "null"] }
+        registryNumber: { type: ["string", "null"] }
+        isSpotlight: { type: boolean }
+        spotlightNote: { type: ["string", "null"] }
         acceptsEnquiries: { type: boolean }
         startingRateCents: { type: ["integer", "null"] }
         rateNote: { type: ["string", "null"] }
@@ -2962,6 +2995,9 @@ components:
         verificationRequestedAt: { type: ["string", "null"] }
         verifiedAt: { type: ["string", "null"] }
         verificationRejectionReason: { type: ["string", "null"] }
+        registryNumber: { type: ["string", "null"] }
+        isSpotlight: { type: boolean }
+        spotlightNote: { type: ["string", "null"] }
         photos: { type: array, items: { $ref: "#/components/schemas/OwnerPhoto" } }
         socialLinks: { type: array, items: { $ref: "#/components/schemas/OwnerSocialLink" } }
         missingForPublish: { type: array, items: { type: string }, description: "Plain-language list of what is still needed before the profile can be published." }
@@ -3123,6 +3159,9 @@ components:
         verificationStatus: { type: string, enum: [none, pending, verified, rejected] }
         verificationRequestedAt: { type: ["string", "null"] }
         daysWaiting: { type: ["integer", "null"], description: "Whole days since verification was requested. Three or more is flagged." }
+        registryNumber: { type: ["string", "null"] }
+        isSpotlight: { type: boolean }
+        spotlightNote: { type: ["string", "null"] }
         photoCount: { type: integer }
         createdAt: { type: string }
 

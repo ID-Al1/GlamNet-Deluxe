@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Users } from "lucide-react";
-import { useGetOwnerModel, useListOwnerModels, useRejectModel, useVerifyModel, getListOwnerModelsQueryKey, getGetOwnerModelQueryKey } from "@workspace/api-client-react";
+import { useGetOwnerModel, useListOwnerModels, useRejectModel, useSetModelSpotlight, useVerifyModel, getListOwnerModelsQueryKey, getGetOwnerModelQueryKey } from "@workspace/api-client-react";
 import type { OwnerModelRow } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,6 +15,8 @@ function Review({ row, onClose }: { row: OwnerModelRow; onClose: () => void }) {
   const { data, isLoading, error, refetch } = useGetOwnerModel(row.id);
   const verify = useVerifyModel();
   const reject = useRejectModel();
+  const spotlight = useSetModelSpotlight();
+  const [note, setNote] = useState("");
   const qc = useQueryClient();
   const [reason, setReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
@@ -38,6 +40,24 @@ function Review({ row, onClose }: { row: OwnerModelRow; onClose: () => void }) {
               <figure key={p.id} className="space-y-1"><div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted"><AuthedImage path={p.url} alt={`${p.kind} digital`} className="h-full w-full" /></div><figcaption className="text-xs text-center text-muted-foreground">{p.kind.replace("_", " ")}</figcaption></figure>
             ))}
           </div>
+          {data.row.verificationStatus === "verified" && (
+            <div className="space-y-3 border-t border-border pt-5">
+              <p className="text-sm"><strong>Bonisa ID {data.row.registryNumber}</strong></p>
+              {data.row.isSpotlight ? (
+                <div className="space-y-2">
+                  <p className="text-sm">Featured in the Spotlight{data.row.spotlightNote ? `: "${data.row.spotlightNote}"` : ""}.</p>
+                  <Button variant="outline" size="sm" disabled={spotlight.isPending} onClick={async () => { try { await spotlight.mutateAsync({ modelId: row.id, data: { spotlight: false } }); await done("Removed from the Spotlight"); } catch (err) { toast.error(errorMessage(err)); } }}>Remove from Spotlight</Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label htmlFor="note" className="text-sm font-medium">Feature in the Spotlight (an editorial pick, shown with a short line)</label>
+                  <input id="note" value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} placeholder="Optional line, e.g. Known for striking beauty close-ups" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+                  <Button size="sm" disabled={spotlight.isPending} onClick={async () => { try { await spotlight.mutateAsync({ modelId: row.id, data: { spotlight: true, note: note.trim() || null } }); setNote(""); await done("Added to the Spotlight"); } catch (err) { toast.error(errorMessage(err)); } }}>Add to Spotlight</Button>
+                  <p className="text-xs text-muted-foreground">The model sees this on their overview. Only pick on merit you can stand behind, never on popularity.</p>
+                </div>
+              )}
+            </div>
+          )}
           {data.row.verificationStatus === "pending" && (
             <div className="space-y-3 border-t border-border pt-5">
               {!rejecting ? (
@@ -71,7 +91,7 @@ export default function OwnerModels() {
 
   const Row = ({ m }: { m: OwnerModelRow }) => (
     <li><button onClick={() => setSelected(m)} className="w-full text-left rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-3 hover:border-primary transition-colors">
-      <div><p className="font-semibold">{m.professionalName}</p><p className="text-xs text-muted-foreground">{m.category || "No category"} · {m.photoCount} photo{m.photoCount === 1 ? "" : "s"} · joined {formatDay(m.createdAt)}</p></div>
+      <div><p className="font-semibold">{m.professionalName}{m.isSpotlight ? " · Spotlight" : ""}</p><p className="text-xs text-muted-foreground">{m.registryNumber ? `${m.registryNumber} · ` : ""}{m.category || "No category"} · {m.photoCount} photo{m.photoCount === 1 ? "" : "s"} · joined {formatDay(m.createdAt)}</p></div>
       <div className="flex items-center gap-2">
         {m.verificationStatus === "pending" && m.daysWaiting != null && (
           <span className={`text-xs font-semibold flex items-center gap-1 ${m.daysWaiting >= 3 ? "text-destructive" : "text-muted-foreground"}`}>{m.daysWaiting >= 3 && <AlertTriangle className="h-3.5 w-3.5" strokeWidth={1.9} aria-hidden="true" />}Waiting {m.daysWaiting === 0 ? "today" : `${m.daysWaiting} day${m.daysWaiting === 1 ? "" : "s"}`}{m.daysWaiting >= 3 ? ", over 72 hours" : ""}</span>

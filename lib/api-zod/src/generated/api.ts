@@ -1635,7 +1635,10 @@ export const ListTalentResponseItem = zod.object({
   "availability": zod.union([zod.literal('available'),zod.literal('limited'),zod.literal(null)]).nullish(),
   "skills": zod.array(zod.string()),
   "verified": zod.boolean().describe('Always true in the public directory. Unverified models are not listed.'),
-  "portraitUrl": zod.string().nullish()
+  "portraitUrl": zod.string().nullish(),
+  "registryNumber": zod.string().nullish().describe('Bonisa ID assigned when verification was granted, e.g. BM-0042.'),
+  "isSpotlight": zod.boolean().optional().describe('An editorial pick by Bonisa. Not a ranking.'),
+  "spotlightNote": zod.string().nullish()
 })
 export const ListTalentResponse = zod.array(ListTalentResponseItem)
 
@@ -1658,6 +1661,9 @@ export const GetTalentResponse = zod.object({
   "serviceCategories": zod.array(zod.string()),
   "verified": zod.boolean(),
   "verifiedAt": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "acceptsEnquiries": zod.boolean(),
   "startingRateCents": zod.number().nullish(),
   "rateNote": zod.string().nullish(),
@@ -1722,6 +1728,9 @@ export const GetMyModelProfileResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -1813,6 +1822,9 @@ export const UpdateMyModelProfileResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -1862,6 +1874,9 @@ export const SetMyModelPublishedResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -1907,6 +1922,9 @@ export const RequestMyModelVerificationResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -1972,6 +1990,9 @@ export const ReplaceMySocialLinksResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -2026,6 +2047,9 @@ export const RegisterMyModelPhotoResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -2079,6 +2103,9 @@ export const UpdateMyModelPhotoResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -2128,6 +2155,9 @@ export const DeleteMyModelPhotoResponse = zod.object({
   "verificationRequestedAt": zod.string().nullish(),
   "verifiedAt": zod.string().nullish(),
   "verificationRejectionReason": zod.string().nullish(),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photos": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.enum(['front', 'left', 'right', 'full_length', 'editorial']),
@@ -2609,6 +2639,9 @@ export const ListOwnerModelsResponseItem = zod.object({
   "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
   "verificationRequestedAt": zod.string().nullish(),
   "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.string()
 })
@@ -2633,6 +2666,9 @@ export const GetOwnerModelResponse = zod.object({
   "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
   "verificationRequestedAt": zod.string().nullish(),
   "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.string()
 }),
@@ -2678,6 +2714,9 @@ export const VerifyModelResponse = zod.object({
   "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
   "verificationRequestedAt": zod.string().nullish(),
   "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.string()
 })
@@ -2709,6 +2748,43 @@ export const RejectModelResponse = zod.object({
   "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
   "verificationRequestedAt": zod.string().nullish(),
   "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
+  "photoCount": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Feature or un-feature a verified model in the Spotlight. An editorial pick, never a ranking.
+ */
+export const SetModelSpotlightParams = zod.object({
+  "modelId": zod.coerce.string()
+})
+
+export const setModelSpotlightBodyNoteMax = 140;
+
+
+
+export const SetModelSpotlightBody = zod.object({
+  "spotlight": zod.boolean(),
+  "note": zod.string().max(setModelSpotlightBodyNoteMax).nullish().describe('Short editorial line shown with the pick.')
+})
+
+export const SetModelSpotlightResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "professionalName": zod.string(),
+  "category": zod.string(),
+  "area": zod.string(),
+  "isPublished": zod.boolean(),
+  "verificationStatus": zod.enum(['none', 'pending', 'verified', 'rejected']),
+  "verificationRequestedAt": zod.string().nullish(),
+  "daysWaiting": zod.number().nullish().describe('Whole days since verification was requested. Three or more is flagged.'),
+  "registryNumber": zod.string().nullish(),
+  "isSpotlight": zod.boolean().optional(),
+  "spotlightNote": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.string()
 })

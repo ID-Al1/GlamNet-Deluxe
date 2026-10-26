@@ -4,7 +4,7 @@ Built from the "Model Brand & Collaboration System" design brief. This file says
 
 ## Deploying this
 
-1. Run the migration once against the live database: `pnpm --filter @workspace/db run migrate:model-portal:dev`. It is safe to run twice. It adds the `model` role and nine tables.
+1. Run the migration once against the live database: `pnpm --filter @workspace/db run migrate:model-portal:dev`. It is safe to run twice. It adds the `model` role, nine tables, and the Bonisa ID and Spotlight columns. Any model already verified is numbered in the order they were verified.
 2. Restart the API server. The web app needs a normal build.
 3. Existing artist, client and brand features are untouched. Until the migration runs, only the new model screens fail; nothing existing depends on the new tables.
 
@@ -35,6 +35,12 @@ Audit events are written for: publishing, visibility changes, photo changes, ver
 ## What is live
 
 Public directory and profile, per-field and per-photo visibility, four-digital capture flow with editorial portraits, My Brand (identity, goals, rate guide, channels with source and date labels), opportunities with every material term shown, apply / save / withdraw / report, brand posting and applicant decisions (the model always sees the outcome), verification queue with the 72 hour flag and mandatory written rejection reason, audit log.
+
+## Comp card, Bonisa ID and Spotlight
+
+- **Comp card** (`/talent/:id/card`): the four digitals in identical frames, name, category, Bonisa ID, a few facts, and the verified date. Built only from the public profile, so a private photo or field can never appear on it. "Print or save as PDF" uses the browser print dialog and fits one A4 page. No rates or contact details are on it.
+- **Bonisa ID** (for example `BM-0042`): issued by the server at the moment of verification, from a database sequence, and never reused. Unverified and rejected models have none. It is shown on directory cards, profiles and the comp card.
+- **Spotlight**: an editorial pick made by the owner for a verified model, with an optional line of up to 140 characters. Picks appear first in the directory under a heading that says it is not a ranking and not based on views. Only verified models can be picked, a pick disappears from public view if the model unpublishes, and every add and removal is in the audit log. Nothing is computed from popularity.
 
 ## What is deliberately not live (labelled on screen)
 
