@@ -247,7 +247,7 @@ router.get("/owner/reputation", requireOwner, async (req, res) => {
   res.json(rows
     .filter(({ p }) => !q || p.name.toLowerCase().includes(q) || p.specialty.toLowerCase().includes(q))
     .map(({ p, s }) => ({
-      stylistId: p.id, name: p.name, specialty: p.specialty,
+      stylistId: p.id, name: p.name, specialty: p.specialty, foundingMember: p.foundingMember,
       tier: s ? (s.evidenceSufficient ? s.tier : "new_talent") : "new_talent",
       tierLabel: s && s.evidenceSufficient ? (CFG.tiers.find((t) => t.key === s.tier)?.label ?? s.tier) : "New Talent",
       building: !s || !s.evidenceSufficient,

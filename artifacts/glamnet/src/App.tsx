@@ -44,6 +44,7 @@ const OwnerCampaigns = lazy(() => import("@/pages/owner/campaigns/index"));
 const CampaignPage = lazy(() => import("@/pages/campaigns/[id]"));
 const ReputationPage = lazy(() => import("@/pages/reputation/index"));
 const OwnerReputation = lazy(() => import("@/pages/owner/reputation/index"));
+const OwnerKeepWarm = lazy(() => import("@/pages/owner/keep-warm/index"));
 const ArtistUpdatesInbox = lazy(() => import("@/pages/updates/index"));
 const OwnerPayouts = lazy(() => import("@/pages/owner/payouts/index"));
 const OwnerPaymentsOverview = lazy(() => import("@/pages/owner/payments-overview/index"));
@@ -198,6 +199,15 @@ function Router() {
                     <OwnerLayout>
                       <Suspense fallback={<PageLoader />}>
                         <OwnerReputation />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/keep-warm">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerKeepWarm />
                       </Suspense>
                     </OwnerLayout>
                   </RequireOwner>

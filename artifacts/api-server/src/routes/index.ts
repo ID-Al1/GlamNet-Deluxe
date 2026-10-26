@@ -18,6 +18,7 @@ import artistContactsRouter from "./artist-contacts";
 import brandsRouter from "./brands";
 import campaignPaymentsRouter from "./campaign-payments";
 import reputationRouter from "./reputation";
+import keepWarmRouter from "./keep-warm";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(artistContactsRouter);
 router.use(brandsRouter);
 router.use(campaignPaymentsRouter);
 router.use(reputationRouter);
+router.use(keepWarmRouter);
 
 export default router;

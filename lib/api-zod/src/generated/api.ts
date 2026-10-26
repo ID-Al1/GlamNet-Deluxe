@@ -152,7 +152,8 @@ export const ListStylistsResponseItem = zod.object({
   "score": zod.number().nullable(),
   "completedBookings": zod.number(),
   "reviewCount": zod.number()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "foundingMember": zod.boolean().optional().describe('One of the first artists on Bonisa (a badge the owner grants).')
 })
 export const ListStylistsResponse = zod.array(ListStylistsResponseItem)
 
@@ -201,7 +202,8 @@ export const GetStylistResponse = zod.object({
   "score": zod.number().nullable(),
   "completedBookings": zod.number(),
   "reviewCount": zod.number()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "foundingMember": zod.boolean().optional().describe('One of the first artists on Bonisa (a badge the owner grants).')
 })
 
 
@@ -245,7 +247,8 @@ export const GetMyStylistProfileResponse = zod.object({
   "score": zod.number().nullable(),
   "completedBookings": zod.number(),
   "reviewCount": zod.number()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "foundingMember": zod.boolean().optional().describe('One of the first artists on Bonisa (a badge the owner grants).')
 }).and(zod.object({
   "userId": zod.string(),
   "verificationStatus": zod.enum(['none', 'pending', 'verified']),
@@ -323,7 +326,8 @@ export const UpdateMyStylistProfileResponse = zod.object({
   "score": zod.number().nullable(),
   "completedBookings": zod.number(),
   "reviewCount": zod.number()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "foundingMember": zod.boolean().optional().describe('One of the first artists on Bonisa (a badge the owner grants).')
 }).and(zod.object({
   "userId": zod.string(),
   "verificationStatus": zod.enum(['none', 'pending', 'verified']),
@@ -2443,6 +2447,7 @@ export const MarkSeatRefundedResponse = zod.object({
  * @summary The signed-in artist's reputation, in plain terms
  */
 export const GetMyReputationResponse = zod.object({
+  "foundingMember": zod.boolean(),
   "building": zod.boolean(),
   "tier": zod.string(),
   "tierLabel": zod.string(),
@@ -2590,6 +2595,7 @@ export const SafetyCheckinResponse = zod.object({
  * @summary Every verified artist with her tier and score
  */
 export const ListOwnerReputationResponseItem = zod.object({
+  "foundingMember": zod.boolean(),
   "stylistId": zod.string(),
   "name": zod.string(),
   "specialty": zod.string(),
@@ -2627,6 +2633,7 @@ export const GetOwnerArtistReputationParams = zod.object({
 })
 
 export const GetOwnerArtistReputationResponse = zod.object({
+  "foundingMember": zod.boolean(),
   "building": zod.boolean(),
   "tier": zod.string(),
   "tierLabel": zod.string(),
@@ -2808,6 +2815,172 @@ export const ListOwnerSafetyCheckinsResponseItem = zod.object({
   "photoUrl": zod.string()
 })
 export const ListOwnerSafetyCheckinsResponse = zod.array(ListOwnerSafetyCheckinsResponseItem)
+
+
+/**
+ * @summary The keep-warm plan for the Founding 50 and what has been sent
+ */
+export const GetKeepWarmPlanResponse = zod.object({
+  "groupLink": zod.string(),
+  "startDate": zod.string(),
+  "auto": zod.boolean(),
+  "started": zod.boolean(),
+  "emailConfigured": zod.boolean(),
+  "foundingArtists": zod.number(),
+  "steps": zod.array(zod.object({
+  "key": zod.string(),
+  "day": zod.number(),
+  "title": zod.string(),
+  "why": zod.string(),
+  "dueDate": zod.string(),
+  "status": zod.enum(['done', 'due', 'upcoming']),
+  "daysUntil": zod.number(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "whatsapp": zod.string(),
+  "emailSentAt": zod.string().nullable(),
+  "emailCount": zod.number(),
+  "postedAt": zod.string().nullable(),
+  "needsFilling": zod.boolean(),
+  "whatsappNeedsFilling": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Set Day 0 and switch automatic sending on or off
+ */
+export const UpdateKeepWarmSettingsBody = zod.object({
+  "startDate": zod.string().optional(),
+  "auto": zod.boolean().optional(),
+  "groupLink": zod.string().optional()
+})
+
+export const UpdateKeepWarmSettingsResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Edit the wording of one keep-warm step
+ */
+export const UpdateKeepWarmStepParams = zod.object({
+  "key": zod.coerce.string()
+})
+
+export const updateKeepWarmStepBodySubjectMax = 200;
+
+export const updateKeepWarmStepBodyBodyMax = 4000;
+
+export const updateKeepWarmStepBodyWhatsappMax = 4000;
+
+
+
+export const UpdateKeepWarmStepBody = zod.object({
+  "subject": zod.string().max(updateKeepWarmStepBodySubjectMax).optional(),
+  "body": zod.string().max(updateKeepWarmStepBodyBodyMax).optional(),
+  "whatsapp": zod.string().max(updateKeepWarmStepBodyWhatsappMax).optional()
+})
+
+export const UpdateKeepWarmStepResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Email one step to everyone with an email address
+ */
+export const SendKeepWarmStepParams = zod.object({
+  "key": zod.coerce.string()
+})
+
+export const SendKeepWarmStepBody = zod.object({
+  "resend": zod.boolean().optional()
+})
+
+export const SendKeepWarmStepResponse = zod.object({
+  "sent": zod.number(),
+  "notDelivered": zod.number(),
+  "skipped": zod.number()
+})
+
+
+/**
+ * @summary Mark a step as posted in the WhatsApp group
+ */
+export const MarkKeepWarmPostedParams = zod.object({
+  "key": zod.coerce.string()
+})
+
+export const MarkKeepWarmPostedResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary People nobody has messaged or spoken to lately
+ */
+export const listQuietContactsQueryDaysMax = 120;
+
+
+
+export const ListQuietContactsQueryParams = zod.object({
+  "days": zod.coerce.number().min(1).max(listQuietContactsQueryDaysMax).optional()
+})
+
+export const ListQuietContactsResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "specialty": zod.string().nullable(),
+  "stage": zod.string(),
+  "reachable": zod.boolean(),
+  "email": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "quietDays": zod.number(),
+  "lastTouchNote": zod.string().nullable()
+})
+export const ListQuietContactsResponse = zod.array(ListQuietContactsResponseItem)
+
+
+/**
+ * @summary Note that you spoke to her, so she leaves the quiet list
+ */
+export const TouchArtistContactParams = zod.object({
+  "contactId": zod.coerce.string()
+})
+
+export const touchArtistContactBodyNoteMax = 300;
+
+
+
+export const TouchArtistContactBody = zod.object({
+  "note": zod.string().max(touchArtistContactBodyNoteMax).optional()
+})
+
+export const TouchArtistContactResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Give or take away the Founding Artist badge
+ */
+export const SetFoundingMemberParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const setFoundingMemberBodyReasonMax = 300;
+
+
+
+export const SetFoundingMemberBody = zod.object({
+  "value": zod.boolean(),
+  "reason": zod.string().max(setFoundingMemberBodyReasonMax).optional()
+})
+
+export const SetFoundingMemberResponse = zod.object({
+  "message": zod.string()
+})
 
 
 /**
@@ -3062,7 +3235,8 @@ export const GetClientDashboardResponse = zod.object({
   "score": zod.number().nullable(),
   "completedBookings": zod.number(),
   "reviewCount": zod.number()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "foundingMember": zod.boolean().optional().describe('One of the first artists on Bonisa (a badge the owner grants).')
 })).optional()
 })
 

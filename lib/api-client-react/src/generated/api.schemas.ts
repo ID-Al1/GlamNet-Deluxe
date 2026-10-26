@@ -1032,6 +1032,8 @@ export interface StylistProfile {
      */
   reputationScore?: number | null;
   reputation?: PublicReputation | null;
+  /** One of the first artists on Bonisa (a badge the owner grants). */
+  foundingMember?: boolean;
 }
 
 export type MyStylistProfileVerificationStatus = typeof MyStylistProfileVerificationStatus[keyof typeof MyStylistProfileVerificationStatus];
@@ -1660,6 +1662,7 @@ export type ArtistReputationCancellationPolicy = {
 };
 
 export interface ArtistReputation {
+  foundingMember: boolean;
   building: boolean;
   tier: string;
   tierLabel: string;
@@ -1741,6 +1744,7 @@ export interface SafetyCheckinResult {
 }
 
 export interface OwnerReputationRow {
+  foundingMember: boolean;
   stylistId: string;
   name: string;
   specialty: string;
@@ -1851,6 +1855,91 @@ export interface OwnerSafetyCheckin {
   date: string;
   createdAt: string;
   photoUrl: string;
+}
+
+export type KeepWarmStepStatus = typeof KeepWarmStepStatus[keyof typeof KeepWarmStepStatus];
+
+
+export const KeepWarmStepStatus = {
+  done: 'done',
+  due: 'due',
+  upcoming: 'upcoming',
+} as const;
+
+export interface KeepWarmStep {
+  key: string;
+  day: number;
+  title: string;
+  why: string;
+  dueDate: string;
+  status: KeepWarmStepStatus;
+  daysUntil: number;
+  subject: string;
+  body: string;
+  whatsapp: string;
+  emailSentAt: string | null;
+  emailCount: number;
+  postedAt: string | null;
+  needsFilling: boolean;
+  whatsappNeedsFilling: boolean;
+}
+
+export interface KeepWarmPlan {
+  groupLink: string;
+  startDate: string;
+  auto: boolean;
+  started: boolean;
+  emailConfigured: boolean;
+  foundingArtists: number;
+  steps: KeepWarmStep[];
+}
+
+export interface KeepWarmSettingsInput {
+  startDate?: string;
+  auto?: boolean;
+  groupLink?: string;
+}
+
+export interface KeepWarmStepInput {
+  /** @maxLength 200 */
+  subject?: string;
+  /** @maxLength 4000 */
+  body?: string;
+  /** @maxLength 4000 */
+  whatsapp?: string;
+}
+
+export interface KeepWarmSendInput {
+  resend?: boolean;
+}
+
+export interface KeepWarmSendResult {
+  sent: number;
+  notDelivered: number;
+  skipped: number;
+}
+
+export interface QuietContact {
+  id: string;
+  name: string;
+  specialty: string | null;
+  stage: string;
+  reachable: boolean;
+  email: string | null;
+  phone: string | null;
+  quietDays: number;
+  lastTouchNote: string | null;
+}
+
+export interface TouchInput {
+  /** @maxLength 300 */
+  note?: string;
+}
+
+export interface FoundingMemberInput {
+  value: boolean;
+  /** @maxLength 300 */
+  reason?: string;
 }
 
 export type CampaignChangeKind = typeof CampaignChangeKind[keyof typeof CampaignChangeKind];
@@ -2238,5 +2327,13 @@ status?: ComplaintStatus;
 export type ListCastingCallsParams = {
 specialty?: string;
 brandId?: string;
+};
+
+export type ListQuietContactsParams = {
+/**
+ * @minimum 1
+ * @maximum 120
+ */
+days?: number;
 };
 

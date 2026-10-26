@@ -360,6 +360,7 @@ export async function artistReputationView(stylistId: string) {
   const cat = (key: string, label: string, weight: number, value: number, help: string) => ({ key, label, weightPercent: Math.round(weight * 100), score: round1(value), help });
   const w = CFG.weights;
   return {
+    foundingMember: profile.foundingMember,
     building: !row.evidenceSufficient,
     tier: row.tier,
     tierLabel: row.evidenceSufficient ? tierLabel(row.tier) : "New Talent",

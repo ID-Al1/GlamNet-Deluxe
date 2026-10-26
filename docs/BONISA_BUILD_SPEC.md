@@ -109,6 +109,20 @@ Rejection requires a written reason, which she receives word for word.
 
 ---
 
+### Keep warm and the Founding Artist badge
+
+**Why:** while the live payment side is finished, the first artists must not drift away. Artists leave a long wait when nothing happens and nobody says when.
+
+**Keep warm (owner portal):** a seven-step message plan timed from Day 0 (the day the Founding 50 cards went out): thanks, a gentle nudge, get-ready checklist, an honest progress update, a founding-artist spotlight, the plan and date, and the badge announcement. Each step has a WhatsApp version to copy into the group and an email version the app sends, in the Bonisa design, to everyone in Artist Contacts who has an email. The owner can edit any wording. A step with an unfilled [bracket] never sends. Pressing send twice is refused. Automatic sending exists but is OFF until the owner switches it on. The WhatsApp group link is saved once and dropped into every message.
+
+**Gone quiet:** anyone in Artist Contacts nobody has messaged or spoken to for 14 days (adjustable) appears in a list. The owner taps "I spoke to her" after a call or WhatsApp to take her off it.
+
+**Founding Artist badge:** a recognition the owner grants and can remove, shown on the artist's profile and in the list. It is recognition only. It never changes her reputation score or tier, and nothing is promised with it. Granting and removing are in the audit log.
+
+**Forbidden:** sending a half-written message. Emailing people who are suspended or paused. Letting an artist give herself the badge. Promising perks that have not been decided.
+
+---
+
 ### Reputation and tiers
 
 **Leads with:** the artist's own plain-language standing. New artists read "Building reputation", never a low number.

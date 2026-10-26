@@ -1780,6 +1780,131 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
+  /owner/keep-warm:
+    get:
+      operationId: getKeepWarmPlan
+      tags: [owner]
+      summary: The keep-warm plan for the Founding 50 and what has been sent
+      responses:
+        "200": { description: The plan, content: { application/json: { schema: { $ref: "#/components/schemas/KeepWarmPlan" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/keep-warm/settings:
+    put:
+      operationId: updateKeepWarmSettings
+      tags: [owner]
+      summary: Set Day 0 and switch automatic sending on or off
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/KeepWarmSettingsInput" } } }
+      responses:
+        "200": { description: Saved, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/keep-warm/steps/{key}:
+    put:
+      operationId: updateKeepWarmStep
+      tags: [owner]
+      summary: Edit the wording of one keep-warm step
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/KeepWarmStepInput" } } }
+      responses:
+        "200": { description: Saved, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/keep-warm/steps/{key}/send:
+    post:
+      operationId: sendKeepWarmStep
+      tags: [owner]
+      summary: Email one step to everyone with an email address
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { $ref: "#/components/schemas/KeepWarmSendInput" } } }
+      responses:
+        "200": { description: Sent, content: { application/json: { schema: { $ref: "#/components/schemas/KeepWarmSendResult" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/keep-warm/steps/{key}/posted:
+    post:
+      operationId: markKeepWarmPosted
+      tags: [owner]
+      summary: Mark a step as posted in the WhatsApp group
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Marked, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/keep-warm/quiet:
+    get:
+      operationId: listQuietContacts
+      tags: [owner]
+      summary: People nobody has messaged or spoken to lately
+      parameters:
+        - { name: days, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 120 } }
+      responses:
+        "200": { description: Quiet contacts, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/QuietContact" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /owner/contacts/{contactId}/touch:
+    post:
+      operationId: touchArtistContact
+      tags: [owner]
+      summary: Note that you spoke to her, so she leaves the quiet list
+      parameters:
+        - { name: contactId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { $ref: "#/components/schemas/TouchInput" } } }
+      responses:
+        "200": { description: Noted, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /owner/artists/{profileId}/founding-member:
+    post:
+      operationId: setFoundingMember
+      tags: [owner]
+      summary: Give or take away the Founding Artist badge
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/FoundingMemberInput" } } }
+      responses:
+        "200": { description: Saved, content: { application/json: { schema: { $ref: "#/components/schemas/MessageResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /brand/profile:
     get:
       operationId: getMyBrandProfile
@@ -2749,6 +2874,9 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PublicReputation"
             - type: "null"
+        foundingMember:
+          type: boolean
+          description: One of the first artists on Bonisa (a badge the owner grants).
 
     MyStylistProfile:
       allOf:
@@ -3399,8 +3527,9 @@ components:
 
     ArtistReputation:
       type: object
-      required: [building, tier, tierLabel, score, provisionalScore, completedBookings, bookingsToRate, reviewCount, monthsSinceVerified, verified, categories, nextTier, history, events, referral, cancellationPolicy]
+      required: [foundingMember, building, tier, tierLabel, score, provisionalScore, completedBookings, bookingsToRate, reviewCount, monthsSinceVerified, verified, categories, nextTier, history, events, referral, cancellationPolicy]
       properties:
+        foundingMember: { type: boolean }
         building: { type: boolean }
         tier: { type: string }
         tierLabel: { type: string }
@@ -3484,8 +3613,9 @@ components:
 
     OwnerReputationRow:
       type: object
-      required: [stylistId, name, specialty, tier, tierLabel, building, score, completedBookings, openDisputes]
+      required: [stylistId, name, specialty, foundingMember, tier, tierLabel, building, score, completedBookings, openDisputes]
       properties:
+        foundingMember: { type: boolean }
         stylistId: { type: string }
         name: { type: string }
         specialty: { type: string }
@@ -3580,6 +3710,93 @@ components:
         date: { type: string }
         createdAt: { type: string, format: date-time }
         photoUrl: { type: string }
+
+    KeepWarmStep:
+      type: object
+      required: [key, day, title, why, dueDate, status, daysUntil, subject, body, whatsapp, emailSentAt, emailCount, postedAt, needsFilling, whatsappNeedsFilling]
+      properties:
+        key: { type: string }
+        day: { type: integer }
+        title: { type: string }
+        why: { type: string }
+        dueDate: { type: string }
+        status: { type: string, enum: [done, due, upcoming] }
+        daysUntil: { type: integer }
+        subject: { type: string }
+        body: { type: string }
+        whatsapp: { type: string }
+        emailSentAt: { type: string, nullable: true }
+        emailCount: { type: integer }
+        postedAt: { type: string, nullable: true }
+        needsFilling: { type: boolean }
+        whatsappNeedsFilling: { type: boolean }
+
+    KeepWarmPlan:
+      type: object
+      required: [startDate, auto, started, groupLink, steps, emailConfigured, foundingArtists]
+      properties:
+        groupLink: { type: string }
+        startDate: { type: string }
+        auto: { type: boolean }
+        started: { type: boolean }
+        emailConfigured: { type: boolean }
+        foundingArtists: { type: integer }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/KeepWarmStep" }
+
+    KeepWarmSettingsInput:
+      type: object
+      properties:
+        startDate: { type: string }
+        auto: { type: boolean }
+        groupLink: { type: string }
+
+    KeepWarmStepInput:
+      type: object
+      properties:
+        subject: { type: string, maxLength: 200 }
+        body: { type: string, maxLength: 4000 }
+        whatsapp: { type: string, maxLength: 4000 }
+
+    KeepWarmSendInput:
+      type: object
+      properties:
+        resend: { type: boolean }
+
+    KeepWarmSendResult:
+      type: object
+      required: [sent, notDelivered, skipped]
+      properties:
+        sent: { type: integer }
+        notDelivered: { type: integer }
+        skipped: { type: integer }
+
+    QuietContact:
+      type: object
+      required: [id, name, specialty, stage, reachable, email, phone, quietDays, lastTouchNote]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        specialty: { type: string, nullable: true }
+        stage: { type: string }
+        reachable: { type: boolean }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        quietDays: { type: integer }
+        lastTouchNote: { type: string, nullable: true }
+
+    TouchInput:
+      type: object
+      properties:
+        note: { type: string, maxLength: 300 }
+
+    FoundingMemberInput:
+      type: object
+      required: [value]
+      properties:
+        value: { type: boolean }
+        reason: { type: string, maxLength: 300 }
 
     CampaignChange:
       type: object

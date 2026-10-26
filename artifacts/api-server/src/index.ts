@@ -8,6 +8,7 @@ import { startCampaignReminderJob } from "./lib/campaign-payments";
 import { startSeatJob } from "./lib/campaign-seats";
 import { startReputationJob } from "./lib/reputation";
 import { startSafetyReminderJob } from "./lib/safety-reminders";
+import { startKeepWarmJob } from "./lib/keep-warm";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -63,3 +64,4 @@ startCampaignReminderJob();
 startSeatJob();
 startReputationJob();
 startSafetyReminderJob();
+startKeepWarmJob();

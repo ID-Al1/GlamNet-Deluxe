@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { formatRating, formatRands } from "@/lib/utils";
 import { TierBadge } from "@/components/reputation-badge";
+import { FoundingBadge } from "@/components/founding-badge";
 import { Award, ChevronLeft, MapPin, Star, TrendingUp } from "lucide-react";
 
 import studioBgImg from "@assets/generated_images/studio-bg.jpg";
@@ -76,7 +77,7 @@ export default function StylistProfile() {
         <div className="mb-5 rounded-2xl border border-border/50 bg-card px-4 py-3" data-testid="card-public-reputation">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"><TrendingUp className="h-3 w-3" /> Reputation on Bonisa</div>
-            {reputation && <TierBadge tier={reputation.tier} label={reputation.tierLabel} building={reputation.building} size="md" />}
+            <div className="flex flex-wrap items-center gap-1.5">{stylist.foundingMember && <FoundingBadge size="md" />}{reputation && <TierBadge tier={reputation.tier} label={reputation.tierLabel} building={reputation.building} size="md" />}</div>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {reputation && !reputation.building

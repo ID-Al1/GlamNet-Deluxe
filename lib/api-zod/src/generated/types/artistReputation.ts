@@ -13,6 +13,7 @@ import type { ReputationNextTier } from './reputationNextTier';
 import type { ReputationReferral } from './reputationReferral';
 
 export interface ArtistReputation {
+  foundingMember: boolean;
   building: boolean;
   tier: string;
   tierLabel: string;

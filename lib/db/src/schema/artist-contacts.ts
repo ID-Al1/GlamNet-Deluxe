@@ -31,6 +31,9 @@ export const artistContactsTable = pgTable("artist_contacts", {
   stageSince: timestamp("stage_since"),
   remindersSent: integer("reminders_sent").notNull().default(0),
   lastRemindedAt: timestamp("last_reminded_at"),
+  // The owner spoke to her herself (a call, a WhatsApp). Keeps her off the "gone quiet" list.
+  lastTouchAt: timestamp("last_touch_at"),
+  lastTouchNote: text("last_touch_note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({

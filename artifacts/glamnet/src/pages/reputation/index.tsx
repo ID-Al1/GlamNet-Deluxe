@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertCircle, ArrowLeft, Copy, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { TierBadge } from "@/components/reputation-badge";
+import { FoundingBadge } from "@/components/founding-badge";
 import { apiMessage, longDate } from "@/lib/campaign-money";
 
 const STATUS_WORDS: Record<ReputationEventView["status"], string> = {
@@ -78,7 +79,9 @@ export default function ReputationPage() {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl">{data.building ? "Building reputation" : data.tierLabel}</h1>
           <TierBadge tier={data.tier} label={data.tierLabel} building={data.building} size="md" />
+          {data.foundingMember && <FoundingBadge size="md" />}
         </div>
+        {data.foundingMember && <p className="text-sm text-muted-foreground" data-testid="text-founding">You are a Founding Artist: one of the first on Bonisa. Thank you for building this with us.</p>}
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.9} />
           <span>

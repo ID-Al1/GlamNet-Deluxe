@@ -68,16 +68,23 @@ import type {
   DecideCastingApplicantInput,
   DisputeInput,
   ForbiddenResponse,
+  FoundingMemberInput,
   GetOwnerArtistManagementParams,
   GetOwnerPayoutsParams,
   HealthStatus,
   IdentityVerificationInput,
   IdentityVerificationStatus,
   InviteArtistInput,
+  KeepWarmPlan,
+  KeepWarmSendInput,
+  KeepWarmSendResult,
+  KeepWarmSettingsInput,
+  KeepWarmStepInput,
   ListAppointmentsParams,
   ListCastingCallsParams,
   ListOwnerArtistsParams,
   ListOwnerComplaintsParams,
+  ListQuietContactsParams,
   ListStylistsParams,
   LoginInput,
   MarkMyArtistUpdatesRead200,
@@ -119,6 +126,7 @@ import type {
   PendingCheckin,
   PortfolioItem,
   PortfolioItemInput,
+  QuietContact,
   ReasonInput,
   ReceiveWaitlistSignup200,
   RejectBrandInput,
@@ -140,6 +148,7 @@ import type {
   StylistDashboard,
   StylistProfile,
   StylistProfileUpdate,
+  TouchInput,
   UnauthorizedResponse,
   User,
   VerificationChecklist,
@@ -7765,6 +7774,591 @@ export function useListOwnerSafetyCheckins<TData = Awaited<ReturnType<typeof lis
 
 
 
+
+export const getGetKeepWarmPlanUrl = () => {
+
+
+
+
+  return `/api/owner/keep-warm`
+}
+
+/**
+ * @summary The keep-warm plan for the Founding 50 and what has been sent
+ */
+export const getKeepWarmPlan = async ( options?: RequestInit): Promise<KeepWarmPlan> => {
+
+  return customFetch<KeepWarmPlan>(getGetKeepWarmPlanUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetKeepWarmPlanQueryKey = () => {
+    return [
+    `/api/owner/keep-warm`
+    ] as const;
+    }
+
+
+export const getGetKeepWarmPlanQueryOptions = <TData = Awaited<ReturnType<typeof getKeepWarmPlan>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKeepWarmPlan>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKeepWarmPlanQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKeepWarmPlan>>> = ({ signal }) => getKeepWarmPlan({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKeepWarmPlan>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetKeepWarmPlanQueryResult = NonNullable<Awaited<ReturnType<typeof getKeepWarmPlan>>>
+export type GetKeepWarmPlanQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary The keep-warm plan for the Founding 50 and what has been sent
+ */
+
+export function useGetKeepWarmPlan<TData = Awaited<ReturnType<typeof getKeepWarmPlan>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKeepWarmPlan>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetKeepWarmPlanQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateKeepWarmSettingsUrl = () => {
+
+
+
+
+  return `/api/owner/keep-warm/settings`
+}
+
+/**
+ * @summary Set Day 0 and switch automatic sending on or off
+ */
+export const updateKeepWarmSettings = async (keepWarmSettingsInput: KeepWarmSettingsInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getUpdateKeepWarmSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(keepWarmSettingsInput)
+  }
+);}
+
+
+
+
+export const getUpdateKeepWarmSettingsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKeepWarmSettings>>, TError,{data: BodyType<KeepWarmSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateKeepWarmSettings>>, TError,{data: BodyType<KeepWarmSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateKeepWarmSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKeepWarmSettings>>, {data: BodyType<KeepWarmSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateKeepWarmSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateKeepWarmSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateKeepWarmSettings>>>
+    export type UpdateKeepWarmSettingsMutationBody = BodyType<KeepWarmSettingsInput>
+    export type UpdateKeepWarmSettingsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Set Day 0 and switch automatic sending on or off
+ */
+export const useUpdateKeepWarmSettings = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKeepWarmSettings>>, TError,{data: BodyType<KeepWarmSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateKeepWarmSettings>>,
+        TError,
+        {data: BodyType<KeepWarmSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateKeepWarmSettingsMutationOptions(options));
+    }
+
+export const getUpdateKeepWarmStepUrl = (key: string,) => {
+
+
+
+
+  return `/api/owner/keep-warm/steps/${key}`
+}
+
+/**
+ * @summary Edit the wording of one keep-warm step
+ */
+export const updateKeepWarmStep = async (key: string,
+    keepWarmStepInput: KeepWarmStepInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getUpdateKeepWarmStepUrl(key),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(keepWarmStepInput)
+  }
+);}
+
+
+
+
+export const getUpdateKeepWarmStepMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKeepWarmStep>>, TError,{key: string;data: BodyType<KeepWarmStepInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateKeepWarmStep>>, TError,{key: string;data: BodyType<KeepWarmStepInput>}, TContext> => {
+
+const mutationKey = ['updateKeepWarmStep'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKeepWarmStep>>, {key: string;data: BodyType<KeepWarmStepInput>}> = (props) => {
+          const {key,data} = props ?? {};
+
+          return  updateKeepWarmStep(key,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateKeepWarmStepMutationResult = NonNullable<Awaited<ReturnType<typeof updateKeepWarmStep>>>
+    export type UpdateKeepWarmStepMutationBody = BodyType<KeepWarmStepInput>
+    export type UpdateKeepWarmStepMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Edit the wording of one keep-warm step
+ */
+export const useUpdateKeepWarmStep = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKeepWarmStep>>, TError,{key: string;data: BodyType<KeepWarmStepInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateKeepWarmStep>>,
+        TError,
+        {key: string;data: BodyType<KeepWarmStepInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateKeepWarmStepMutationOptions(options));
+    }
+
+export const getSendKeepWarmStepUrl = (key: string,) => {
+
+
+
+
+  return `/api/owner/keep-warm/steps/${key}/send`
+}
+
+/**
+ * @summary Email one step to everyone with an email address
+ */
+export const sendKeepWarmStep = async (key: string,
+    keepWarmSendInput?: KeepWarmSendInput, options?: RequestInit): Promise<KeepWarmSendResult> => {
+
+  return customFetch<KeepWarmSendResult>(getSendKeepWarmStepUrl(key),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(keepWarmSendInput)
+  }
+);}
+
+
+
+
+export const getSendKeepWarmStepMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendKeepWarmStep>>, TError,{key: string;data?: BodyType<KeepWarmSendInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendKeepWarmStep>>, TError,{key: string;data?: BodyType<KeepWarmSendInput>}, TContext> => {
+
+const mutationKey = ['sendKeepWarmStep'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendKeepWarmStep>>, {key: string;data?: BodyType<KeepWarmSendInput>}> = (props) => {
+          const {key,data} = props ?? {};
+
+          return  sendKeepWarmStep(key,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendKeepWarmStepMutationResult = NonNullable<Awaited<ReturnType<typeof sendKeepWarmStep>>>
+    export type SendKeepWarmStepMutationBody = BodyType<KeepWarmSendInput> | undefined
+    export type SendKeepWarmStepMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Email one step to everyone with an email address
+ */
+export const useSendKeepWarmStep = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendKeepWarmStep>>, TError,{key: string;data?: BodyType<KeepWarmSendInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendKeepWarmStep>>,
+        TError,
+        {key: string;data?: BodyType<KeepWarmSendInput>},
+        TContext
+      > => {
+      return useMutation(getSendKeepWarmStepMutationOptions(options));
+    }
+
+export const getMarkKeepWarmPostedUrl = (key: string,) => {
+
+
+
+
+  return `/api/owner/keep-warm/steps/${key}/posted`
+}
+
+/**
+ * @summary Mark a step as posted in the WhatsApp group
+ */
+export const markKeepWarmPosted = async (key: string, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getMarkKeepWarmPostedUrl(key),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getMarkKeepWarmPostedMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markKeepWarmPosted>>, TError,{key: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markKeepWarmPosted>>, TError,{key: string}, TContext> => {
+
+const mutationKey = ['markKeepWarmPosted'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markKeepWarmPosted>>, {key: string}> = (props) => {
+          const {key} = props ?? {};
+
+          return  markKeepWarmPosted(key,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkKeepWarmPostedMutationResult = NonNullable<Awaited<ReturnType<typeof markKeepWarmPosted>>>
+
+    export type MarkKeepWarmPostedMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Mark a step as posted in the WhatsApp group
+ */
+export const useMarkKeepWarmPosted = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markKeepWarmPosted>>, TError,{key: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markKeepWarmPosted>>,
+        TError,
+        {key: string},
+        TContext
+      > => {
+      return useMutation(getMarkKeepWarmPostedMutationOptions(options));
+    }
+
+export const getListQuietContactsUrl = (params?: ListQuietContactsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/owner/keep-warm/quiet?${stringifiedParams}` : `/api/owner/keep-warm/quiet`
+}
+
+/**
+ * @summary People nobody has messaged or spoken to lately
+ */
+export const listQuietContacts = async (params?: ListQuietContactsParams, options?: RequestInit): Promise<QuietContact[]> => {
+
+  return customFetch<QuietContact[]>(getListQuietContactsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListQuietContactsQueryKey = (params?: ListQuietContactsParams,) => {
+    return [
+    `/api/owner/keep-warm/quiet`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListQuietContactsQueryOptions = <TData = Awaited<ReturnType<typeof listQuietContacts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: ListQuietContactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listQuietContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListQuietContactsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listQuietContacts>>> = ({ signal }) => listQuietContacts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listQuietContacts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListQuietContactsQueryResult = NonNullable<Awaited<ReturnType<typeof listQuietContacts>>>
+export type ListQuietContactsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary People nobody has messaged or spoken to lately
+ */
+
+export function useListQuietContacts<TData = Awaited<ReturnType<typeof listQuietContacts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListQuietContactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listQuietContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListQuietContactsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getTouchArtistContactUrl = (contactId: string,) => {
+
+
+
+
+  return `/api/owner/contacts/${contactId}/touch`
+}
+
+/**
+ * @summary Note that you spoke to her, so she leaves the quiet list
+ */
+export const touchArtistContact = async (contactId: string,
+    touchInput?: TouchInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getTouchArtistContactUrl(contactId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(touchInput)
+  }
+);}
+
+
+
+
+export const getTouchArtistContactMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof touchArtistContact>>, TError,{contactId: string;data?: BodyType<TouchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof touchArtistContact>>, TError,{contactId: string;data?: BodyType<TouchInput>}, TContext> => {
+
+const mutationKey = ['touchArtistContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof touchArtistContact>>, {contactId: string;data?: BodyType<TouchInput>}> = (props) => {
+          const {contactId,data} = props ?? {};
+
+          return  touchArtistContact(contactId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TouchArtistContactMutationResult = NonNullable<Awaited<ReturnType<typeof touchArtistContact>>>
+    export type TouchArtistContactMutationBody = BodyType<TouchInput> | undefined
+    export type TouchArtistContactMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Note that you spoke to her, so she leaves the quiet list
+ */
+export const useTouchArtistContact = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof touchArtistContact>>, TError,{contactId: string;data?: BodyType<TouchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof touchArtistContact>>,
+        TError,
+        {contactId: string;data?: BodyType<TouchInput>},
+        TContext
+      > => {
+      return useMutation(getTouchArtistContactMutationOptions(options));
+    }
+
+export const getSetFoundingMemberUrl = (profileId: string,) => {
+
+
+
+
+  return `/api/owner/artists/${profileId}/founding-member`
+}
+
+/**
+ * @summary Give or take away the Founding Artist badge
+ */
+export const setFoundingMember = async (profileId: string,
+    foundingMemberInput: FoundingMemberInput, options?: RequestInit): Promise<MessageResponse> => {
+
+  return customFetch<MessageResponse>(getSetFoundingMemberUrl(profileId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(foundingMemberInput)
+  }
+);}
+
+
+
+
+export const getSetFoundingMemberMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setFoundingMember>>, TError,{profileId: string;data: BodyType<FoundingMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setFoundingMember>>, TError,{profileId: string;data: BodyType<FoundingMemberInput>}, TContext> => {
+
+const mutationKey = ['setFoundingMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setFoundingMember>>, {profileId: string;data: BodyType<FoundingMemberInput>}> = (props) => {
+          const {profileId,data} = props ?? {};
+
+          return  setFoundingMember(profileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetFoundingMemberMutationResult = NonNullable<Awaited<ReturnType<typeof setFoundingMember>>>
+    export type SetFoundingMemberMutationBody = BodyType<FoundingMemberInput>
+    export type SetFoundingMemberMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Give or take away the Founding Artist badge
+ */
+export const useSetFoundingMember = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setFoundingMember>>, TError,{profileId: string;data: BodyType<FoundingMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setFoundingMember>>,
+        TError,
+        {profileId: string;data: BodyType<FoundingMemberInput>},
+        TContext
+      > => {
+      return useMutation(getSetFoundingMemberMutationOptions(options));
+    }
 
 export const getGetMyBrandProfileUrl = () => {
 

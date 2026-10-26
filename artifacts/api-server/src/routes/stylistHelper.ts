@@ -28,6 +28,7 @@ export function serializePublicStylistProfile(
     // A score is only public once there is enough evidence. New artists show "Building reputation", never a low number.
     reputationScore: reputation?.score ?? null,
     reputation,
+    foundingMember: profile.foundingMember,
   };
 }
 

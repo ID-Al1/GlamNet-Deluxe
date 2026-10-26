@@ -37,4 +37,6 @@ export interface StylistProfile {
      */
   reputationScore?: number | null;
   reputation?: PublicReputation | null;
+  /** One of the first artists on Bonisa (a badge the owner grants). */
+  foundingMember?: boolean;
 }

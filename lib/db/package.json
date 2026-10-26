@@ -16,7 +16,8 @@
     "migrate:artist-contacts:dev": "node ./scripts/add-artist-contacts.mjs",
     "migrate:brand-campaigns:dev": "node ./scripts/add-brand-campaigns.mjs",
     "migrate:campaign-seats:dev": "node ./scripts/add-campaign-seats.mjs",
-    "migrate:reputation:dev": "node ./scripts/add-reputation.mjs"
+    "migrate:reputation:dev": "node ./scripts/add-reputation.mjs",
+    "migrate:founding-keepwarm:dev": "node ./scripts/add-founding-keepwarm.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

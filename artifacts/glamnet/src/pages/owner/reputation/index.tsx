@@ -11,6 +11,7 @@ import {
   useListOwnerSafetyCheckins,
   useRecordArtistNoShow,
   useRecordConductCase,
+  useSetFoundingMember,
   useResolveReputationDispute,
   useReverseReputationEvent,
 } from "@workspace/api-client-react";
@@ -25,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, HeartHandshake, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TierBadge } from "@/components/reputation-badge";
+import { FoundingBadge } from "@/components/founding-badge";
 import { apiMessage, longDate } from "@/lib/campaign-money";
 
 /**
@@ -143,6 +145,7 @@ function ArtistDetail({ stylistId, onBack }: { stylistId: string; onBack: () => 
   const reverse = useReverseReputationEvent();
   const conduct = useRecordConductCase();
   const noShow = useRecordArtistNoShow();
+  const founding = useSetFoundingMember();
   const [reasonFor, setReasonFor] = useState<{ kind: "reverse"; id: string } | { kind: "noshow"; id: string } | { kind: "conduct" } | null>(null);
   const [reason, setReason] = useState("");
   const [severity, setSeverity] = useState<"minor" | "serious">("minor");
@@ -173,6 +176,10 @@ function ArtistDetail({ stylistId, onBack }: { stylistId: string; onBack: () => 
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="font-serif text-2xl">{data.name}</h2>
         <TierBadge tier={data.tier} label={data.tierLabel} building={data.building} size="md" />
+        {data.foundingMember && <FoundingBadge size="md" />}
+        <Button size="sm" variant="outline" disabled={founding.isPending} data-testid="button-toggle-founding" onClick={async () => {
+          try { const r = await founding.mutateAsync({ profileId: stylistId, data: { value: !data.foundingMember } }); toast.success(r.message); await refresh(); } catch (e) { toast.error(apiMessage(e, "Could not save that.")); }
+        }}>{data.foundingMember ? "Remove Founding badge" : "Give Founding badge"}</Button>
         <span className="text-sm text-muted-foreground">Score {data.provisionalScore}{data.building ? " (provisional, not shown publicly)" : ""} · {data.completedBookings} completed</span>
       </div>
       <div className="grid gap-2 sm:grid-cols-5">
@@ -265,6 +272,7 @@ export default function OwnerReputation() {
               <div className="flex items-center gap-2">
                 {a.openDisputes > 0 && <Badge variant="destructive">{a.openDisputes} dispute{a.openDisputes > 1 ? "s" : ""}</Badge>}
                 <span className="text-muted-foreground">{a.score !== null ? Math.round(a.score) : "-"}</span>
+                {a.foundingMember && <FoundingBadge />}
                 <TierBadge tier={a.tier} label={a.tierLabel} building={a.building} />
               </div>
             </CardContent>

@@ -7,6 +7,7 @@
  */
 
 export interface OwnerReputationRow {
+  foundingMember: boolean;
   stylistId: string;
   name: string;
   specialty: string;
