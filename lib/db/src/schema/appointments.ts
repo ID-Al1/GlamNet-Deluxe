@@ -45,6 +45,18 @@ export const appointmentsTable = pgTable("appointments", {
   payoutStatus: text("payout_status").notNull().default("held"),
   artistPayoutAmount: real("artist_payout_amount").notNull().default(0),
   platformFeeAmount: real("platform_fee_amount").notNull().default(0),
+  // ── Completion code ────────────────────────────────────────────────────────
+  // The artist asks for a code after the service; the client reads it from her
+  // app and gives it to the artist, who types it in. The code itself is never
+  // stored: it is derived from the nonce, so only the nonce lives here.
+  completionCodeNonce: text("completion_code_nonce"),
+  completionCodeRequestedAt: timestamp("completion_code_requested_at"),
+  completionCodeRequests: integer("completion_code_requests").notNull().default(0),
+  completionCodeAttempts: integer("completion_code_attempts").notNull().default(0),
+  // Set when the right code is entered. The complaint window runs until
+  // complaintWindowEndsAt; after that the money is released.
+  completedAt: timestamp("completed_at"),
+  complaintWindowEndsAt: timestamp("complaint_window_ends_at"),
 });
 
 export type Appointment = typeof appointmentsTable.$inferSelect;

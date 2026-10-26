@@ -16,16 +16,20 @@ const STEPS = ["Held", "Confirmed", "Ready", "Paid"] as const;
 function stepIndex(item: PayoutTrackerItem): number {
   if (item.stage === "paid") return 3;
   if (item.stage === "ready") return 2;
-  if (item.stage === "held" && item.waitingOn !== "both") return 1;
+  if (item.stage === "held" && item.holdState === "complaint_window") return 1;
   return 0;
 }
 
 function statusLine(item: PayoutTrackerItem): string {
   switch (item.stage) {
     case "held":
-      if (item.waitingOn === "client") return "Waiting for your client to confirm the work.";
-      if (item.waitingOn === "artist") return "Waiting for you to confirm the work.";
-      return "Held safely until you and your client confirm the work.";
+      if (item.holdState === "complaint_window") {
+        return item.windowEndsAt
+          ? `Service complete. Your client can report a problem until ${format(new Date(item.windowEndsAt), "EEE d MMM, HH:mm")}. After that this is ready.`
+          : "Service complete. Your client has 24 hours to report a problem. After that this is ready.";
+      }
+      if (item.holdState === "code_requested") return "Waiting for your client to give you the completion code.";
+      return "Held safely. After the service, ask for the completion code in your dashboard.";
     case "in_review":
       return "Bonisa is reviewing this booking. Your money is safe.";
     case "ready":
@@ -85,7 +89,7 @@ export default function Payouts() {
   const summary = data?.summary;
   const cards = [
     { label: "Ready to be paid", value: summary?.ready, note: "Waiting for Bonisa to pay you", icon: Banknote },
-    { label: "Held for you", value: summary?.held, note: "Clients have paid. Work not confirmed yet", icon: ShieldCheck },
+    { label: "Held for you", value: summary?.held, note: "Clients have paid. Not ready yet", icon: ShieldCheck },
     { label: "In review", value: summary?.inReview, note: "Bonisa is checking these", icon: Hourglass },
     { label: "Paid this month", value: summary?.paidThisMonth, note: summary ? `${money(summary.paidTotal)} paid in total` : "", icon: CheckCircle2 },
   ];
@@ -107,7 +111,7 @@ export default function Payouts() {
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <Icon className="h-4 w-4" strokeWidth={1.9} aria-hidden="true" /> {label}
               </div>
-              {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-serif font-bold">{money(value ?? 0)}</div>}
+              {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-serif font-bold lining-nums">{money(value ?? 0)}</div>}
               <p className="text-xs text-muted-foreground">{note}</p>
             </CardContent>
           </Card>
@@ -118,8 +122,8 @@ export default function Payouts() {
         <h2 className="text-lg font-semibold">How you get paid</h2>
         <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
           <li>Your client pays up front. Bonisa holds the money safely.</li>
-          <li>After the service, you and your client both confirm the work is done.</li>
-          <li>The money becomes <span className="text-foreground font-medium">Ready</span>.</li>
+          <li>After the service, you ask for a completion code. Your client gives it to you.</li>
+          <li>Your client then has 24 hours to report a problem. If there is none, the money becomes <span className="text-foreground font-medium">Ready</span>.</li>
           <li>Bonisa pays your ready money to your bank account.</li>
         </ol>
       </section>
@@ -149,7 +153,7 @@ export default function Payouts() {
                   <p className="text-xs text-muted-foreground">{item.clientName} · {format(new Date(item.date), "d MMM yyyy")} at {item.time}</p>
                 </div>
                 <div className="text-right shrink-0 space-y-1">
-                  <p className="text-lg font-serif font-bold">{money(item.amount)}</p>
+                  <p className="text-lg font-serif font-bold lining-nums">{money(item.amount)}</p>
                   <StageBadge stage={item.stage} />
                 </div>
               </div>

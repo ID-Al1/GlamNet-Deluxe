@@ -40,6 +40,8 @@ import type {
   ComplaintCreateInput,
   ComplaintEvidence,
   ComplaintEvidenceInput,
+  CompletionCode,
+  CompletionCodeRequestResult,
   ConflictResponse,
   Conversation,
   ForbiddenResponse,
@@ -92,7 +94,8 @@ import type {
   StylistProfileUpdate,
   UnauthorizedResponse,
   User,
-  VerificationChecklist
+  VerificationChecklist,
+  VerifyCompletionCodeInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1645,6 +1648,224 @@ export function useGetVerificationChecklist<TData = Awaited<ReturnType<typeof ge
 
 
 
+
+export const getRequestCompletionCodeUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/request-completion-code`
+}
+
+/**
+ * @summary Artist asks for the completion code after the service
+ */
+export const requestCompletionCode = async (appointmentId: string, options?: RequestInit): Promise<CompletionCodeRequestResult> => {
+
+  return customFetch<CompletionCodeRequestResult>(getRequestCompletionCodeUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRequestCompletionCodeMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCompletionCode>>, TError,{appointmentId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestCompletionCode>>, TError,{appointmentId: string}, TContext> => {
+
+const mutationKey = ['requestCompletionCode'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestCompletionCode>>, {appointmentId: string}> = (props) => {
+          const {appointmentId} = props ?? {};
+
+          return  requestCompletionCode(appointmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestCompletionCodeMutationResult = NonNullable<Awaited<ReturnType<typeof requestCompletionCode>>>
+
+    export type RequestCompletionCodeMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Artist asks for the completion code after the service
+ */
+export const useRequestCompletionCode = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCompletionCode>>, TError,{appointmentId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestCompletionCode>>,
+        TError,
+        {appointmentId: string},
+        TContext
+      > => {
+      return useMutation(getRequestCompletionCodeMutationOptions(options));
+    }
+
+export const getGetCompletionCodeUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/completion-code`
+}
+
+/**
+ * @summary Client reads the completion code to give to her artist
+ */
+export const getCompletionCode = async (appointmentId: string, options?: RequestInit): Promise<CompletionCode> => {
+
+  return customFetch<CompletionCode>(getGetCompletionCodeUrl(appointmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCompletionCodeQueryKey = (appointmentId: string,) => {
+    return [
+    `/api/appointments/${appointmentId}/completion-code`
+    ] as const;
+    }
+
+
+export const getGetCompletionCodeQueryOptions = <TData = Awaited<ReturnType<typeof getCompletionCode>>, TError = ErrorType<ApiError>>(appointmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompletionCode>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCompletionCodeQueryKey(appointmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCompletionCode>>> = ({ signal }) => getCompletionCode(appointmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: appointmentId !== null && appointmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCompletionCode>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCompletionCodeQueryResult = NonNullable<Awaited<ReturnType<typeof getCompletionCode>>>
+export type GetCompletionCodeQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Client reads the completion code to give to her artist
+ */
+
+export function useGetCompletionCode<TData = Awaited<ReturnType<typeof getCompletionCode>>, TError = ErrorType<ApiError>>(
+ appointmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompletionCode>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCompletionCodeQueryOptions(appointmentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getVerifyCompletionCodeUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/verify-completion-code`
+}
+
+/**
+ * @summary Artist types in the code the client gave her
+ */
+export const verifyCompletionCode = async (appointmentId: string,
+    verifyCompletionCodeInput: VerifyCompletionCodeInput, options?: RequestInit): Promise<Appointment> => {
+
+  return customFetch<Appointment>(getVerifyCompletionCodeUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(verifyCompletionCodeInput)
+  }
+);}
+
+
+
+
+export const getVerifyCompletionCodeMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCompletionCode>>, TError,{appointmentId: string;data: BodyType<VerifyCompletionCodeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyCompletionCode>>, TError,{appointmentId: string;data: BodyType<VerifyCompletionCodeInput>}, TContext> => {
+
+const mutationKey = ['verifyCompletionCode'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyCompletionCode>>, {appointmentId: string;data: BodyType<VerifyCompletionCodeInput>}> = (props) => {
+          const {appointmentId,data} = props ?? {};
+
+          return  verifyCompletionCode(appointmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyCompletionCodeMutationResult = NonNullable<Awaited<ReturnType<typeof verifyCompletionCode>>>
+    export type VerifyCompletionCodeMutationBody = BodyType<VerifyCompletionCodeInput>
+    export type VerifyCompletionCodeMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Artist types in the code the client gave her
+ */
+export const useVerifyCompletionCode = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCompletionCode>>, TError,{appointmentId: string;data: BodyType<VerifyCompletionCodeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyCompletionCode>>,
+        TError,
+        {appointmentId: string;data: BodyType<VerifyCompletionCodeInput>},
+        TContext
+      > => {
+      return useMutation(getVerifyCompletionCodeMutationOptions(options));
+    }
 
 export const getGetMyPayoutsUrl = () => {
 

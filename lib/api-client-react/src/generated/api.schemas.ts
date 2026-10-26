@@ -846,6 +846,28 @@ export interface Appointment {
   /** @nullable */
   notes?: string | null;
   createdAt: string;
+  /** True while the artist has asked for a completion code that has not been used */
+  completionCodeRequested?: boolean;
+  /** @nullable */
+  completedAt?: string | null;
+  /** @nullable */
+  complaintWindowEndsAt?: string | null;
+}
+
+export interface CompletionCodeRequestResult {
+  requestedAt: string;
+  expiresAt: string;
+}
+
+export interface CompletionCode {
+  /** Six digits. Only the client on the booking can read it. */
+  code: string;
+  expiresAt: string;
+}
+
+export interface VerifyCompletionCodeInput {
+  /** @pattern ^[0-9]{6}$ */
+  code: string;
 }
 
 export interface AppointmentInput {
@@ -1088,16 +1110,16 @@ export const PayoutTrackerItemStage = {
 } as const;
 
 /**
- * Who still has to confirm the work, while the money is held
+ * While the money is held: waiting for the service and completion code, waiting for the client to give the code, or inside the complaint window.
  * @nullable
  */
-export type PayoutTrackerItemWaitingOn = typeof PayoutTrackerItemWaitingOn[keyof typeof PayoutTrackerItemWaitingOn] | null;
+export type PayoutTrackerItemHoldState = typeof PayoutTrackerItemHoldState[keyof typeof PayoutTrackerItemHoldState] | null;
 
 
-export const PayoutTrackerItemWaitingOn = {
-  client: 'client',
-  artist: 'artist',
-  both: 'both',
+export const PayoutTrackerItemHoldState = {
+  awaiting_service: 'awaiting_service',
+  code_requested: 'code_requested',
+  complaint_window: 'complaint_window',
 } as const;
 
 export interface PayoutTrackerItem {
@@ -1110,10 +1132,15 @@ export interface PayoutTrackerItem {
   amount: number;
   stage: PayoutTrackerItemStage;
   /**
-     * Who still has to confirm the work, while the money is held
+     * While the money is held: waiting for the service and completion code, waiting for the client to give the code, or inside the complaint window.
      * @nullable
      */
-  waitingOn: PayoutTrackerItemWaitingOn;
+  holdState: PayoutTrackerItemHoldState;
+  /**
+     * When the complaint window closes, once the service is complete
+     * @nullable
+     */
+  windowEndsAt: string | null;
   /**
      * For money that is ready, the date by which Bonisa must have paid it
      * @nullable

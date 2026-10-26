@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { param } from "../lib/params";
-import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable, bankAccountsTable, payoutLedgerTable, bookingTeamMembersTable } from "@workspace/db";
+import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable, bankAccountsTable, payoutLedgerTable, bookingTeamMembersTable, complaintsTable } from "@workspace/db";
 import { eq, and, ilike, or, sql, inArray, gt, notInArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
@@ -597,16 +597,26 @@ router.get("/stylists/me/payouts", requireAuth, async (req, res) => {
     return (poolCents - others) / 100;
   };
 
+  // A booking with an open complaint is "in review": the release job leaves it held.
+  const heldIds = heldRows.map(a => a.id);
+  const complaintHeld = new Set(heldIds.length
+    ? (await db.select({ appointmentId: complaintsTable.appointmentId }).from(complaintsTable).where(and(
+        inArray(complaintsTable.appointmentId, heldIds),
+        inArray(complaintsTable.status, ["new", "under_review", "waiting_for_client", "waiting_for_artist", "escalated"]),
+      ))).map(r => r.appointmentId)
+    : []);
+
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const items: Array<{
     appointmentId: string; serviceName: string; clientName: string; date: string; time: string;
     amount: number; stage: "held" | "in_review" | "ready" | "paid" | "refunded";
-    waitingOn: "client" | "artist" | "both" | null; dueBy: string | null; paidAt: string | null;
+    holdState: "awaiting_service" | "code_requested" | "complaint_window" | null;
+    windowEndsAt: string | null; dueBy: string | null; paidAt: string | null;
   }> = [];
   const summary = { held: 0, inReview: 0, ready: 0, paidThisMonth: 0, paidTotal: 0 };
 
   for (const { line, appt } of ledgerRows) {
-    const base = { appointmentId: appt.id, serviceName: appt.serviceName, clientName: appt.clientName, date: appt.date, time: appt.time, amount: line.netAmount, waitingOn: null };
+    const base = { appointmentId: appt.id, serviceName: appt.serviceName, clientName: appt.clientName, date: appt.date, time: appt.time, amount: line.netAmount, holdState: null, windowEndsAt: null };
     if (line.status === "paid") {
       summary.paidTotal += line.netAmount;
       if (line.paidAt && line.paidAt >= monthStart) summary.paidThisMonth += line.netAmount;
@@ -624,14 +634,15 @@ router.get("/stylists/me/payouts", requireAuth, async (req, res) => {
     if (ledgerAppointmentIds.has(a.id)) continue;
     const amount = heldShare(a);
     const base = { appointmentId: a.id, serviceName: a.serviceName, clientName: a.clientName, date: a.date, time: a.time, amount, dueBy: null, paidAt: null };
-    if (a.payoutStatus === "disputed") {
+    const windowEndsAt = a.complaintWindowEndsAt?.toISOString() ?? null;
+    if (a.payoutStatus === "disputed" || complaintHeld.has(a.id)) {
       summary.inReview += amount;
-      items.push({ ...base, stage: "in_review", waitingOn: null });
+      items.push({ ...base, stage: "in_review", holdState: null, windowEndsAt });
     } else {
       summary.held += amount;
-      const waitingOn = a.workConfirmedByArtist && !a.workConfirmedByClient ? "client"
-        : a.workConfirmedByClient && !a.workConfirmedByArtist ? "artist" : "both";
-      items.push({ ...base, stage: "held", waitingOn });
+      const holdState = a.completedAt ? "complaint_window"
+        : a.completionCodeRequestedAt ? "code_requested" : "awaiting_service";
+      items.push({ ...base, stage: "held", holdState, windowEndsAt });
     }
   }
 

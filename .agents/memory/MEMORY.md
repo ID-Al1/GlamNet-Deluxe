@@ -19,3 +19,4 @@
 - [GitHub push authentication](github-push-auth.md) — the Git remote can retain an invalid PAT after a GitHub App is attached; verify the remote SHA through the connector API.
 - [Subscriptions on hold until 50 verified artists](bonisa-no-subscriptions-before-50.md) — do not build R99/R199 artist plans before 50 artists are verified; remind Alwande at 50.
 - [Who decides](bonisa-who-decides.md) — Alwande has the final call on money and rules; he confirmed the Peach switch, subscription hold and payments policy on 2026-10-26.
+- [Completion code and release](bonisa-completion-code.md) — code from client to artist starts a 24 hour complaint window, then a job releases money; confirm-work cannot release; open complaints block release.

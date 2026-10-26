@@ -5,8 +5,8 @@
  * GlamNet API
  * OpenAPI spec version: 0.1.0
  */
+import type { PayoutTrackerItemHoldState } from './payoutTrackerItemHoldState';
 import type { PayoutTrackerItemStage } from './payoutTrackerItemStage';
-import type { PayoutTrackerItemWaitingOn } from './payoutTrackerItemWaitingOn';
 
 export interface PayoutTrackerItem {
   appointmentId: string;
@@ -18,10 +18,15 @@ export interface PayoutTrackerItem {
   amount: number;
   stage: PayoutTrackerItemStage;
   /**
-     * Who still has to confirm the work, while the money is held
+     * While the money is held: waiting for the service and completion code, waiting for the client to give the code, or inside the complaint window.
      * @nullable
      */
-  waitingOn: PayoutTrackerItemWaitingOn;
+  holdState: PayoutTrackerItemHoldState;
+  /**
+     * When the complaint window closes, once the service is complete
+     * @nullable
+     */
+  windowEndsAt: Date | null;
   /**
      * For money that is ready, the date by which Bonisa must have paid it
      * @nullable

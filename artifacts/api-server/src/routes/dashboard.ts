@@ -86,6 +86,9 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
       payoutStatus: a.payoutStatus,
       artistPayoutAmount: a.artistPayoutAmount,
       platformFeeAmount: a.platformFeeAmount,
+      completionCodeRequested: !!a.completionCodeRequestedAt && !a.completedAt,
+      completedAt: a.completedAt?.toISOString() ?? null,
+      complaintWindowEndsAt: a.complaintWindowEndsAt?.toISOString() ?? null,
     };
   }
 
@@ -169,6 +172,9 @@ router.get("/dashboard/client", requireAuth, async (req, res) => {
       payoutStatus: a.payoutStatus,
       artistPayoutAmount: a.artistPayoutAmount,
       platformFeeAmount: a.platformFeeAmount,
+      completionCodeRequested: !!a.completionCodeRequestedAt && !a.completedAt,
+      completedAt: a.completedAt?.toISOString() ?? null,
+      complaintWindowEndsAt: a.complaintWindowEndsAt?.toISOString() ?? null,
     };
   }
 

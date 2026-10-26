@@ -455,6 +455,93 @@ paths:
               schema:
                 $ref: "#/components/schemas/VerificationChecklist"
 
+  /appointments/{appointmentId}/request-completion-code:
+    post:
+      operationId: requestCompletionCode
+      tags: [appointments]
+      summary: Artist asks for the completion code after the service
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Code requested. The client can now see it in her app.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletionCodeRequestResult"
+        "409":
+          description: Not ready for a code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /appointments/{appointmentId}/completion-code:
+    get:
+      operationId: getCompletionCode
+      tags: [appointments]
+      summary: Client reads the completion code to give to her artist
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletionCode"
+        "404":
+          description: No code has been requested, or it expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /appointments/{appointmentId}/verify-completion-code:
+    post:
+      operationId: verifyCompletionCode
+      tags: [appointments]
+      summary: Artist types in the code the client gave her
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyCompletionCodeInput"
+      responses:
+        "200":
+          description: Service complete. The complaint window is open.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "400":
+          description: Wrong code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Not ready or already complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /stylists/me/payouts:
     get:
       operationId: getMyPayouts
@@ -1997,6 +2084,45 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+        completionCodeRequested:
+          type: boolean
+          description: True while the artist has asked for a completion code that has not been used
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        complaintWindowEndsAt:
+          type: ["string", "null"]
+          format: date-time
+
+    CompletionCodeRequestResult:
+      type: object
+      required: [requestedAt, expiresAt]
+      properties:
+        requestedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    CompletionCode:
+      type: object
+      required: [code, expiresAt]
+      properties:
+        code:
+          type: string
+          description: Six digits. Only the client on the booking can read it.
+        expiresAt:
+          type: string
+          format: date-time
+
+    VerifyCompletionCodeInput:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
 
     AppointmentInput:
       type: object
@@ -2352,7 +2478,7 @@ components:
 
     PayoutTrackerItem:
       type: object
-      required: [appointmentId, serviceName, clientName, date, time, amount, stage, waitingOn, dueBy, paidAt]
+      required: [appointmentId, serviceName, clientName, date, time, amount, stage, holdState, windowEndsAt, dueBy, paidAt]
       properties:
         appointmentId:
           type: string
@@ -2370,10 +2496,16 @@ components:
         stage:
           type: string
           enum: [held, in_review, ready, paid, refunded]
-        waitingOn:
+        holdState:
           type: ["string", "null"]
-          enum: [client, artist, both, null]
-          description: Who still has to confirm the work, while the money is held
+          enum: [awaiting_service, code_requested, complaint_window, null]
+          description: >
+            While the money is held: waiting for the service and completion code,
+            waiting for the client to give the code, or inside the complaint window.
+        windowEndsAt:
+          type: ["string", "null"]
+          format: date-time
+          description: When the complaint window closes, once the service is complete
         dueBy:
           type: ["string", "null"]
           format: date-time

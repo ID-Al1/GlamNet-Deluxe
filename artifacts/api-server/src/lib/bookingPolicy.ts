@@ -45,6 +45,15 @@ export const LATE_FEE_PERCENT_OF_DEPOSIT = 20;
  */
 export const LARGE_PAYOUT_THRESHOLD = 2000;
 
+/** How long a completion code stays valid after the artist asks for it. ASSUMPTION: confirm. */
+export const COMPLETION_CODE_VALID_HOURS = 24;
+
+/** Wrong guesses allowed per code before the artist must ask for a new one. */
+export const COMPLETION_CODE_MAX_ATTEMPTS = 5;
+
+/** Codes an artist can ask for on one booking. After this she contacts Bonisa. */
+export const COMPLETION_CODE_MAX_REQUESTS = 3;
+
 const cents = (rand: number) => Math.round(rand * 100);
 const rand = (c: number) => c / 100;
 

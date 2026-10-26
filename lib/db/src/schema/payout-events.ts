@@ -3,7 +3,7 @@ import { appointmentsTable } from "./appointments";
 
 /**
  * Append-only audit trail for everything payout-related.
- * Types: held | client_confirmed | artist_confirmed | released | disputed | escalated
+ * Types: held | client_confirmed | artist_confirmed | completed_by_code | released | disputed | escalated
  * Nothing here is ever updated or deleted.
  */
 export const payoutEventsTable = pgTable("payout_events", {

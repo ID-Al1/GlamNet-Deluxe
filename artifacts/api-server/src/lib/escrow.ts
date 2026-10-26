@@ -60,7 +60,7 @@ export async function transitionFromDisputed(tx: any, appointment: any, actorUse
 /** Append a row to the payout audit trail. Never throws — audit failures are logged, not fatal. */
 export async function recordPayoutEvent(event: {
   appointmentId: string;
-  type: "held" | "client_confirmed" | "artist_confirmed" | "released" | "disputed" | "escalated";
+  type: "held" | "client_confirmed" | "artist_confirmed" | "completed_by_code" | "released" | "disputed" | "escalated";
   actorUserId?: string | null;
   amount?: number;
   artistShare?: number;

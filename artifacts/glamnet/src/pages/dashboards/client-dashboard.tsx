@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { CompletionCodeDialog } from "@/components/completion-code-dialog";
 import { useAuth } from "@/lib/auth";
 import { useGetClientDashboard, useListStylists } from "@workspace/api-client-react";
 import { SERVICE_CATEGORIES } from "@/lib/categories";
@@ -62,30 +63,6 @@ export default function ClientDashboard() {
     query: { staleTime: 60_000, queryKey: ["stylists", "dashboard-featured"] },
   });
   const featured = (stylists ?? []).slice().sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
-
-  const confirmWorkMutation = useMutation({
-    mutationFn: async ({ appointmentId, dispute = false }: { appointmentId: string; dispute?: boolean }) => {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/appointments/${appointmentId}/confirm-work`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ dispute }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Request failed");
-      }
-      return res.json();
-    },
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["clientDashboard"] });
-      if (vars.dispute) {
-        toast.warning("Dispute raised — Bonisa will review and contact both parties.");
-      } else {
-        toast.success("Work confirmed! Waiting for the artist to confirm too.");
-      }
-    },
-    onError: (err: any) => toast.error(err.message || "Something went wrong"),
-  });
 
   const [phone, setPhone] = useState((user as any)?.phone ?? "");
   const [savingPhone, setSavingPhone] = useState(false);
@@ -316,23 +293,17 @@ export default function ClientDashboard() {
                     new Date(apt.date) < new Date() &&
                     (apt as any).payoutStatus !== "disputed" &&
                     (apt as any).payoutStatus !== "released" && (
-                    (apt as any).workConfirmedByClient ? (
+                    (apt as any).completedAt ? (
                       <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-full bg-primary/10 text-primary border border-primary/20">
-                        <CircleCheck strokeWidth={1.9} className="h-3 w-3" />You confirmed
-                        {!(apt as any).workConfirmedByArtist && (
-                          <span className="ml-1 text-muted-foreground">· waiting for artist</span>
-                        )}
+                        <CircleCheck strokeWidth={1.9} className="h-3 w-3" />Complete
                       </span>
                     ) : (
                       <>
-                        <Button
-                          size="sm"
-                          className="gap-1.5 h-8 text-[11px] rounded-full"
-                          onClick={() => confirmWorkMutation.mutate({ appointmentId: apt.id })}
-                          disabled={confirmWorkMutation.isPending}
-                        >
-                          <CheckCircle className="h-3.5 w-3.5" strokeWidth={1.9} />Yes, everything went well
-                        </Button>
+                        {(apt as any).completionCodeRequested ? (
+                          <CompletionCodeDialog appointmentId={apt.id} artistName={apt.stylistName ?? "your artist"} />
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground">Your artist will ask you for a code when the service is done.</span>
+                        )}
                         <Link href={`/complaints/new?appointmentId=${encodeURIComponent(apt.id)}`}>
                           <Button
                             size="sm"
@@ -346,6 +317,18 @@ export default function ClientDashboard() {
                     )
                   )}
 
+                  {apt.status === "completed" && (apt as any).payoutStatus === "held" && (apt as any).complaintWindowEndsAt && (
+                    <>
+                      <span className="text-[11px] text-muted-foreground">
+                        You can report a problem until {new Date((apt as any).complaintWindowEndsAt).toLocaleString("en-ZA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.
+                      </span>
+                      <Link href={`/complaints/new?appointmentId=${encodeURIComponent(apt.id)}`}>
+                        <Button size="sm" variant="outline" className="gap-1.5 h-8 text-[11px] rounded-full border-destructive/50 text-destructive hover:bg-destructive/10">
+                          <ShieldAlert className="h-3.5 w-3.5" strokeWidth={1.9} />Report a problem
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                   {apt.status === "completed" && (
                     <Link href={`/reviews/${apt.id}`}>
                       <Button size="sm" variant="outline" className="gap-1.5 h-8 text-[11px] rounded-full">

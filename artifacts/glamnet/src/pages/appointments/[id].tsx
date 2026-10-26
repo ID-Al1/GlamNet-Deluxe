@@ -21,12 +21,13 @@ interface Appointment {
   notes: string | null;
   workConfirmedByClient?: boolean;
   workConfirmedByArtist?: boolean;
+  completedAt?: string | null;
 }
 
 const STAGES = ["Booked", "Confirmed", "In Progress", "Completed"] as const;
 
 function stageIndex(a: Appointment): number {
-  if (a.status === "completed" || (a.workConfirmedByClient && a.workConfirmedByArtist)) return 3;
+  if (a.status === "completed" || a.completedAt || (a.workConfirmedByClient && a.workConfirmedByArtist)) return 3;
   const start = new Date(`${a.date}T${a.time || "00:00"}`);
   const end = new Date(start.getTime() + (a.duration || 60) * 60_000);
   const now = new Date();

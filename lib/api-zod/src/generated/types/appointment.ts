@@ -23,4 +23,10 @@ export interface Appointment {
   /** @nullable */
   notes?: string | null;
   createdAt: string;
+  /** True while the artist has asked for a completion code that has not been used */
+  completionCodeRequested?: boolean;
+  /** @nullable */
+  completedAt?: Date | null;
+  /** @nullable */
+  complaintWindowEndsAt?: Date | null;
 }

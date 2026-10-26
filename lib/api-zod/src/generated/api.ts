@@ -542,6 +542,67 @@ export const GetVerificationChecklistResponse = zod.object({
 
 
 /**
+ * @summary Artist asks for the completion code after the service
+ */
+export const RequestCompletionCodeParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const RequestCompletionCodeResponse = zod.object({
+  "requestedAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Client reads the completion code to give to her artist
+ */
+export const GetCompletionCodeParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const GetCompletionCodeResponse = zod.object({
+  "code": zod.string().describe('Six digits. Only the client on the booking can read it.'),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Artist types in the code the client gave her
+ */
+export const VerifyCompletionCodeParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const verifyCompletionCodeBodyCodeRegExp = new RegExp('^[0-9]{6}$');
+
+
+export const VerifyCompletionCodeBody = zod.object({
+  "code": zod.string().regex(verifyCompletionCodeBodyCodeRegExp)
+})
+
+export const VerifyCompletionCodeResponse = zod.object({
+  "id": zod.string(),
+  "clientId": zod.string(),
+  "clientName": zod.string().optional(),
+  "stylistId": zod.string(),
+  "stylistName": zod.string().optional(),
+  "serviceId": zod.string(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "time": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'completed', 'cancelled', 'declined']),
+  "price": zod.number(),
+  "duration": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
+})
+
+
+/**
  * Shows the artist where her money is for every booking: held in escrow, in review, ready to be paid by Bonisa, paid, or refunded. Amounts are always the artist's share, never the booking total.
  * @summary Get my payout tracker
  */
@@ -561,7 +622,8 @@ export const GetMyPayoutsResponse = zod.object({
   "time": zod.string(),
   "amount": zod.number().describe('The artist\'s share in rand'),
   "stage": zod.enum(['held', 'in_review', 'ready', 'paid', 'refunded']),
-  "waitingOn": zod.union([zod.literal('client'),zod.literal('artist'),zod.literal('both'),zod.literal(null)]).nullable().describe('Who still has to confirm the work, while the money is held'),
+  "holdState": zod.union([zod.literal('awaiting_service'),zod.literal('code_requested'),zod.literal('complaint_window'),zod.literal(null)]).nullable().describe('While the money is held: waiting for the service and completion code, waiting for the client to give the code, or inside the complaint window.\n'),
+  "windowEndsAt": zod.coerce.date().nullable().describe('When the complaint window closes, once the service is complete'),
   "dueBy": zod.coerce.date().nullable().describe('For money that is ready, the date by which Bonisa must have paid it'),
   "paidAt": zod.coerce.date().nullable()
 }))
@@ -590,7 +652,10 @@ export const ListAppointmentsResponseItem = zod.object({
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
 })
 export const ListAppointmentsResponse = zod.array(ListAppointmentsResponseItem)
 
@@ -620,7 +685,10 @@ export const CreateAppointmentResponse = zod.object({
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
 })
 
 
@@ -645,7 +713,10 @@ export const GetAppointmentResponse = zod.object({
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
 })
 
 
@@ -677,7 +748,10 @@ export const UpdateAppointmentResponse = zod.object({
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
 })
 
 
@@ -1544,7 +1618,10 @@ export const GetStylistDashboardResponse = zod.object({
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
 })),
   "recentActivity": zod.array(zod.object({
   "id": zod.string(),
@@ -1577,7 +1654,10 @@ export const GetClientDashboardResponse = zod.object({
   "price": zod.number(),
   "duration": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "completionCodeRequested": zod.boolean().optional().describe('True while the artist has asked for a completion code that has not been used'),
+  "completedAt": zod.coerce.date().nullish(),
+  "complaintWindowEndsAt": zod.coerce.date().nullish()
 })),
   "recommendedStylists": zod.array(zod.object({
   "id": zod.string(),

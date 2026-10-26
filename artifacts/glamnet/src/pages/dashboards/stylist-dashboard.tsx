@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { CompletionCodeEntry } from "@/components/completion-code-entry";
 import { toast } from "sonner";
 import {
   DollarSign, Calendar as CalendarIcon, Activity, Star,
@@ -227,27 +228,6 @@ export default function StylistDashboard() {
       setActiveTab("services");
     }
   }, [myProfile?.services?.length]);
-
-  const confirmWork = useMutation({
-    mutationFn: async ({ appointmentId, dispute = false }: { appointmentId: string; dispute?: boolean }) => {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/appointments/${appointmentId}/confirm-work`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ dispute }),
-      });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Failed"); }
-      return res.json();
-    },
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["stylistDashboard"] });
-      if (vars.dispute) {
-        toast.warning("Dispute raised — Bonisa will review and contact both parties.");
-      } else {
-        toast.success("Work confirmed! Payout releases once the client confirms too.");
-      }
-    },
-    onError: (e: any) => toast.error(e.message || "Failed"),
-  });
 
   const addSvc = useMutation({
     mutationFn: async () => {
@@ -802,21 +782,16 @@ export default function StylistDashboard() {
                             {new Date(apt.date) < new Date() &&
                               (apt as any).payoutStatus !== "released" &&
                               (apt as any).payoutStatus !== "disputed" && (
-                              (apt as any).workConfirmedByArtist ? (
+                              (apt as any).completedAt ? (
                                 <span className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20">
-                                  <CheckCircle2 className="h-3 w-3" />You confirmed
-                                  {!(apt as any).workConfirmedByClient && <span className="ml-1 text-muted-foreground">· waiting for client</span>}
+                                  <CheckCircle2 className="h-3 w-3" />Complete
+                                  {(apt as any).complaintWindowEndsAt && (
+                                    <span className="ml-1 text-muted-foreground">· paid after {new Date((apt as any).complaintWindowEndsAt).toLocaleString("en-ZA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                                  )}
                                 </span>
                               ) : (
                                 <>
-                                  <Button
-                                    size="sm"
-                                    className="gap-1.5 h-8 text-xs rounded-full"
-                                    onClick={() => confirmWork.mutate({ appointmentId: apt.id })}
-                                    disabled={confirmWork.isPending}
-                                  >
-                                    <CheckCircle2 className="h-3.5 w-3.5" />Yes, appointment completed
-                                  </Button>
+                                  <CompletionCodeEntry appointmentId={apt.id} clientName={(apt as any).clientName} codeRequested={!!(apt as any).completionCodeRequested} />
                                   <Link href={`/complaints/new?appointmentId=${encodeURIComponent(apt.id)}`}>
                                     <Button
                                       size="sm"

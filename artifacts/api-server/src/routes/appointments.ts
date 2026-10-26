@@ -1,19 +1,19 @@
 import { Router } from "express";
 import { db, appointmentsTable, stylistProfilesTable, servicesTable, usersTable, paymentsTable, payoutLedgerTable } from "@workspace/db";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, isNull, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod";
-import { sendNotification, notify } from "../lib/notifications";
+import { sendNotification } from "../lib/notifications";
 import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
-import { recordPayoutEvent, splitAmount, transitionToDisputed } from "../lib/escrow";
+import { recordPayoutEvent, transitionToDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
-import { createPayoutLedgerLines } from "../lib/payout-ledger";
+import { COMPLAINT_WINDOW_HOURS, COMPLETION_CODE_MAX_ATTEMPTS, COMPLETION_CODE_MAX_REQUESTS } from "../lib/bookingPolicy";
+import { appointmentStartTime, completionCodeExpiresAt, completionCodesMatch, deriveCompletionCode, newCodeNonce } from "../lib/completionCode";
 
 const router = Router();
 
-import { ARTIST_SHARE as ARTIST_PAYOUT_PCT, PLATFORM_SHARE as PLATFORM_FEE_PCT, payoutDueAt } from "../lib/money";
 
 function formatAppt(a: typeof appointmentsTable.$inferSelect) {
   return {
@@ -42,6 +42,9 @@ function formatAppt(a: typeof appointmentsTable.$inferSelect) {
     payoutStatus: a.payoutStatus,
     artistPayoutAmount: a.artistPayoutAmount,
     platformFeeAmount: a.platformFeeAmount,
+    completionCodeRequested: !!a.completionCodeRequestedAt && !a.completedAt,
+    completedAt: a.completedAt?.toISOString() ?? null,
+    complaintWindowEndsAt: a.complaintWindowEndsAt?.toISOString() ?? null,
   };
 }
 
@@ -332,113 +335,142 @@ router.post("/appointments/:appointmentId/confirm-work", requireAuth, async (req
     return;
   }
 
-  if (appt.payoutStatus === "disputed") {
-    res.status(409).json({ error: "This appointment is under dispute. Please contact support." }); return;
+  // Completing a booking now happens with the completion code, followed by the
+  // complaint window (see the routes below). A plain "confirm" can no longer
+  // release money; only reporting a problem (dispute=true above) uses this route.
+  res.status(409).json({ error: "Complete this booking with the completion code. Ask your artist or client for it in the Bonisa app." });
+});
+
+// ── Completion code ──────────────────────────────────────────────────────────
+// After the service the artist asks for a code. The client reads it in her app
+// and gives it to the artist, who types it in. That proves the client was there
+// and opens the complaint window. The money is released when the window closes
+// with no open complaint (lib/completionRelease.ts).
+
+async function loadCodeBooking(req: any, res: any, who: "artist" | "client") {
+  const user = req.user;
+  const [appt] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, String(req.params.appointmentId)));
+  if (!appt) { res.status(404).json({ error: "Appointment not found" }); return null; }
+  if (who === "client") {
+    if (appt.clientId !== user.id) { res.status(403).json({ error: "Only the client on this booking can see the code" }); return null; }
+  } else {
+    const [mine] = await db.select({ id: stylistProfilesTable.id }).from(stylistProfilesTable)
+      .where(and(eq(stylistProfilesTable.id, appt.stylistId), eq(stylistProfilesTable.userId, user.id)));
+    if (!mine) { res.status(403).json({ error: "Only the artist on this booking can do this" }); return null; }
   }
-  if (appt.payoutStatus === "released") {
-    res.status(409).json({ error: "Payout already released for this appointment." }); return;
+  return appt;
+}
+
+async function bookingIsPaid(appt: typeof appointmentsTable.$inferSelect) {
+  const [paymentRow] = await db.select().from(paymentsTable)
+    .where(eq(paymentsTable.appointmentId, appt.id)).orderBy(desc(paymentsTable.createdAt)).limit(1);
+  return (paymentRow && paymentRow.status === "succeeded") || !!appt.stripePaymentIntentId;
+}
+
+router.post("/appointments/:appointmentId/request-completion-code", requireAuth, async (req, res) => {
+  const appt = await loadCodeBooking(req, res, "artist");
+  if (!appt) return;
+  if (appt.completedAt) { res.status(409).json({ error: "This booking is already complete." }); return; }
+  if (appt.status !== "confirmed") { res.status(409).json({ error: "Only confirmed bookings can be completed." }); return; }
+  if (appt.payoutStatus !== "held") { res.status(409).json({ error: "This booking cannot be completed right now. Please contact Bonisa." }); return; }
+  if (!(await bookingIsPaid(appt))) { res.status(409).json({ error: "The client has not paid yet, so there is nothing to complete." }); return; }
+  if (new Date() < appointmentStartTime(appt.date, appt.time)) {
+    res.status(409).json({ error: "You can ask for the code once the appointment has started." }); return;
+  }
+  if (appt.completionCodeRequests >= COMPLETION_CODE_MAX_REQUESTS) {
+    res.status(429).json({ error: "You have asked for the maximum number of codes. Please contact Bonisa." }); return;
   }
 
-  // Record this party's confirmation with a conditional update so concurrent
-  // retries can't double-confirm: the WHERE clause only matches while the flag
-  // is still false and funds are still held.
   const now = new Date();
-  const confirmedRows = await db.update(appointmentsTable)
-    .set(isClient
-      ? { workConfirmedByClient: true, workConfirmedByClientAt: now }
-      : { workConfirmedByArtist: true, workConfirmedByArtistAt: now })
-    .where(and(
-      eq(appointmentsTable.id, appointmentId),
-      eq(appointmentsTable.payoutStatus, "held"),
-      isClient
-        ? eq(appointmentsTable.workConfirmedByClient, false)
-        : eq(appointmentsTable.workConfirmedByArtist, false),
-    ))
-    .returning();
+  const [updated] = await db.update(appointmentsTable).set({
+    completionCodeNonce: newCodeNonce(),
+    completionCodeRequestedAt: now,
+    completionCodeRequests: appt.completionCodeRequests + 1,
+    completionCodeAttempts: 0,
+  }).where(and(
+    eq(appointmentsTable.id, appt.id),
+    eq(appointmentsTable.payoutStatus, "held"),
+    isNull(appointmentsTable.completedAt),
+    eq(appointmentsTable.completionCodeRequests, appt.completionCodeRequests),
+  )).returning();
+  if (!updated) { res.status(409).json({ error: "This booking just changed. Please refresh and try again." }); return; }
 
-  if (confirmedRows.length > 0) {
-    await recordPayoutEvent({
-      appointmentId, type: isClient ? "client_confirmed" : "artist_confirmed",
-      actorUserId: user.id,
-      note: isClient ? "Client confirmed the appointment was received" : "Artist confirmed the appointment was completed",
-    });
+  try {
+    // The code is never put in chat: the artist can read the chat.
+    await postSystemMessage(appt.clientId, appt.stylistId,
+      `${appt.stylistName} has asked for your completion code for ${appt.serviceName}. Open this booking in Bonisa to see it, and give it to ${appt.stylistName} once you are happy with the service.`);
+  } catch { /* non-fatal */ }
+
+  res.json({ requestedAt: now.toISOString(), expiresAt: completionCodeExpiresAt(now).toISOString() });
+});
+
+router.get("/appointments/:appointmentId/completion-code", requireAuth, async (req, res) => {
+  const appt = await loadCodeBooking(req, res, "client");
+  if (!appt) return;
+  if (appt.completedAt || !appt.completionCodeNonce || !appt.completionCodeRequestedAt) {
+    res.status(404).json({ error: "No completion code has been requested for this booking." }); return;
+  }
+  const expiresAt = completionCodeExpiresAt(appt.completionCodeRequestedAt);
+  if (expiresAt < new Date()) { res.status(404).json({ error: "The code has expired. Your artist can ask for a new one." }); return; }
+  res.setHeader("Cache-Control", "no-store, private");
+  res.json({ code: deriveCompletionCode(appt.id, appt.completionCodeNonce), expiresAt: expiresAt.toISOString() });
+});
+
+router.post("/appointments/:appointmentId/verify-completion-code", requireAuth, async (req, res) => {
+  const appt = await loadCodeBooking(req, res, "artist");
+  if (!appt) return;
+  const entered = typeof req.body?.code === "string" ? req.body.code.trim() : "";
+  if (!/^\d{6}$/.test(entered)) { res.status(400).json({ error: "Enter the 6 digit code." }); return; }
+  if (appt.completedAt) { res.status(409).json({ error: "This booking is already complete." }); return; }
+  if (!appt.completionCodeNonce || !appt.completionCodeRequestedAt) {
+    res.status(409).json({ error: "Ask for a code first." }); return;
+  }
+  if (completionCodeExpiresAt(appt.completionCodeRequestedAt) < new Date()) {
+    res.status(409).json({ error: "That code has expired. Ask for a new one." }); return;
+  }
+  if (appt.completionCodeAttempts >= COMPLETION_CODE_MAX_ATTEMPTS) {
+    res.status(429).json({ error: "Too many wrong tries. Ask for a new code." }); return;
   }
 
-  // Attempt release whenever both flags are set and funds are still held.
-  // Running this even when the confirmation above was a no-op means a booking
-  // that previously confirmed both sides but failed to release gets retried
-  // here instead of being stuck. The conditional WHERE makes release atomic —
-  // exactly one caller wins; everyone else matches zero rows.
-  const actualCollected = paymentRow?.amount
-    ?? (appt.paymentMode === "deposit" && appt.depositAmount > 0
-      ? appt.depositAmount + appt.tipAmount
-      : appt.price + appt.tipAmount);
-  const { artistShare: artistPayout, platformShare: platformFee } = splitAmount(actualCollected);
-
-  const releasedRows = await db.transaction(async (tx) => {
-    const rows = await tx.update(appointmentsTable)
-      .set({
-        payoutStatus: "released",
-        artistPayoutAmount: artistPayout,
-        platformFeeAmount: platformFee,
-        status: "completed",
-      })
-      .where(and(
-        eq(appointmentsTable.id, appointmentId),
-        eq(appointmentsTable.payoutStatus, "held"),
-        eq(appointmentsTable.workConfirmedByClient, true),
-        eq(appointmentsTable.workConfirmedByArtist, true),
-      ))
-      .returning();
-    if (rows.length > 0) await createPayoutLedgerLines(tx, rows[0], payoutDueAt());
-    return rows;
-  });
-
-  if (releasedRows.length > 0) {
-    await recordPayoutEvent({
-      appointmentId, type: "released", actorUserId: user.id,
-      amount: actualCollected, artistShare: artistPayout, platformShare: platformFee,
-      note: "Both parties confirmed — escrow released",
+  if (!completionCodesMatch(entered, deriveCompletionCode(appt.id, appt.completionCodeNonce))) {
+    const [after] = await db.update(appointmentsTable)
+      .set({ completionCodeAttempts: sql`${appointmentsTable.completionCodeAttempts} + 1` })
+      .where(eq(appointmentsTable.id, appt.id)).returning({ attempts: appointmentsTable.completionCodeAttempts });
+    res.status(400).json({
+      error: "That code is not right.",
+      attemptsLeft: Math.max(0, COMPLETION_CODE_MAX_ATTEMPTS - (after?.attempts ?? appt.completionCodeAttempts + 1)),
     });
-    try {
-      await postSystemMessage(
-        appt.clientId, appt.stylistId,
-        appt.isTeamBooking
-          ? `Both parties confirmed the appointment. R${artistPayout.toFixed(2)} allocated across the confirmed team artists (Bonisa fee: R${platformFee.toFixed(2)}).`
-          : `Both parties confirmed the appointment. R${artistPayout.toFixed(2)} released to ${appt.stylistName} (Bonisa fee: R${platformFee.toFixed(2)}).`
-      );
-    } catch { /* non-fatal */ }
-    // Notify each paid artist of only their own allocation — email + WhatsApp, non-fatal.
-    setImmediate(async () => {
-      try {
-        const ledgerLines = await db.select({
-          artistProfileId: payoutLedgerTable.artistProfileId,
-          amount: payoutLedgerTable.netAmount,
-        }).from(payoutLedgerTable).where(eq(payoutLedgerTable.appointmentId, appointmentId));
-        const dueDate = payoutDueAt().toLocaleDateString("en-ZA");
-        for (const line of ledgerLines) {
-          const [artistProfile] = await db.select().from(stylistProfilesTable)
-            .where(eq(stylistProfilesTable.id, line.artistProfileId));
-          if (!artistProfile) continue;
-          const [artistUser] = await db.select().from(usersTable)
-            .where(eq(usersTable.id, artistProfile.userId));
-          if (!artistUser) continue;
-          await notify(
-            { phone: artistUser.phone, email: artistUser.email, name: artistUser.name },
-            "payout.released",
-            { artistName: artistProfile.name, serviceName: appt.serviceName, amount: line.amount, payoutDueAt: dueDate },
-          );
-        }
-      } catch { /* non-fatal */ }
-    });
-    res.json(formatAppt(releasedRows[0]));
     return;
   }
 
-  // Not released — return the freshest state
-  const [current] = await db.select().from(appointmentsTable)
-    .where(eq(appointmentsTable.id, appointmentId));
-  res.json(formatAppt(current ?? appt));
+  // The code proves both sides: the client gave it, the artist typed it. Both
+  // flags are set so complaint handling that checks them keeps working. The
+  // money stays held until the complaint window closes.
+  const now = new Date();
+  const [done] = await db.update(appointmentsTable).set({
+    status: "completed",
+    completedAt: now,
+    complaintWindowEndsAt: new Date(now.getTime() + COMPLAINT_WINDOW_HOURS * 60 * 60 * 1000),
+    workConfirmedByClient: true, workConfirmedByClientAt: now,
+    workConfirmedByArtist: true, workConfirmedByArtistAt: now,
+    completionCodeNonce: null,
+  }).where(and(
+    eq(appointmentsTable.id, appt.id),
+    eq(appointmentsTable.payoutStatus, "held"),
+    isNull(appointmentsTable.completedAt),
+    eq(appointmentsTable.completionCodeNonce, appt.completionCodeNonce),
+  )).returning();
+  if (!done) { res.status(409).json({ error: "This booking just changed. Please refresh." }); return; }
+
+  await recordPayoutEvent({
+    appointmentId: appt.id, type: "completed_by_code", actorUserId: (req as any).user.id,
+    note: `Completion code entered. Complaint window open until ${done.complaintWindowEndsAt?.toISOString()}`,
+  });
+  try {
+    await postSystemMessage(appt.clientId, appt.stylistId,
+      `${appt.serviceName} is complete. ${appt.clientName} has ${COMPLAINT_WINDOW_HOURS} hours to report a problem. After that, the payment is released to ${appt.stylistName}.`);
+  } catch { /* non-fatal */ }
+  res.json(formatAppt(done));
 });
 
 export default router;

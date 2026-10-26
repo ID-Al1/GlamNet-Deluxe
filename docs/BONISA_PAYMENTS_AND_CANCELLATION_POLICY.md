@@ -56,7 +56,10 @@ by 24 hours before. Your current booking screen already has a "pay at appointmen
 the B way. That option would need to change or be limited.
 
 ## What is built and what is not
-- Built: the rules in `bookingPolicy.ts` with tests, the payout tracker for artists, escrow, the 82/18 split, owner payout batches.
-- Not built: the completion code, applying these rules when a client cancels, late fees, the 24 hour complaint window, the Monday rule in payouts, collecting the balance.
+- Built: the rules in `bookingPolicy.ts` with tests, the payout tracker for artists, escrow, the 82/18 split, owner payout batches, **the completion code and the 24 hour complaint window** (money is released automatically when the window closes with no open complaint).
+- Completion code details (my assumptions, confirm): the code is 6 digits, valid 24 hours, 5 wrong tries per code, and an artist can ask for 3 codes per booking.
+- If the client never gives the code: the artist can ask again up to 3 times. After that she contacts Bonisa. (A "client did not give the code" report for the owner is not built yet.)
+- A complaint on a booking keeps the money held until the owner closes the case.
+- Not built: applying these rules when a client cancels, late fees, the Monday rule in payouts, collecting the balance.
 - Today when a client cancels, the status changes and nothing else happens: no refund, no fee. The client's money stays held. This is wired up after Peach is set up, because refunds are done through the payment provider.
 - Payments are moving to Peach Payments. These rules do not depend on how Peach works.
