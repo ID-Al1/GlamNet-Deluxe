@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRequestCompletionCode, useVerifyCompletionCode } from "@workspace/api-client-react";
+import { useReportMissingCompletionCode, useRequestCompletionCode, useVerifyCompletionCode } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, KeyRound } from "lucide-react";
@@ -32,6 +32,14 @@ export function CompletionCodeEntry({ appointmentId, clientName, codeRequested }
     },
   });
 
+  const [reported, setReported] = useState(false);
+  const report = useReportMissingCompletionCode({
+    mutation: {
+      onSuccess: () => { setReported(true); toast.success("Reported. Bonisa will look into it and contact you."); },
+      onError: (e) => toast.error(apiErrorMessage(e)),
+    },
+  });
+
   if (!codeRequested) {
     return (
       <Button size="sm" className="gap-1.5 h-8 text-xs rounded-full" disabled={request.isPending}
@@ -55,6 +63,14 @@ export function CompletionCodeEntry({ appointmentId, clientName, codeRequested }
           <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.9} />Complete
         </Button>
       </div>
+      {reported ? (
+        <p className="text-xs text-muted-foreground">Reported. Bonisa is looking into it.</p>
+      ) : (
+        <button type="button" className="text-xs text-muted-foreground underline hover:text-foreground" disabled={report.isPending}
+          onClick={() => report.mutate({ appointmentId })}>
+          {clientName} did not give me the code
+        </button>
+      )}
     </form>
   );
 }

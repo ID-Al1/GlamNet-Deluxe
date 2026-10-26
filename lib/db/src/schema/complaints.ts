@@ -5,7 +5,7 @@ import { usersTable } from "./users";
 
 export const complaintCategories = [
   "didnt_arrive", "poor_service", "payment_issue", "refund_request",
-  "behaviour", "safety_concern", "false_review", "harassment", "other",
+  "behaviour", "safety_concern", "false_review", "harassment", "other", "no_completion_code",
 ] as const;
 export const complaintStatuses = [
   "new", "under_review", "waiting_for_client", "waiting_for_artist",
@@ -27,7 +27,7 @@ export const complaintsTable = pgTable("complaints", {
   resolvedAt: timestamp("resolved_at"),
 }, (t) => ({
   roleCheck: check("complaints_role_check", sql`${t.complainantRole} in ('client', 'stylist')`),
-  categoryCheck: check("complaints_category_check", sql`${t.category} in ('didnt_arrive','poor_service','payment_issue','refund_request','behaviour','safety_concern','false_review','harassment','other')`),
+  categoryCheck: check("complaints_category_check", sql`${t.category} in ('didnt_arrive','poor_service','payment_issue','refund_request','behaviour','safety_concern','false_review','harassment','other','no_completion_code')`),
   statusCheck: check("complaints_status_check", sql`${t.status} in ('new','under_review','waiting_for_client','waiting_for_artist','resolved','escalated','closed')`),
 }));
 

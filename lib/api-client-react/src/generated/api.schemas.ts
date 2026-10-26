@@ -31,6 +31,7 @@ export const ComplaintCategory = {
   false_review: 'false_review',
   harassment: 'harassment',
   other: 'other',
+  no_completion_code: 'no_completion_code',
 } as const;
 
 export type ComplaintStatusProperty = typeof ComplaintStatusProperty[keyof typeof ComplaintStatusProperty];
@@ -146,6 +147,8 @@ export interface OwnerComplaintAppointmentSummary {
   date: string;
   bookingStatus: string;
   payoutStatus: string;
+  /** @nullable */
+  completedAt: string | null;
   grossCollected: number;
   refundedAmount: number;
   refundableAmount: number;
@@ -180,6 +183,7 @@ export const OwnerComplaintActionAction = {
   hold: 'hold',
   release: 'release',
   refund: 'refund',
+  complete_booking: 'complete_booking',
 } as const;
 
 export interface OwnerComplaintAction {
@@ -863,6 +867,10 @@ export interface CompletionCode {
   /** Six digits. Only the client on the booking can read it. */
   code: string;
   expiresAt: string;
+}
+
+export interface MissingCodeReportResult {
+  caseNumber: string;
 }
 
 export interface VerifyCompletionCodeInput {

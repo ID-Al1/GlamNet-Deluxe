@@ -19,4 +19,5 @@ export const ComplaintCategory = {
   false_review: 'false_review',
   harassment: 'harassment',
   other: 'other',
+  no_completion_code: 'no_completion_code',
 } as const;

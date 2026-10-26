@@ -62,6 +62,7 @@ import type {
   Message,
   MessageInput,
   MessageResponse,
+  MissingCodeReportResult,
   MyStylistProfile,
   NotFoundResponse,
   OwnerArtistAccountStatusInput,
@@ -1717,6 +1718,77 @@ export const useRequestCompletionCode = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getRequestCompletionCodeMutationOptions(options));
+    }
+
+export const getReportMissingCompletionCodeUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/report-missing-code`
+}
+
+/**
+ * Opens a case for Bonisa to look into. Allowed 30 minutes after the artist asked for the code, once per booking while a case is open.
+ * @summary Artist reports that the client did not give the completion code
+ */
+export const reportMissingCompletionCode = async (appointmentId: string, options?: RequestInit): Promise<MissingCodeReportResult> => {
+
+  return customFetch<MissingCodeReportResult>(getReportMissingCompletionCodeUrl(appointmentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getReportMissingCompletionCodeMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportMissingCompletionCode>>, TError,{appointmentId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportMissingCompletionCode>>, TError,{appointmentId: string}, TContext> => {
+
+const mutationKey = ['reportMissingCompletionCode'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportMissingCompletionCode>>, {appointmentId: string}> = (props) => {
+          const {appointmentId} = props ?? {};
+
+          return  reportMissingCompletionCode(appointmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportMissingCompletionCodeMutationResult = NonNullable<Awaited<ReturnType<typeof reportMissingCompletionCode>>>
+
+    export type ReportMissingCompletionCodeMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Artist reports that the client did not give the completion code
+ */
+export const useReportMissingCompletionCode = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportMissingCompletionCode>>, TError,{appointmentId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportMissingCompletionCode>>,
+        TError,
+        {appointmentId: string},
+        TContext
+      > => {
+      return useMutation(getReportMissingCompletionCodeMutationOptions(options));
     }
 
 export const getGetCompletionCodeUrl = (appointmentId: string,) => {

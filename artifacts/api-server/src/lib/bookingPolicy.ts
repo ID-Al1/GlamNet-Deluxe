@@ -49,7 +49,13 @@ export const LARGE_PAYOUT_THRESHOLD = 2000;
 export const COMPLETION_CODE_VALID_HOURS = 24;
 
 /** Wrong guesses allowed per code before the artist must ask for a new one. */
-export const COMPLETION_CODE_MAX_ATTEMPTS = 5;
+export const COMPLETION_CODE_MAX_ATTEMPTS = 4;
+
+/**
+ * Minutes after asking for the code before an artist can report that the client
+ * did not give it. ASSUMPTION: confirm.
+ */
+export const MISSING_CODE_REPORT_AFTER_MINUTES = 30;
 
 /** Codes an artist can ask for on one booking. After this she contacts Bonisa. */
 export const COMPLETION_CODE_MAX_REQUESTS = 3;

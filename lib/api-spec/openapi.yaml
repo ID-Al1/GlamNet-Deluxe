@@ -480,6 +480,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /appointments/{appointmentId}/report-missing-code:
+    post:
+      operationId: reportMissingCompletionCode
+      tags: [appointments]
+      summary: Artist reports that the client did not give the completion code
+      description: >
+        Opens a case for Bonisa to look into. Allowed 30 minutes after the artist
+        asked for the code, once per booking while a case is open.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Case opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissingCodeReportResult"
+        "409":
+          description: Not allowed yet, or already reported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /appointments/{appointmentId}/completion-code:
     get:
       operationId: getCompletionCode
@@ -1300,7 +1328,7 @@ components:
         id: { type: string }
         caseNumber: { type: string, pattern: "^BN-[0-9]{4}-[0-9]{6}$" }
         appointmentId: { type: string, nullable: true }
-        category: { type: string, enum: [didnt_arrive, poor_service, payment_issue, refund_request, behaviour, safety_concern, false_review, harassment, other] }
+        category: { type: string, enum: [didnt_arrive, poor_service, payment_issue, refund_request, behaviour, safety_concern, false_review, harassment, other, no_completion_code] }
         description: { type: string }
         status: { type: string, enum: [new, under_review, waiting_for_client, waiting_for_artist, resolved, escalated, closed] }
         evidence: { type: array, items: { $ref: "#/components/schemas/ComplaintEvidence" } }
@@ -1398,7 +1426,7 @@ components:
         accountStatus: { type: string, enum: [active, suspended] }
     OwnerComplaintAppointmentSummary:
       type: object
-      required: [id, clientUserId, clientName, artistUserId, artistName, serviceName, date, bookingStatus, payoutStatus, grossCollected, refundedAmount, refundableAmount]
+      required: [id, clientUserId, clientName, artistUserId, artistName, serviceName, date, bookingStatus, payoutStatus, completedAt, grossCollected, refundedAmount, refundableAmount]
       properties:
         id: { type: string }
         clientUserId: { type: string }
@@ -1409,6 +1437,7 @@ components:
         date: { type: string }
         bookingStatus: { type: string }
         payoutStatus: { type: string }
+        completedAt: { type: ["string", "null"], format: date-time }
         grossCollected: { type: number }
         refundedAmount: { type: number }
         refundableAmount: { type: number }
@@ -1416,7 +1445,7 @@ components:
       type: object
       required: [action]
       properties:
-        action: { type: string, enum: [status, note, suspend, hold, release, refund] }
+        action: { type: string, enum: [status, note, suspend, hold, release, refund, complete_booking] }
         status: { type: string }
         note:
           type: string
@@ -2115,6 +2144,13 @@ components:
         expiresAt:
           type: string
           format: date-time
+
+    MissingCodeReportResult:
+      type: object
+      required: [caseNumber]
+      properties:
+        caseNumber:
+          type: string
 
     VerifyCompletionCodeInput:
       type: object

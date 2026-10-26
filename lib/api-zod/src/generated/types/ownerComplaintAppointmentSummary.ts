@@ -16,6 +16,8 @@ export interface OwnerComplaintAppointmentSummary {
   date: string;
   bookingStatus: string;
   payoutStatus: string;
+  /** @nullable */
+  completedAt: Date | null;
   grossCollected: number;
   refundedAmount: number;
   refundableAmount: number;

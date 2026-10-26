@@ -28,6 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   false_review: "Review",
   harassment: "Harassment",
   other: "Other",
+  no_completion_code: "No code",
 };
 
 export default function OwnerComplaintsList() {

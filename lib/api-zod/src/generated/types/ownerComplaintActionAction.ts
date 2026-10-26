@@ -16,4 +16,5 @@ export const OwnerComplaintActionAction = {
   hold: 'hold',
   release: 'release',
   refund: 'refund',
+  complete_booking: 'complete_booking',
 } as const;

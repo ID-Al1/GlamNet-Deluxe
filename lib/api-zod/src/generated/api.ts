@@ -555,6 +555,19 @@ export const RequestCompletionCodeResponse = zod.object({
 
 
 /**
+ * Opens a case for Bonisa to look into. Allowed 30 minutes after the artist asked for the code, once per booking while a case is open.
+ * @summary Artist reports that the client did not give the completion code
+ */
+export const ReportMissingCompletionCodeParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const ReportMissingCompletionCodeResponse = zod.object({
+  "caseNumber": zod.string()
+})
+
+
+/**
  * @summary Client reads the completion code to give to her artist
  */
 export const GetCompletionCodeParams = zod.object({
@@ -1269,7 +1282,7 @@ export const CreateComplaintResponse = zod.object({
   "id": zod.string(),
   "caseNumber": zod.string().regex(createComplaintResponseCaseNumberRegExp),
   "appointmentId": zod.string().nullish(),
-  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other']),
+  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other', 'no_completion_code']),
   "description": zod.string(),
   "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']),
   "evidence": zod.array(zod.object({
@@ -1290,7 +1303,7 @@ export const ListComplaintsResponseItem = zod.object({
   "id": zod.string(),
   "caseNumber": zod.string().regex(listComplaintsResponseCaseNumberRegExp),
   "appointmentId": zod.string().nullish(),
-  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other']),
+  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other', 'no_completion_code']),
   "description": zod.string(),
   "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']),
   "evidence": zod.array(zod.object({
@@ -1313,7 +1326,7 @@ export const GetComplaintResponse = zod.object({
   "id": zod.string(),
   "caseNumber": zod.string().regex(getComplaintResponseCaseNumberRegExp),
   "appointmentId": zod.string().nullish(),
-  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other']),
+  "category": zod.enum(['didnt_arrive', 'poor_service', 'payment_issue', 'refund_request', 'behaviour', 'safety_concern', 'false_review', 'harassment', 'other', 'no_completion_code']),
   "description": zod.string(),
   "status": zod.enum(['new', 'under_review', 'waiting_for_client', 'waiting_for_artist', 'resolved', 'escalated', 'closed']),
   "evidence": zod.array(zod.object({
@@ -1416,6 +1429,7 @@ export const GetOwnerComplaintResponse = zod.object({
   "date": zod.string(),
   "bookingStatus": zod.string(),
   "payoutStatus": zod.string(),
+  "completedAt": zod.coerce.date().nullable(),
   "grossCollected": zod.number(),
   "refundedAmount": zod.number(),
   "refundableAmount": zod.number()
@@ -1449,7 +1463,7 @@ export const ownerComplaintActionBodyAmountMin = 0;
 
 
 export const OwnerComplaintActionBody = zod.object({
-  "action": zod.enum(['status', 'note', 'suspend', 'hold', 'release', 'refund']),
+  "action": zod.enum(['status', 'note', 'suspend', 'hold', 'release', 'refund', 'complete_booking']),
   "status": zod.string().optional(),
   "note": zod.string().max(ownerComplaintActionBodyNoteMax).optional().describe('Required when action is suspend; reason is recorded in the owner-only activity trail.'),
   "userId": zod.string().optional(),

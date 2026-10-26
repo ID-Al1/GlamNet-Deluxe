@@ -57,8 +57,8 @@ the B way. That option would need to change or be limited.
 
 ## What is built and what is not
 - Built: the rules in `bookingPolicy.ts` with tests, the payout tracker for artists, escrow, the 82/18 split, owner payout batches, **the completion code and the 24 hour complaint window** (money is released automatically when the window closes with no open complaint).
-- Completion code details (my assumptions, confirm): the code is 6 digits, valid 24 hours, 5 wrong tries per code, and an artist can ask for 3 codes per booking.
-- If the client never gives the code: the artist can ask again up to 3 times. After that she contacts Bonisa. (A "client did not give the code" report for the owner is not built yet.)
+- Completion code details: 6 digits, valid 24 hours (confirmed by Alwande), 4 wrong tries per code (confirmed). An artist can ask for up to 3 codes for the same booking, so she can get a fresh one if a code expires or locks.
+- If the client never gives the code: 30 minutes after asking, the artist taps "did not give me the code". That opens a case for the owner (category "no_completion_code"), and the client is told in chat. The owner can then **complete the booking for the artist** (the client still gets the 24 hour complaint window) or refund the client. The 30 minute wait is my assumption, confirm.
 - A complaint on a booking keeps the money held until the owner closes the case.
 - Not built: applying these rules when a client cancels, late fees, the Monday rule in payouts, collecting the balance.
 - Today when a client cancels, the status changes and nothing else happens: no refund, no fee. The client's money stays held. This is wired up after Peach is set up, because refunds are done through the payment provider.

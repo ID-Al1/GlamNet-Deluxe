@@ -26,6 +26,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   false_review: "False review",
   harassment: "Harassment",
   other: "Other",
+  no_completion_code: "Completion code not given",
 };
 
 function EvidenceIcon({ mimeType }: { mimeType: string }) {

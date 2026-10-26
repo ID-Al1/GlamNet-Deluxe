@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, appointmentsTable, stylistProfilesTable, servicesTable, usersTable, paymentsTable, payoutLedgerTable } from "@workspace/db";
-import { eq, and, or, desc, isNull, sql } from "drizzle-orm";
+import { db, appointmentsTable, stylistProfilesTable, servicesTable, usersTable, paymentsTable, complaintsTable } from "@workspace/db";
+import { eq, and, or, desc, isNull, sql, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../lib/auth";
 import { CreateAppointmentBody, UpdateAppointmentBody } from "@workspace/api-zod";
@@ -9,7 +9,9 @@ import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
 import { recordPayoutEvent, transitionToDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
-import { COMPLAINT_WINDOW_HOURS, COMPLETION_CODE_MAX_ATTEMPTS, COMPLETION_CODE_MAX_REQUESTS } from "../lib/bookingPolicy";
+import { COMPLAINT_WINDOW_HOURS, COMPLETION_CODE_MAX_ATTEMPTS, COMPLETION_CODE_MAX_REQUESTS, MISSING_CODE_REPORT_AFTER_MINUTES } from "../lib/bookingPolicy";
+import { markBookingComplete } from "../lib/completion";
+import { createComplaintCase } from "../lib/complaintCases";
 import { appointmentStartTime, completionCodeExpiresAt, completionCodesMatch, deriveCompletionCode, newCodeNonce } from "../lib/completionCode";
 
 const router = Router();
@@ -446,20 +448,7 @@ router.post("/appointments/:appointmentId/verify-completion-code", requireAuth, 
   // The code proves both sides: the client gave it, the artist typed it. Both
   // flags are set so complaint handling that checks them keeps working. The
   // money stays held until the complaint window closes.
-  const now = new Date();
-  const [done] = await db.update(appointmentsTable).set({
-    status: "completed",
-    completedAt: now,
-    complaintWindowEndsAt: new Date(now.getTime() + COMPLAINT_WINDOW_HOURS * 60 * 60 * 1000),
-    workConfirmedByClient: true, workConfirmedByClientAt: now,
-    workConfirmedByArtist: true, workConfirmedByArtistAt: now,
-    completionCodeNonce: null,
-  }).where(and(
-    eq(appointmentsTable.id, appt.id),
-    eq(appointmentsTable.payoutStatus, "held"),
-    isNull(appointmentsTable.completedAt),
-    eq(appointmentsTable.completionCodeNonce, appt.completionCodeNonce),
-  )).returning();
+  const done = await markBookingComplete(appt.id, eq(appointmentsTable.completionCodeNonce, appt.completionCodeNonce));
   if (!done) { res.status(409).json({ error: "This booking just changed. Please refresh." }); return; }
 
   await recordPayoutEvent({
@@ -471,6 +460,40 @@ router.post("/appointments/:appointmentId/verify-completion-code", requireAuth, 
       `${appt.serviceName} is complete. ${appt.clientName} has ${COMPLAINT_WINDOW_HOURS} hours to report a problem. After that, the payment is released to ${appt.stylistName}.`);
   } catch { /* non-fatal */ }
   res.json(formatAppt(done));
+});
+
+router.post("/appointments/:appointmentId/report-missing-code", requireAuth, async (req, res) => {
+  const appt = await loadCodeBooking(req, res, "artist");
+  if (!appt) return;
+  if (appt.completedAt) { res.status(409).json({ error: "This booking is already complete." }); return; }
+  if (appt.payoutStatus !== "held") { res.status(409).json({ error: "This booking cannot be reported right now. Please contact Bonisa." }); return; }
+  if (!appt.completionCodeRequestedAt) { res.status(409).json({ error: "Ask your client for the completion code first." }); return; }
+  const canReportAt = new Date(appt.completionCodeRequestedAt.getTime() + MISSING_CODE_REPORT_AFTER_MINUTES * 60 * 1000);
+  if (new Date() < canReportAt) {
+    res.status(409).json({ error: `Give your client ${MISSING_CODE_REPORT_AFTER_MINUTES} minutes after you ask for the code. You can report it after that.` }); return;
+  }
+  const [existing] = await db.select({ id: complaintsTable.id }).from(complaintsTable).where(and(
+    eq(complaintsTable.appointmentId, appt.id),
+    eq(complaintsTable.category, "no_completion_code"),
+    inArray(complaintsTable.status, ["new", "under_review", "waiting_for_client", "waiting_for_artist", "escalated"]),
+  )).limit(1);
+  if (existing) { res.status(409).json({ error: "You have already reported this. Bonisa is looking into it." }); return; }
+
+  const user = (req as any).user;
+  const when = `${appt.serviceName} on ${appt.date} at ${appt.time}`;
+  let created;
+  try {
+    created = await createComplaintCase({
+      appointmentId: appt.id, complainantUserId: user.id, subjectUserId: appt.clientId, complainantRole: "stylist",
+      category: "no_completion_code",
+      description: `${appt.stylistName} reports that ${appt.clientName} did not give the completion code for ${when}. The code was requested at ${appt.completionCodeRequestedAt.toISOString()}.`,
+    });
+  } catch { res.status(500).json({ error: "Could not open the report. Please try again." }); return; }
+  try {
+    await postSystemMessage(appt.clientId, appt.stylistId,
+      `${appt.stylistName} says the completion code was not given for ${appt.serviceName}. Bonisa will look into it. If the service went well, please open this booking in Bonisa and give her the code.`);
+  } catch { /* non-fatal */ }
+  res.status(201).json({ caseNumber: created.caseNumber });
 });
 
 export default router;

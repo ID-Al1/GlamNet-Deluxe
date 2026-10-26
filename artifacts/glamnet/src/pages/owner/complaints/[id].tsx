@@ -63,6 +63,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   false_review: "Review",
   harassment: "Harassment",
   other: "Other",
+  no_completion_code: "No code",
 };
 
 function EvidenceIcon({ mimeType }: { mimeType: string }) {
@@ -217,6 +218,19 @@ export default function OwnerComplaintWorkspace() {
         invalidateAll();
       },
       onError: (err: any) => toast.error(err?.data?.error || "Failed to release payout")
+    });
+  };
+
+  const handleCompleteBooking = () => {
+    actionMutation.mutate({
+      complaintId,
+      data: { action: "complete_booking" as OwnerComplaintActionAction }
+    }, {
+      onSuccess: () => {
+        toast.success("Booking completed. The client has 24 hours to report a problem.");
+        invalidateAll();
+      },
+      onError: (err: any) => toast.error(err?.data?.error || "Failed to complete the booking")
     });
   };
 
@@ -468,6 +482,18 @@ export default function OwnerComplaintWorkspace() {
                       Release
                     </Button>
                   </div>
+
+                  {complaint.category === "no_completion_code" && (
+                    <Button
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={handleCompleteBooking}
+                      disabled={actionMutation.isPending || complaint.appointment.payoutStatus !== "held" || !!complaint.appointment.completedAt}
+                    >
+                      <CheckCircle strokeWidth={1.9} className="w-4 h-4" />
+                      {complaint.appointment.completedAt ? "Booking already complete" : "Complete booking for the artist"}
+                    </Button>
+                  )}
 
                   <Button
                     variant="outline"

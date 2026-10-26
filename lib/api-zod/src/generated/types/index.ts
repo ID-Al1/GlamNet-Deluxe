@@ -68,6 +68,7 @@ export * from './messageInput';
 export * from './messageInputMessageType';
 export * from './messageMessageType';
 export * from './messageResponse';
+export * from './missingCodeReportResult';
 export * from './myStylistProfile';
 export * from './myStylistProfileReputationBreakdown';
 export * from './myStylistProfileVerificationStatus';

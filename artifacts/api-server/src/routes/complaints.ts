@@ -11,6 +11,9 @@ import { wasUploadedBy } from "../lib/upload-registry";
 import { getUncachableStripeClient } from "../stripeClient";
 import { transitionToDisputed, transitionFromDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
+import { createComplaintCase } from "../lib/complaintCases";
+import { markBookingComplete } from "../lib/completion";
+import { recordPayoutEvent } from "../lib/escrow";
 import { logger } from "../lib/logger";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { Readable } from "stream";
@@ -37,7 +40,9 @@ router.post("/complaints", requireAuth, async (req, res) => {
   if (!["client", "stylist"].includes(user.role)) { res.status(403).json({ error: "Only clients and artists may submit complaints" }); return; }
   const { appointmentId, category, description, subjectUserId } = req.body ?? {};
   if (!complaintCategories.includes(category) || typeof description !== "string" || !description.trim()) { res.status(400).json({ error: "Invalid complaint category or description" }); return; }
-  let role = user.role === "stylist" ? "stylist" : "client";
+  // Opened automatically when an artist reports a missing completion code.
+  if (category === "no_completion_code") { res.status(400).json({ error: "Invalid complaint category or description" }); return; }
+  let role: "client" | "stylist" = user.role === "stylist" ? "stylist" : "client";
   let validatedSubject: string | null = null;
   if (subjectUserId === user.id) { res.status(400).json({ error: "A complaint cannot target the complainant" }); return; }
   if (appointmentId) {
@@ -58,13 +63,10 @@ router.post("/complaints", requireAuth, async (req, res) => {
     if (!conversation) { res.status(403).json({ error: "Subject has no existing relationship with you" }); return; }
     validatedSubject = subjectUserId;
   }
-  const seqRows = await db.execute(sql`select nextval('complaint_case_number_seq') as n`);
-  const sequenceNumber = Number((seqRows.rows[0] as any)?.n);
-  if (!Number.isFinite(sequenceNumber)) { res.status(500).json({ error: "Could not allocate case number" }); return; }
-  const caseNumber = `BN-${new Date().getFullYear()}-${String(sequenceNumber).padStart(6, "0")}`;
-  const complaint = { id: id(), caseNumber, appointmentId: appointmentId ?? null, complainantUserId: user.id, subjectUserId: validatedSubject, complainantRole: role, category, description: description.trim(), status: "new" };
-  const [created] = await db.insert(complaintsTable).values(complaint).returning();
-  await activity(created.id, user.id, "created");
+  let created;
+  try {
+    created = await createComplaintCase({ appointmentId: appointmentId ?? null, complainantUserId: user.id, subjectUserId: validatedSubject, complainantRole: role, category, description: description.trim() });
+  } catch { res.status(500).json({ error: "Could not allocate case number" }); return; }
   res.status(201).json(publicComplaint(created));
 });
 
@@ -152,6 +154,7 @@ router.get("/owner/complaints/:complaintId", requireOwner, async (req, res) => {
       date: appointmentsTable.date,
       bookingStatus: appointmentsTable.status,
       payoutStatus: appointmentsTable.payoutStatus,
+      completedAt: appointmentsTable.completedAt,
     }).from(appointmentsTable)
       .innerJoin(stylistProfilesTable, eq(stylistProfilesTable.id, appointmentsTable.stylistId))
       .where(eq(appointmentsTable.id, c.appointmentId));
@@ -175,6 +178,7 @@ router.get("/owner/complaints/:complaintId", requireOwner, async (req, res) => {
         date: row.date,
         bookingStatus: row.bookingStatus,
         payoutStatus: row.payoutStatus,
+        completedAt: row.completedAt?.toISOString() ?? null,
         grossCollected: grossCents / 100,
         refundedAmount: refundedCents / 100,
         refundableAmount: Math.max(0, grossCents - refundedCents) / 100,
@@ -245,6 +249,18 @@ router.post("/owner/complaints/:complaintId/actions", requireOwner, async (req, 
           await activity(complaintId, owner.id, "payment_released", c.caseNumber, tx);
         });
       }
+    } else if (action === "complete_booking") {
+      // For a client who never gave the completion code: the owner completes the
+      // booking on the artist's behalf. The usual complaint window still opens, so
+      // the client keeps her 24 hours to report a problem.
+      if (!c.appointmentId) { res.status(409).json({ error: "Complaint has no payment appointment" }); return; }
+      const completed = await markBookingComplete(c.appointmentId);
+      if (!completed) { res.status(409).json({ error: "This booking is already complete or its payment is no longer held" }); return; }
+      await recordPayoutEvent({
+        appointmentId: c.appointmentId, type: "completed_by_owner", actorUserId: owner.id,
+        note: `Completed by Bonisa for ${c.caseNumber}. Complaint window open until ${completed.complaintWindowEndsAt?.toISOString()}`,
+      });
+      await activity(complaintId, owner.id, "booking_completed", c.caseNumber);
     } else if (action === "refund") {
       if (!c.appointmentId) { res.status(409).json({ error: "Complaint has no payment appointment" }); return; }
       const refundAppointmentId = c.appointmentId;
