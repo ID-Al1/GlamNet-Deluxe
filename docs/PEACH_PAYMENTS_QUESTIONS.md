@@ -1,6 +1,6 @@
 # Message to Peach Payments
 
-**Hold this until Bonisa is registered with Peach** (Alwande, 2026-10-26). Then send it to Peach sales. Fill in your name and contact details first.
+**Hold this until Bonisa is registered with Peach** (Haiden, 2026-10-26). Then send it to Peach sales. Fill in your name and contact details first.
 
 ---
 

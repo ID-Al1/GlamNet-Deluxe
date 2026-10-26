@@ -114,11 +114,11 @@ Rejection requires a written reason, which she receives word for word.
 Straight from the strategy red lights, restated so nobody has to go looking:
 
 - Anything that positions Bonisa against Gumtree, Bark, or a classifieds directory
-- Any payment provider other than Peach Payments (which replaces Stripe, confirmed by Alwande 2026-10-26; the code still uses Stripe until the swap ships)
+- Any payment provider other than Peach Payments (which replaces Stripe, instructed by Haiden 2026-10-26, Alwande to confirm; the code still uses Stripe until the swap ships)
 - Any fake, seeded, sample or placeholder content, anywhere, ever, including demos shown to investors
 - Salons as the primary entity. Bonisa lists individuals
 - A commission below 18% to win artists
-- Artist subscriptions (R99 Basic, R199 Pro) before 50 artists are verified. Alwande's rule, set 2026-10-19
+- Artist subscriptions (R99 Basic, R199 Pro) before 50 artists are verified. set by Haiden in session 2026-10-19, Alwande to confirm
 - Features before the model is proven. If it does not help onboard the First 50, take verified bookings, or pay an artist on time, it waits
 
 ---
