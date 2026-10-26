@@ -562,7 +562,7 @@ export const GetMyPayoutsResponse = zod.object({
   "amount": zod.number().describe('The artist\'s share in rand'),
   "stage": zod.enum(['held', 'in_review', 'ready', 'paid', 'refunded']),
   "waitingOn": zod.union([zod.literal('client'),zod.literal('artist'),zod.literal('both'),zod.literal(null)]).nullable().describe('Who still has to confirm the work, while the money is held'),
-  "readySince": zod.coerce.date().nullable(),
+  "dueBy": zod.coerce.date().nullable().describe('For money that is ready, the date by which Bonisa must have paid it'),
   "paidAt": zod.coerce.date().nullable()
 }))
 })

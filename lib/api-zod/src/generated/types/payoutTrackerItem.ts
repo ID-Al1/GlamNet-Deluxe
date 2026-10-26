@@ -22,8 +22,11 @@ export interface PayoutTrackerItem {
      * @nullable
      */
   waitingOn: PayoutTrackerItemWaitingOn;
-  /** @nullable */
-  readySince: Date | null;
+  /**
+     * For money that is ready, the date by which Bonisa must have paid it
+     * @nullable
+     */
+  dueBy: Date | null;
   /** @nullable */
   paidAt: Date | null;
 }

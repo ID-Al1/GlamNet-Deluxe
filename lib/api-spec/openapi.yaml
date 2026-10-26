@@ -2352,7 +2352,7 @@ components:
 
     PayoutTrackerItem:
       type: object
-      required: [appointmentId, serviceName, clientName, date, time, amount, stage, waitingOn, readySince, paidAt]
+      required: [appointmentId, serviceName, clientName, date, time, amount, stage, waitingOn, dueBy, paidAt]
       properties:
         appointmentId:
           type: string
@@ -2374,9 +2374,10 @@ components:
           type: ["string", "null"]
           enum: [client, artist, both, null]
           description: Who still has to confirm the work, while the money is held
-        readySince:
+        dueBy:
           type: ["string", "null"]
           format: date-time
+          description: For money that is ready, the date by which Bonisa must have paid it
         paidAt:
           type: ["string", "null"]
           format: date-time

@@ -29,7 +29,10 @@ function statusLine(item: PayoutTrackerItem): string {
     case "in_review":
       return "Bonisa is reviewing this booking. Your money is safe.";
     case "ready":
-      return "Ready. Bonisa will pay this in your next payout.";
+      if (!item.dueBy) return "Ready. Bonisa will pay this in your next payout.";
+      return new Date(item.dueBy).getTime() < Date.now()
+        ? "This is past its payout date. Please contact Bonisa."
+        : `Ready. Bonisa pays this by ${format(new Date(item.dueBy), "EEE d MMM")}.`;
     case "paid":
       return item.paidAt ? `Paid on ${format(new Date(item.paidAt), "d MMM yyyy")}.` : "Paid.";
     default:

@@ -601,7 +601,7 @@ router.get("/stylists/me/payouts", requireAuth, async (req, res) => {
   const items: Array<{
     appointmentId: string; serviceName: string; clientName: string; date: string; time: string;
     amount: number; stage: "held" | "in_review" | "ready" | "paid" | "refunded";
-    waitingOn: "client" | "artist" | "both" | null; readySince: string | null; paidAt: string | null;
+    waitingOn: "client" | "artist" | "both" | null; dueBy: string | null; paidAt: string | null;
   }> = [];
   const summary = { held: 0, inReview: 0, ready: 0, paidThisMonth: 0, paidTotal: 0 };
 
@@ -610,12 +610,12 @@ router.get("/stylists/me/payouts", requireAuth, async (req, res) => {
     if (line.status === "paid") {
       summary.paidTotal += line.netAmount;
       if (line.paidAt && line.paidAt >= monthStart) summary.paidThisMonth += line.netAmount;
-      items.push({ ...base, stage: "paid", readySince: line.dueAt.toISOString(), paidAt: line.paidAt?.toISOString() ?? null });
+      items.push({ ...base, stage: "paid", dueBy: null, paidAt: line.paidAt?.toISOString() ?? null });
     } else if (line.status === "due") {
       summary.ready += line.netAmount;
-      items.push({ ...base, stage: "ready", readySince: line.dueAt.toISOString(), paidAt: null });
+      items.push({ ...base, stage: "ready", dueBy: line.dueAt.toISOString(), paidAt: null });
     } else {
-      items.push({ ...base, stage: "refunded", readySince: null, paidAt: null });
+      items.push({ ...base, stage: "refunded", dueBy: null, paidAt: null });
     }
   }
 
@@ -623,7 +623,7 @@ router.get("/stylists/me/payouts", requireAuth, async (req, res) => {
   for (const a of heldRows) {
     if (ledgerAppointmentIds.has(a.id)) continue;
     const amount = heldShare(a);
-    const base = { appointmentId: a.id, serviceName: a.serviceName, clientName: a.clientName, date: a.date, time: a.time, amount, readySince: null, paidAt: null };
+    const base = { appointmentId: a.id, serviceName: a.serviceName, clientName: a.clientName, date: a.date, time: a.time, amount, dueBy: null, paidAt: null };
     if (a.payoutStatus === "disputed") {
       summary.inReview += amount;
       items.push({ ...base, stage: "in_review", waitingOn: null });
