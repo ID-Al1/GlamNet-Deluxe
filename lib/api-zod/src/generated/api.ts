@@ -555,6 +555,53 @@ export const RequestCompletionCodeResponse = zod.object({
 
 
 /**
+ * @summary Get my trusted safety contact
+ */
+export const GetMySafetyContactResponse = zod.object({
+  "name": zod.string().nullable(),
+  "phone": zod.string().nullable()
+})
+
+
+/**
+ * Private to the artist. Send an empty name and phone to clear it.
+ * @summary Save (or clear) my trusted safety contact
+ */
+export const SaveMySafetyContactBody = zod.object({
+  "name": zod.string(),
+  "phone": zod.string()
+})
+
+export const SaveMySafetyContactResponse = zod.object({
+  "name": zod.string().nullable(),
+  "phone": zod.string().nullable()
+})
+
+
+/**
+ * Paid, confirmed bookings only, from 24 hours before the appointment until 12 hours after it ends.
+ * @summary Artist reads the details she needs to share with a trusted person
+ */
+export const GetBookingSafetyInfoParams = zod.object({
+  "appointmentId": zod.coerce.string()
+})
+
+export const GetBookingSafetyInfoResponse = zod.object({
+  "clientName": zod.string(),
+  "clientPhone": zod.string().nullable(),
+  "serviceName": zod.string(),
+  "date": zod.string(),
+  "time": zod.string(),
+  "duration": zod.number(),
+  "notes": zod.string().nullable(),
+  "trustedContact": zod.object({
+  "name": zod.string(),
+  "phone": zod.string()
+}).nullable()
+})
+
+
+/**
  * Opens a case for Bonisa to look into. Allowed 30 minutes after the artist asked for the code, once per booking while a case is open.
  * @summary Artist reports that the client did not give the completion code
  */

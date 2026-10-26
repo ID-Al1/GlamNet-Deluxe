@@ -480,6 +480,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /stylists/me/safety-contact:
+    get:
+      operationId: getMySafetyContact
+      tags: [stylists]
+      summary: Get my trusted safety contact
+      responses:
+        "200":
+          description: The trusted contact, or nulls if none is saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetyContact"
+    put:
+      operationId: saveMySafetyContact
+      tags: [stylists]
+      summary: Save (or clear) my trusted safety contact
+      description: Private to the artist. Send an empty name and phone to clear it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SafetyContactInput"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetyContact"
+        "400":
+          description: Invalid name or phone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /appointments/{appointmentId}/safety:
+    get:
+      operationId: getBookingSafetyInfo
+      tags: [appointments]
+      summary: Artist reads the details she needs to share with a trusted person
+      description: >
+        Paid, confirmed bookings only, from 24 hours before the appointment until
+        12 hours after it ends.
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Safety details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSafetyInfo"
+        "409":
+          description: Not available for this booking right now
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /appointments/{appointmentId}/report-missing-code:
     post:
       operationId: reportMissingCompletionCode
@@ -2144,6 +2209,51 @@ components:
         expiresAt:
           type: string
           format: date-time
+
+    SafetyContact:
+      type: object
+      required: [name, phone]
+      properties:
+        name:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+
+    SafetyContactInput:
+      type: object
+      required: [name, phone]
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+
+    BookingSafetyInfo:
+      type: object
+      required: [clientName, clientPhone, serviceName, date, time, duration, notes, trustedContact]
+      properties:
+        clientName:
+          type: string
+        clientPhone:
+          type: ["string", "null"]
+        serviceName:
+          type: string
+        date:
+          type: string
+        time:
+          type: string
+        duration:
+          type: integer
+        notes:
+          type: ["string", "null"]
+        trustedContact:
+          type: ["object", "null"]
+          required: [name, phone]
+          properties:
+            name:
+              type: string
+            phone:
+              type: string
 
     MissingCodeReportResult:
       type: object

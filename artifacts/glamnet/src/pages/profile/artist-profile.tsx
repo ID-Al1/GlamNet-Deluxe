@@ -1,3 +1,4 @@
+import { SafetyContactCard } from "@/components/safety-contact-card";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { 
@@ -510,6 +511,8 @@ export function ArtistProfile() {
           </CardContent>
         </Card>
       </section>
+
+      <SafetyContactCard />
 
       {/* 4. Submit Gating Section */}
       <section className="space-y-4">

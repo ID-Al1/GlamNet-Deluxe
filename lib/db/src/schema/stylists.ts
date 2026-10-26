@@ -29,6 +29,10 @@ export const stylistProfilesTable = pgTable("stylist_profiles", {
   verificationSubmittedAt: timestamp("verification_submitted_at"),
   // The owner's written reason from her latest rejection. Cleared on resubmit and on approval.
   verificationRejectionReason: text("verification_rejection_reason"),
+  // Private. A person the artist chooses to tell about her bookings, for her own
+  // safety. Bonisa never contacts them; the artist's phone does, via her own buttons.
+  safetyContactName: text("safety_contact_name"),
+  safetyContactPhone: text("safety_contact_phone"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

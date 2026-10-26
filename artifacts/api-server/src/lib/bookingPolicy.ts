@@ -45,6 +45,14 @@ export const LATE_FEE_PERCENT_OF_DEPOSIT = 20;
  */
 export const LARGE_PAYOUT_THRESHOLD = 2000;
 
+/**
+ * Safety: an artist can see her client's name and phone for a paid, confirmed
+ * booking from this many hours before it starts until this many hours after it
+ * ends, so she can tell a trusted person who she is meeting. ASSUMPTION: confirm.
+ */
+export const SAFETY_INFO_HOURS_BEFORE = 24;
+export const SAFETY_INFO_HOURS_AFTER = 12;
+
 /** How long a completion code stays valid after the artist asks for it. ASSUMPTION: confirm. */
 export const COMPLETION_CODE_VALID_HOURS = 24;
 

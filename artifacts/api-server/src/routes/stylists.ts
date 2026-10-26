@@ -557,6 +557,34 @@ router.get("/stylists/me/verification-checklist", requireAuth, async (req, res) 
   });
 });
 
+// Safety: the person the artist chooses to tell about her bookings. Private to her.
+// Must be declared before /:stylistId to avoid being swallowed by that wildcard.
+router.get("/stylists/me/safety-contact", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select({ name: stylistProfilesTable.safetyContactName, phone: stylistProfilesTable.safetyContactPhone })
+    .from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+  res.setHeader("Cache-Control", "no-store, private");
+  res.json({ name: profile.name ?? null, phone: profile.phone ?? null });
+});
+
+router.put("/stylists/me/safety-contact", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select({ id: stylistProfilesTable.id }).from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+  const phone = typeof req.body?.phone === "string" ? req.body.phone.trim().replace(/[\s()-]/g, "") : "";
+  // Both empty clears the contact.
+  if (!name && !phone) {
+    await db.update(stylistProfilesTable).set({ safetyContactName: null, safetyContactPhone: null }).where(eq(stylistProfilesTable.id, profile.id));
+    res.json({ name: null, phone: null }); return;
+  }
+  if (name.length < 2 || name.length > 60) { res.status(400).json({ error: "Enter your trusted contact's name (2 to 60 characters)." }); return; }
+  if (!/^\+?\d{9,15}$/.test(phone)) { res.status(400).json({ error: "Enter a valid phone number for your trusted contact." }); return; }
+  await db.update(stylistProfilesTable).set({ safetyContactName: name, safetyContactPhone: phone }).where(eq(stylistProfilesTable.id, profile.id));
+  res.json({ name, phone });
+});
+
 // Payout tracker: where each rand of the artist's money is right now.
 // Must be declared before /:stylistId to avoid being swallowed by that wildcard.
 // Stages use only what the system really knows: held, in review, ready (waiting for

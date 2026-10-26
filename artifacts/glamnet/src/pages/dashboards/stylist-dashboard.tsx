@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { CompletionCodeEntry } from "@/components/completion-code-entry";
+import { SafetyDialog } from "@/components/safety-dialog";
 import { toast } from "sonner";
 import {
   DollarSign, Calendar as CalendarIcon, Activity, Star,
@@ -804,6 +805,7 @@ export default function StylistDashboard() {
                                 </>
                               )
                             )}
+                            <SafetyDialog appointmentId={apt.id} />
                             <Link href={`/messages?clientId=${(apt as any).clientId}`}>
                               <Button size="sm" variant="outline" className="gap-1.5 h-8 rounded-full">
                                 <MessageCircle className="h-3.5 w-3.5" />Message

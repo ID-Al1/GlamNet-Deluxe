@@ -30,6 +30,7 @@ import type {
   BankAccountSafe,
   BankVerificationInput,
   BankVerificationResult,
+  BookingSafetyInfo,
   BrandDashboard,
   CastingCall,
   CastingCallInput,
@@ -84,6 +85,8 @@ import type {
   PortfolioItem,
   PortfolioItemInput,
   RevealArtistBankAccount200,
+  SafetyContact,
+  SafetyContactInput,
   SearchOwnerRegistryParams,
   Service,
   ServiceInput,
@@ -1719,6 +1722,232 @@ export const useRequestCompletionCode = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getRequestCompletionCodeMutationOptions(options));
     }
+
+export const getGetMySafetyContactUrl = () => {
+
+
+
+
+  return `/api/stylists/me/safety-contact`
+}
+
+/**
+ * @summary Get my trusted safety contact
+ */
+export const getMySafetyContact = async ( options?: RequestInit): Promise<SafetyContact> => {
+
+  return customFetch<SafetyContact>(getGetMySafetyContactUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMySafetyContactQueryKey = () => {
+    return [
+    `/api/stylists/me/safety-contact`
+    ] as const;
+    }
+
+
+export const getGetMySafetyContactQueryOptions = <TData = Awaited<ReturnType<typeof getMySafetyContact>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySafetyContact>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMySafetyContactQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMySafetyContact>>> = ({ signal }) => getMySafetyContact({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMySafetyContact>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMySafetyContactQueryResult = NonNullable<Awaited<ReturnType<typeof getMySafetyContact>>>
+export type GetMySafetyContactQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get my trusted safety contact
+ */
+
+export function useGetMySafetyContact<TData = Awaited<ReturnType<typeof getMySafetyContact>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySafetyContact>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMySafetyContactQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveMySafetyContactUrl = () => {
+
+
+
+
+  return `/api/stylists/me/safety-contact`
+}
+
+/**
+ * Private to the artist. Send an empty name and phone to clear it.
+ * @summary Save (or clear) my trusted safety contact
+ */
+export const saveMySafetyContact = async (safetyContactInput: SafetyContactInput, options?: RequestInit): Promise<SafetyContact> => {
+
+  return customFetch<SafetyContact>(getSaveMySafetyContactUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(safetyContactInput)
+  }
+);}
+
+
+
+
+export const getSaveMySafetyContactMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMySafetyContact>>, TError,{data: BodyType<SafetyContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveMySafetyContact>>, TError,{data: BodyType<SafetyContactInput>}, TContext> => {
+
+const mutationKey = ['saveMySafetyContact'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveMySafetyContact>>, {data: BodyType<SafetyContactInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveMySafetyContact(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveMySafetyContactMutationResult = NonNullable<Awaited<ReturnType<typeof saveMySafetyContact>>>
+    export type SaveMySafetyContactMutationBody = BodyType<SafetyContactInput>
+    export type SaveMySafetyContactMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Save (or clear) my trusted safety contact
+ */
+export const useSaveMySafetyContact = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMySafetyContact>>, TError,{data: BodyType<SafetyContactInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveMySafetyContact>>,
+        TError,
+        {data: BodyType<SafetyContactInput>},
+        TContext
+      > => {
+      return useMutation(getSaveMySafetyContactMutationOptions(options));
+    }
+
+export const getGetBookingSafetyInfoUrl = (appointmentId: string,) => {
+
+
+
+
+  return `/api/appointments/${appointmentId}/safety`
+}
+
+/**
+ * Paid, confirmed bookings only, from 24 hours before the appointment until 12 hours after it ends.
+ * @summary Artist reads the details she needs to share with a trusted person
+ */
+export const getBookingSafetyInfo = async (appointmentId: string, options?: RequestInit): Promise<BookingSafetyInfo> => {
+
+  return customFetch<BookingSafetyInfo>(getGetBookingSafetyInfoUrl(appointmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBookingSafetyInfoQueryKey = (appointmentId: string,) => {
+    return [
+    `/api/appointments/${appointmentId}/safety`
+    ] as const;
+    }
+
+
+export const getGetBookingSafetyInfoQueryOptions = <TData = Awaited<ReturnType<typeof getBookingSafetyInfo>>, TError = ErrorType<ApiError>>(appointmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBookingSafetyInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBookingSafetyInfoQueryKey(appointmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBookingSafetyInfo>>> = ({ signal }) => getBookingSafetyInfo(appointmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: appointmentId !== null && appointmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBookingSafetyInfo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBookingSafetyInfoQueryResult = NonNullable<Awaited<ReturnType<typeof getBookingSafetyInfo>>>
+export type GetBookingSafetyInfoQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Artist reads the details she needs to share with a trusted person
+ */
+
+export function useGetBookingSafetyInfo<TData = Awaited<ReturnType<typeof getBookingSafetyInfo>>, TError = ErrorType<ApiError>>(
+ appointmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBookingSafetyInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBookingSafetyInfoQueryOptions(appointmentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getReportMissingCompletionCodeUrl = (appointmentId: string,) => {
 

@@ -869,6 +869,40 @@ export interface CompletionCode {
   expiresAt: string;
 }
 
+export interface SafetyContact {
+  /** @nullable */
+  name: string | null;
+  /** @nullable */
+  phone: string | null;
+}
+
+export interface SafetyContactInput {
+  name: string;
+  phone: string;
+}
+
+/**
+ * @nullable
+ */
+export type BookingSafetyInfoTrustedContact = {
+  name: string;
+  phone: string;
+} | null;
+
+export interface BookingSafetyInfo {
+  clientName: string;
+  /** @nullable */
+  clientPhone: string | null;
+  serviceName: string;
+  date: string;
+  time: string;
+  duration: number;
+  /** @nullable */
+  notes: string | null;
+  /** @nullable */
+  trustedContact: BookingSafetyInfoTrustedContact;
+}
+
 export interface MissingCodeReportResult {
   caseNumber: string;
 }

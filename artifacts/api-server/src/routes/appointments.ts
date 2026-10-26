@@ -9,7 +9,7 @@ import { isValidSlot, isUniqueViolation } from "../lib/bookingValidation";
 import { postSystemMessage } from "./messages";
 import { recordPayoutEvent, transitionToDisputed } from "../lib/escrow";
 import { param } from "../lib/params";
-import { COMPLAINT_WINDOW_HOURS, COMPLETION_CODE_MAX_ATTEMPTS, COMPLETION_CODE_MAX_REQUESTS, MISSING_CODE_REPORT_AFTER_MINUTES } from "../lib/bookingPolicy";
+import { COMPLAINT_WINDOW_HOURS, COMPLETION_CODE_MAX_ATTEMPTS, COMPLETION_CODE_MAX_REQUESTS, MISSING_CODE_REPORT_AFTER_MINUTES, SAFETY_INFO_HOURS_AFTER, SAFETY_INFO_HOURS_BEFORE } from "../lib/bookingPolicy";
 import { markBookingComplete } from "../lib/completion";
 import { createComplaintCase } from "../lib/complaintCases";
 import { appointmentStartTime, completionCodeExpiresAt, completionCodesMatch, deriveCompletionCode, newCodeNonce } from "../lib/completionCode";
@@ -494,6 +494,34 @@ router.post("/appointments/:appointmentId/report-missing-code", requireAuth, asy
       `${appt.stylistName} says the completion code was not given for ${appt.serviceName}. Bonisa will look into it. If the service went well, please open this booking in Bonisa and give her the code.`);
   } catch { /* non-fatal */ }
   res.status(201).json({ caseNumber: created.caseNumber });
+});
+
+// ── Safety ───────────────────────────────────────────────────────────────────
+// What an artist needs to tell a trusted person who she is meeting. Only for a
+// paid, confirmed booking, and only around the time of the appointment, so a
+// client's phone number is not open-ended.
+router.get("/appointments/:appointmentId/safety", requireAuth, async (req, res) => {
+  const appt = await loadCodeBooking(req, res, "artist");
+  if (!appt) return;
+  if (appt.status !== "confirmed" && appt.status !== "completed") { res.status(409).json({ error: "Safety details are only available for confirmed bookings." }); return; }
+  if (!(await bookingIsPaid(appt))) { res.status(409).json({ error: "Safety details are available once the client has paid." }); return; }
+  const start = appointmentStartTime(appt.date, appt.time);
+  const end = new Date(start.getTime() + (appt.duration || 60) * 60 * 1000);
+  const opens = new Date(start.getTime() - SAFETY_INFO_HOURS_BEFORE * 60 * 60 * 1000);
+  const closes = new Date(end.getTime() + SAFETY_INFO_HOURS_AFTER * 60 * 60 * 1000);
+  const now = new Date();
+  if (now < opens || now > closes) {
+    res.status(409).json({ error: `Safety details are available from ${SAFETY_INFO_HOURS_BEFORE} hours before the appointment until ${SAFETY_INFO_HOURS_AFTER} hours after it.` }); return;
+  }
+  const [client] = await db.select({ phone: usersTable.phone }).from(usersTable).where(eq(usersTable.id, appt.clientId));
+  const [mine] = await db.select({ name: stylistProfilesTable.safetyContactName, phone: stylistProfilesTable.safetyContactPhone })
+    .from(stylistProfilesTable).where(eq(stylistProfilesTable.id, appt.stylistId));
+  res.setHeader("Cache-Control", "no-store, private");
+  res.json({
+    clientName: appt.clientName, clientPhone: client?.phone ?? null,
+    serviceName: appt.serviceName, date: appt.date, time: appt.time, duration: appt.duration, notes: appt.notes ?? null,
+    trustedContact: mine?.name && mine?.phone ? { name: mine.name, phone: mine.phone } : null,
+  });
 });
 
 export default router;

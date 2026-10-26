@@ -20,3 +20,4 @@
 - [Subscriptions on hold until 50 verified artists](bonisa-no-subscriptions-before-50.md) — do not build R99/R199 artist plans before 50 artists are verified; remind Alwande at 50.
 - [Who decides](bonisa-who-decides.md) — Alwande has the final call on money and rules; he confirmed the Peach switch, subscription hold and payments policy on 2026-10-26.
 - [Completion code and release](bonisa-completion-code.md) — code from client to artist starts a 24 hour complaint window, then a job releases money; confirm-work cannot release; open complaints block release.
+- [Artist safety tools](bonisa-safety.md) — trusted contact plus WhatsApp and call buttons; client details only for paid bookings near the appointment; no tracking, no ID check, no auto alerts yet.

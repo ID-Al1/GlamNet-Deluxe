@@ -7,7 +7,7 @@ import { SignupBody, LoginBody } from "@workspace/api-zod";
 
 // Bump when the privacy policy text changes in a way users must re-accept.
 // Keep in step with PRIVACY_POLICY_VERSION in artifacts/glamnet/src/lib/legal.ts.
-const PRIVACY_POLICY_VERSION = "2026-10-19";
+const PRIVACY_POLICY_VERSION = "2026-10-26";
 
 const router = Router();
 function getTokenSecret(): string {

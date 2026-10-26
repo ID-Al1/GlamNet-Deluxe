@@ -14,6 +14,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
       "Account details: your name, email address, phone number, role (client, artist or brand) and a securely stored password.",
       "Artist profile details: your specialty, location, services, prices, portfolio photos and availability.",
       "Verification details (artists): identity documents you upload so we can verify you. These are stored privately and only our review team can see them.",
+      "Safety contact (artists): if you choose, the name and phone number of someone you trust. We store it for you and never contact them. Your phone uses it when you tap the safety buttons.",
       "Payout details (artists): bank account details so we can pay you. These are masked in the app and only revealed to authorised staff when needed to make a payment.",
       "Booking, payment and chat details: your appointments, payment records (card payments are handled by Stripe, we do not store your card number), messages, reviews and any complaints you submit.",
     ],
@@ -30,6 +31,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Who we share it with",
     body: [
       "Artists and clients see what they need to complete a booking together. Your phone number and identity documents are not shown on public pages.",
+      "For a paid booking, the artist can see her client's name and phone number from 24 hours before the appointment until 12 hours after it, so she can tell someone she trusts who she is meeting.",
       "Service providers who help us run Bonisa, such as Stripe for payments, and our hosting and messaging providers. They may only use your information to provide their service to us.",
       "Authorities, where the law requires it.",
       "We do not sell your personal information.",
