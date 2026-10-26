@@ -12,7 +12,7 @@ Professional identity network for South African beauty artists. Nearest comp: Li
 3. **"artist" not "stylist"** in all user-facing text and new code/DB fields. Legacy `stylist*` identifiers exist; do not create new ones.
 4. **Three separate flows.** Client / Artist / Brand — three dashboards, never merged.
 5. **Zero fake data.** Empty data = empty state. No placeholders, no stock photos for missing images.
-6. **Payments = Peach Payments** (replaces Stripe, instructed by Haiden 2026-10-26, needs Alwande to confirm; code still Stripe until the swap ships). Keep payment logic isolated in `stripeClient.ts` / `routes/stripe.ts` so the swap stays cheap.
+6. **Payments = Peach Payments** (replaces Stripe, confirmed by Alwande 2026-10-26; code still Stripe until the swap ships). Keep payment logic isolated in `stripeClient.ts` / `routes/stripe.ts` so the swap stays cheap.
 7. **Artists are individuals.** One profile per person; no salon/venue as primary entity.
 8. **POPIA compliance is a hard gate** before the first real booking.
 

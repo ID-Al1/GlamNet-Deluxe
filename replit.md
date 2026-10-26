@@ -56,7 +56,7 @@ South Africa's verified professional network for beauty artists. Artists build a
 3. **The word is "artist", never "stylist"** in any user-facing text, new code, or new DB fields. Legacy `stylist*` identifiers exist and are being migrated.
 4. **Client, Artist, and Brand flows stay completely separate.** Three roles, three dashboards.
 5. **Zero fake data. Ever.** No placeholder artists, invented ratings, prices, reviews, or stock photos substituting for missing data. Empty data = empty state.
-6. **Payments are Peach Payments** (cards and instant EFT). Haiden instructed this in session on 2026-10-26 (Alwande must confirm, as this changes a non-negotiable). The code still runs on Stripe until the swap ships, so do not remove Stripe code until then. Do not add any other payment system.
+6. **Payments are Peach Payments** (cards and instant EFT). Alwande confirmed this replaces Stripe on 2026-10-26. The code still runs on Stripe until the swap ships, so do not remove Stripe code until then. Do not add any other payment system.
 7. **Artists are individuals, not salons.** One profile per person; the artist is the brand.
 8. **POPIA compliance is required before the first real booking** — consent capture, privacy policy, data retention position.
 

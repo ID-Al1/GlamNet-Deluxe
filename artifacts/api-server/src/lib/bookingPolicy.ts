@@ -1,7 +1,7 @@
 /**
  * Bonisa booking policy: deposits, cancellations, lateness and no-shows.
  *
- * One file, one source of truth, like money.ts. Decided with Haiden on 2026-10-26; Alwande has the final call, so confirm with him.
+ * One file, one source of truth, like money.ts. Decided and confirmed by Alwande on 2026-10-26.
  * The full wording lives in docs/BONISA_PAYMENTS_AND_CANCELLATION_POLICY.md.
  *
  * These are pure functions. They say how much money goes where; they do not move

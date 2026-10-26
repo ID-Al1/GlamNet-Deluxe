@@ -1,6 +1,6 @@
 # Bonisa payments, cancellation and no-show policy (v2)
 
-Decided with Haiden on 2026-10-26. Alwande makes the final call on money and rules, so this is a draft until he confirms. The numbers live in one file,
+Decided and confirmed by Alwande on 2026-10-26, including the assumptions marked below and the recommendations (R2,000 Monday line, weekday payout days, balance paid through Bonisa). The numbers live in one file,
 `artifacts/api-server/src/lib/bookingPolicy.ts`, and are tested. Not legal advice:
 have it read before it is shown to customers.
 
