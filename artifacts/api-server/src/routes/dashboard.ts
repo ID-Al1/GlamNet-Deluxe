@@ -8,6 +8,7 @@ import {
   servicesTable,
   portfolioItemsTable,
   usersTable,
+  payoutLedgerTable,
 } from "@workspace/db";
 import { eq, and, gte, or, sql, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -45,6 +46,14 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
   // Net earnings: artists always see their 82% share, never gross booking values.
   const released = appts.filter((a) => a.payoutStatus === "released");
   const availableEarnings = released.reduce((sum, a) => sum + (a.artistPayoutAmount || 0), 0);
+  // Released money that Bonisa has not paid out yet. availableEarnings above also
+  // includes money already paid, so it cannot be shown as "ready to be paid".
+  const [readyRow] = profileRows[0]
+    ? await db.select({ total: sql<number>`coalesce(sum(${payoutLedgerTable.netAmount}), 0)::float8` })
+        .from(payoutLedgerTable)
+        .where(and(eq(payoutLedgerTable.artistProfileId, profileRows[0].id), eq(payoutLedgerTable.status, "due")))
+    : [{ total: 0 }];
+  const readyEarnings = readyRow?.total ?? 0;
   const pendingEarnings = appts
     .filter((a) => a.payoutStatus === "held" && (a.status === "confirmed" || a.status === "completed"))
     .reduce((sum, a) => sum + (a.artistPayoutAmount || splitAmount(a.price + a.tipAmount).artistShare), 0);
@@ -112,6 +121,7 @@ router.get("/dashboard/stylist", requireAuth, async (req, res) => {
     thisMonthEarnings,
     pendingEarnings: Math.round(pendingEarnings * 100) / 100,
     availableEarnings: Math.round(availableEarnings * 100) / 100,
+    readyEarnings: Math.round(readyEarnings * 100) / 100,
     lifetimeEarnings: Math.round(availableEarnings * 100) / 100,
     profileStrength: Math.min(100, profileStrength),
     upcomingAppointments: upcoming,

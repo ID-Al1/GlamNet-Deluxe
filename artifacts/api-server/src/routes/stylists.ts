@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { param } from "../lib/params";
-import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable, bankAccountsTable } from "@workspace/db";
-import { eq, and, ilike, or, sql } from "drizzle-orm";
+import { db, stylistProfilesTable, servicesTable, portfolioItemsTable, usersTable, appointmentsTable, bankAccountsTable, payoutLedgerTable, bookingTeamMembersTable } from "@workspace/db";
+import { eq, and, ilike, or, sql, inArray, gt, notInArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, verifyToken } from "../lib/auth";
 import { meetsRateFloor, rateFloorMessage } from "../lib/money";
@@ -554,6 +554,92 @@ router.get("/stylists/me/verification-checklist", requireAuth, async (req, res) 
     verificationStatus: profile.verificationStatus,
     rejectionReason: profile.verificationRejectionReason ?? null,
     ...readiness,
+  });
+});
+
+// Payout tracker: where each rand of the artist's money is right now.
+// Must be declared before /:stylistId to avoid being swallowed by that wildcard.
+// Stages use only what the system really knows: held, in review, ready (waiting for
+// Bonisa to pay her), paid, refunded.
+router.get("/stylists/me/payouts", requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  const [profile] = await db.select().from(stylistProfilesTable).where(eq(stylistProfilesTable.userId, user.id));
+  if (!profile) { res.status(404).json({ error: "Stylist profile not found" }); return; }
+
+  const [ledgerRows, heldRows] = await Promise.all([
+    db.select({ line: payoutLedgerTable, appt: appointmentsTable })
+      .from(payoutLedgerTable)
+      .innerJoin(appointmentsTable, eq(payoutLedgerTable.appointmentId, appointmentsTable.id))
+      .where(eq(payoutLedgerTable.artistProfileId, profile.id)),
+    db.select().from(appointmentsTable).where(and(
+      eq(appointmentsTable.stylistId, profile.id),
+      inArray(appointmentsTable.payoutStatus, ["held", "disputed"]),
+      gt(appointmentsTable.artistPayoutAmount, 0),
+      notInArray(appointmentsTable.status, ["cancelled", "declined"]),
+    )),
+  ]);
+
+  // Team bookings: while money is still held, her share is the lead's remainder
+  // after confirmed team members' percentages (same rounding as the payout ledger).
+  const teamIds = heldRows.filter(a => a.isTeamBooking).map(a => a.id);
+  const teamMembers = teamIds.length
+    ? await db.select().from(bookingTeamMembersTable).where(and(
+        inArray(bookingTeamMembersTable.appointmentId, teamIds),
+        eq(bookingTeamMembersTable.status, "confirmed"),
+      ))
+    : [];
+  const heldShare = (a: typeof heldRows[number]) => {
+    const poolCents = Math.round(a.artistPayoutAmount * 100);
+    if (!a.isTeamBooking) return poolCents / 100;
+    const others = teamMembers
+      .filter(m => m.appointmentId === a.id && m.stylistId !== a.stylistId)
+      .reduce((sum, m) => sum + Math.floor(poolCents * Number(m.payoutPercentage) / 100), 0);
+    return (poolCents - others) / 100;
+  };
+
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const items: Array<{
+    appointmentId: string; serviceName: string; clientName: string; date: string; time: string;
+    amount: number; stage: "held" | "in_review" | "ready" | "paid" | "refunded";
+    waitingOn: "client" | "artist" | "both" | null; readySince: string | null; paidAt: string | null;
+  }> = [];
+  const summary = { held: 0, inReview: 0, ready: 0, paidThisMonth: 0, paidTotal: 0 };
+
+  for (const { line, appt } of ledgerRows) {
+    const base = { appointmentId: appt.id, serviceName: appt.serviceName, clientName: appt.clientName, date: appt.date, time: appt.time, amount: line.netAmount, waitingOn: null };
+    if (line.status === "paid") {
+      summary.paidTotal += line.netAmount;
+      if (line.paidAt && line.paidAt >= monthStart) summary.paidThisMonth += line.netAmount;
+      items.push({ ...base, stage: "paid", readySince: line.dueAt.toISOString(), paidAt: line.paidAt?.toISOString() ?? null });
+    } else if (line.status === "due") {
+      summary.ready += line.netAmount;
+      items.push({ ...base, stage: "ready", readySince: line.dueAt.toISOString(), paidAt: null });
+    } else {
+      items.push({ ...base, stage: "refunded", readySince: null, paidAt: null });
+    }
+  }
+
+  const ledgerAppointmentIds = new Set(ledgerRows.map(r => r.appt.id));
+  for (const a of heldRows) {
+    if (ledgerAppointmentIds.has(a.id)) continue;
+    const amount = heldShare(a);
+    const base = { appointmentId: a.id, serviceName: a.serviceName, clientName: a.clientName, date: a.date, time: a.time, amount, readySince: null, paidAt: null };
+    if (a.payoutStatus === "disputed") {
+      summary.inReview += amount;
+      items.push({ ...base, stage: "in_review", waitingOn: null });
+    } else {
+      summary.held += amount;
+      const waitingOn = a.workConfirmedByArtist && !a.workConfirmedByClient ? "client"
+        : a.workConfirmedByClient && !a.workConfirmedByArtist ? "artist" : "both";
+      items.push({ ...base, stage: "held", waitingOn });
+    }
+  }
+
+  items.sort((x, y) => (y.date + y.time).localeCompare(x.date + x.time));
+  const round = (n: number) => Math.round(n * 100) / 100;
+  res.json({
+    summary: { held: round(summary.held), inReview: round(summary.inReview), ready: round(summary.ready), paidThisMonth: round(summary.paidThisMonth), paidTotal: round(summary.paidTotal) },
+    items: items.slice(0, 100),
   });
 });
 

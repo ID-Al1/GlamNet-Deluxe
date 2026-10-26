@@ -27,6 +27,7 @@ const CastingCalls = lazy(() => import("@/pages/casting/index"));
 const Profile = lazy(() => import("@/pages/profile/index"));
 const ProfileSetup = lazy(() => import("@/pages/profile/setup"));
 const LeaveReview = lazy(() => import("@/pages/reviews/[appointmentId]"));
+const Payouts = lazy(() => import("@/pages/payouts/index"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const ComplaintsList = lazy(() => import("@/pages/complaints/index"));
 const NewComplaint = lazy(() => import("@/pages/complaints/new"));
@@ -109,6 +110,7 @@ function Router() {
                 <Route path="/casting" component={CastingCalls} />
                 <Route path="/reviews/:appointmentId" component={LeaveReview} />
                 <Route path="/payments" component={PaymentHistory} />
+                <Route path="/payouts" component={Payouts} />
                 <Route path="/complaints" component={ComplaintsList} />
                 <Route path="/complaints/new" component={NewComplaint} />
                 <Route path="/complaints/:id" component={ComplaintDetail} />

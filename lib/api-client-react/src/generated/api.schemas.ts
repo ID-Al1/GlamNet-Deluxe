@@ -1065,6 +1065,66 @@ export interface VerificationChecklist {
   isFullyReady: boolean;
 }
 
+export type PayoutTrackerSummary = {
+  /** Paid by clients and held until the work is confirmed */
+  held: number;
+  /** Held while Bonisa reviews a complaint or a one-sided confirmation */
+  inReview: number;
+  /** Released and waiting for Bonisa to pay the artist */
+  ready: number;
+  paidThisMonth: number;
+  paidTotal: number;
+};
+
+export type PayoutTrackerItemStage = typeof PayoutTrackerItemStage[keyof typeof PayoutTrackerItemStage];
+
+
+export const PayoutTrackerItemStage = {
+  held: 'held',
+  in_review: 'in_review',
+  ready: 'ready',
+  paid: 'paid',
+  refunded: 'refunded',
+} as const;
+
+/**
+ * Who still has to confirm the work, while the money is held
+ * @nullable
+ */
+export type PayoutTrackerItemWaitingOn = typeof PayoutTrackerItemWaitingOn[keyof typeof PayoutTrackerItemWaitingOn] | null;
+
+
+export const PayoutTrackerItemWaitingOn = {
+  client: 'client',
+  artist: 'artist',
+  both: 'both',
+} as const;
+
+export interface PayoutTrackerItem {
+  appointmentId: string;
+  serviceName: string;
+  clientName: string;
+  date: string;
+  time: string;
+  /** The artist's share in rand */
+  amount: number;
+  stage: PayoutTrackerItemStage;
+  /**
+     * Who still has to confirm the work, while the money is held
+     * @nullable
+     */
+  waitingOn: PayoutTrackerItemWaitingOn;
+  /** @nullable */
+  readySince: string | null;
+  /** @nullable */
+  paidAt: string | null;
+}
+
+export interface PayoutTracker {
+  summary: PayoutTrackerSummary;
+  items: PayoutTrackerItem[];
+}
+
 /**
  * Validation error
  */

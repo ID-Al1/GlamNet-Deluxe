@@ -542,6 +542,33 @@ export const GetVerificationChecklistResponse = zod.object({
 
 
 /**
+ * Shows the artist where her money is for every booking: held in escrow, in review, ready to be paid by Bonisa, paid, or refunded. Amounts are always the artist's share, never the booking total.
+ * @summary Get my payout tracker
+ */
+export const GetMyPayoutsResponse = zod.object({
+  "summary": zod.object({
+  "held": zod.number().describe('Paid by clients and held until the work is confirmed'),
+  "inReview": zod.number().describe('Held while Bonisa reviews a complaint or a one-sided confirmation'),
+  "ready": zod.number().describe('Released and waiting for Bonisa to pay the artist'),
+  "paidThisMonth": zod.number(),
+  "paidTotal": zod.number()
+}),
+  "items": zod.array(zod.object({
+  "appointmentId": zod.string(),
+  "serviceName": zod.string(),
+  "clientName": zod.string(),
+  "date": zod.string(),
+  "time": zod.string(),
+  "amount": zod.number().describe('The artist\'s share in rand'),
+  "stage": zod.enum(['held', 'in_review', 'ready', 'paid', 'refunded']),
+  "waitingOn": zod.union([zod.literal('client'),zod.literal('artist'),zod.literal('both'),zod.literal(null)]).nullable().describe('Who still has to confirm the work, while the money is held'),
+  "readySince": zod.coerce.date().nullable(),
+  "paidAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
  * @summary List appointments for current user
  */
 export const ListAppointmentsQueryParams = zod.object({

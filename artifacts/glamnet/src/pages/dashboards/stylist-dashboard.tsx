@@ -522,16 +522,17 @@ export default function StylistDashboard() {
           <>
             <Card className="bg-card border-border/50 hover:border-border transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Available Earnings</CardTitle>
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ready to be paid</CardTitle>
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'hsl(var(--orange) / 0.12)' }}>
                   <DollarSign className="h-4 w-4" style={{ color: 'hsl(var(--orange))' }} />
                 </div>
               </CardHeader>
               <CardContent className="pb-5">
-                <div className="text-3xl font-serif font-bold">R{((dashboard as any)!.availableEarnings ?? 0).toLocaleString()}</div>
+                <div className="text-3xl font-serif font-bold">R{((dashboard as any)!.readyEarnings ?? 0).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Net of 18% fee · <span className="text-amber-600">R{((dashboard as any)!.pendingEarnings ?? 0).toLocaleString()} in escrow</span>
                 </p>
+                <Link href="/payouts" className="text-xs text-primary hover:underline mt-1 inline-block">See where your money is</Link>
               </CardContent>
             </Card>
             <Card className="bg-card border-border/50 hover:border-border transition-colors">

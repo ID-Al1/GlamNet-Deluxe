@@ -77,6 +77,7 @@ import type {
   OwnerPayoutGroup,
   OwnerRegistryEntry,
   OwnerRegistryProfile,
+  PayoutTracker,
   PortfolioItem,
   PortfolioItemInput,
   RevealArtistBankAccount200,
@@ -1633,6 +1634,84 @@ export function useGetVerificationChecklist<TData = Awaited<ReturnType<typeof ge
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetVerificationChecklistQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyPayoutsUrl = () => {
+
+
+
+
+  return `/api/stylists/me/payouts`
+}
+
+/**
+ * Shows the artist where her money is for every booking: held in escrow, in review, ready to be paid by Bonisa, paid, or refunded. Amounts are always the artist's share, never the booking total.
+ * @summary Get my payout tracker
+ */
+export const getMyPayouts = async ( options?: RequestInit): Promise<PayoutTracker> => {
+
+  return customFetch<PayoutTracker>(getGetMyPayoutsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyPayoutsQueryKey = () => {
+    return [
+    `/api/stylists/me/payouts`
+    ] as const;
+    }
+
+
+export const getGetMyPayoutsQueryOptions = <TData = Awaited<ReturnType<typeof getMyPayouts>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyPayouts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyPayoutsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyPayouts>>> = ({ signal }) => getMyPayouts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyPayouts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyPayoutsQueryResult = NonNullable<Awaited<ReturnType<typeof getMyPayouts>>>
+export type GetMyPayoutsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get my payout tracker
+ */
+
+export function useGetMyPayouts<TData = Awaited<ReturnType<typeof getMyPayouts>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyPayouts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyPayoutsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

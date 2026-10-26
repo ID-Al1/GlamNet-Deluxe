@@ -455,6 +455,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/VerificationChecklist"
 
+  /stylists/me/payouts:
+    get:
+      operationId: getMyPayouts
+      tags: [stylists]
+      summary: Get my payout tracker
+      description: >
+        Shows the artist where her money is for every booking: held in escrow,
+        in review, ready to be paid by Bonisa, paid, or refunded. Amounts are
+        always the artist's share, never the booking total.
+      responses:
+        "200":
+          description: Payout tracker
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutTracker"
+        "404":
+          description: No artist profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /appointments:
     get:
       operationId: listAppointments
@@ -2300,6 +2323,63 @@ components:
         isFullyReady:
           type: boolean
           description: True when all readiness criteria are met
+
+    PayoutTracker:
+      type: object
+      required: [summary, items]
+      properties:
+        summary:
+          type: object
+          required: [held, inReview, ready, paidThisMonth, paidTotal]
+          properties:
+            held:
+              type: number
+              description: Paid by clients and held until the work is confirmed
+            inReview:
+              type: number
+              description: Held while Bonisa reviews a complaint or a one-sided confirmation
+            ready:
+              type: number
+              description: Released and waiting for Bonisa to pay the artist
+            paidThisMonth:
+              type: number
+            paidTotal:
+              type: number
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayoutTrackerItem"
+
+    PayoutTrackerItem:
+      type: object
+      required: [appointmentId, serviceName, clientName, date, time, amount, stage, waitingOn, readySince, paidAt]
+      properties:
+        appointmentId:
+          type: string
+        serviceName:
+          type: string
+        clientName:
+          type: string
+        date:
+          type: string
+        time:
+          type: string
+        amount:
+          type: number
+          description: The artist's share in rand
+        stage:
+          type: string
+          enum: [held, in_review, ready, paid, refunded]
+        waitingOn:
+          type: ["string", "null"]
+          enum: [client, artist, both, null]
+          description: Who still has to confirm the work, while the money is held
+        readySince:
+          type: ["string", "null"]
+          format: date-time
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
 
     CastingApplication:
       type: object
