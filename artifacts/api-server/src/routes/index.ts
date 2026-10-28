@@ -14,6 +14,7 @@ import storageRouter from "./storage";
 import ownerRouter from "./owner";
 import complaintsRouter from "./complaints";
 import aftercareRouter from "./aftercare";
+import accountDeletionRouter from "./account-deletion";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(storageRouter);
 router.use(ownerRouter);
 router.use(complaintsRouter);
 router.use(aftercareRouter);
+router.use(accountDeletionRouter);
 
 export default router;

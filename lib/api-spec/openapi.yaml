@@ -635,6 +635,126 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /account/deletion-request:
+    get:
+      operationId: getMyDeletionRequest
+      tags: [account]
+      summary: My latest account deletion request, if any
+      responses:
+        "200":
+          description: The latest request or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionRequestEnvelope"
+    post:
+      operationId: requestAccountDeletion
+      tags: [account]
+      summary: Ask Bonisa to delete my account and personal information
+      description: The owner reviews every request. Nothing is deleted until it is approved.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDeletionRequestInput"
+      responses:
+        "201":
+          description: Request received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionRequestEnvelope"
+        "409":
+          description: A request is already waiting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: withdrawDeletionRequest
+      tags: [account]
+      summary: Withdraw my waiting request
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionRequestEnvelope"
+
+  /owner/deletion-requests:
+    get:
+      operationId: listOwnerDeletionRequests
+      tags: [owner]
+      summary: All account deletion requests, newest first
+      responses:
+        "200":
+          description: Requests, with what is in the way for the waiting ones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnerDeletionRequest"
+
+  /owner/deletion-requests/{requestId}/approve:
+    post:
+      operationId: approveDeletionRequest
+      tags: [owner]
+      summary: Delete the account's personal information
+      description: Refused with the reasons if the person has live bookings, money in flight, money owed or an open complaint.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Done
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApproveDeletionResult"
+        "409":
+          description: Not possible yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /owner/deletion-requests/{requestId}/reject:
+    post:
+      operationId: rejectDeletionRequest
+      tags: [owner]
+      summary: Decline the request with a reason the person will read
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectDeletionInput"
+      responses:
+        "200":
+          description: Declined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionRequestEnvelope"
+        "400":
+          description: A reason is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /aftercare/templates:
     get:
       operationId: listAftercareTemplates
@@ -2473,6 +2593,107 @@ components:
               type: string
             phone:
               type: string
+
+    DeletionRequest:
+      type: object
+      required: [id, status, userNote, ownerNote, requestedAt, handledAt]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, rejected, withdrawn]
+        userNote:
+          type: ["string", "null"]
+        ownerNote:
+          type: ["string", "null"]
+        requestedAt:
+          type: string
+          format: date-time
+        handledAt:
+          type: ["string", "null"]
+          format: date-time
+
+    DeletionRequestEnvelope:
+      type: object
+      required: [request]
+      properties:
+        request:
+          anyOf:
+            - $ref: "#/components/schemas/DeletionRequest"
+            - type: "null"
+
+    CreateDeletionRequestInput:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 500
+
+    DeletionBlockers:
+      type: object
+      required: [isOwnerAccount, openBookings, moneyHeld, moneyOwed, openComplaints]
+      properties:
+        isOwnerAccount:
+          type: boolean
+        openBookings:
+          type: integer
+        moneyHeld:
+          type: integer
+        moneyOwed:
+          type: integer
+        openComplaints:
+          type: integer
+
+    OwnerDeletionRequest:
+      type: object
+      required: [id, status, userNote, ownerNote, requestedAt, handledAt, userId, role, name, email, blockers]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, rejected, withdrawn]
+        userNote:
+          type: ["string", "null"]
+        ownerNote:
+          type: ["string", "null"]
+        requestedAt:
+          type: string
+          format: date-time
+        handledAt:
+          type: ["string", "null"]
+          format: date-time
+        userId:
+          type: string
+        role:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        blockers:
+          anyOf:
+            - $ref: "#/components/schemas/DeletionBlockers"
+            - type: "null"
+
+    RejectDeletionInput:
+      type: object
+      required: [note]
+      properties:
+        note:
+          type: string
+          maxLength: 500
+
+    ApproveDeletionResult:
+      type: object
+      required: [ok, idDocumentDeleted]
+      properties:
+        ok:
+          type: boolean
+        idDocumentDeleted:
+          type: boolean
+          description: False if the stored identity document file could not be deleted and needs removing by hand.
 
     AftercareBlock:
       type: object

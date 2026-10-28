@@ -5,6 +5,7 @@ import { OwnerProfile } from "./owner-profile";
 import { BrandProfile } from "./brand-profile";
 import { ClientProfile } from "./client-profile";
 import { ArtistProfile } from "./artist-profile";
+import { DeleteAccountCard } from "@/components/delete-account-card";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -33,6 +34,12 @@ export default function Profile() {
         <ArtistProfile />
       ) : (
         <ClientProfile />
+      )}
+
+      {!user.isOwner && (
+        <div className="mt-12 border-t border-border pt-8">
+          <DeleteAccountCard />
+        </div>
       )}
     </div>
   );

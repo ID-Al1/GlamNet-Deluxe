@@ -13,3 +13,4 @@ export * from "./payout-ledger";
 export * from "./complaints";
 export * from "./bank-accounts";
 export * from "./aftercare";
+export * from "./account-deletion";

@@ -903,6 +903,83 @@ export interface BookingSafetyInfo {
   trustedContact: BookingSafetyInfoTrustedContact;
 }
 
+export type DeletionRequestStatus = typeof DeletionRequestStatus[keyof typeof DeletionRequestStatus];
+
+
+export const DeletionRequestStatus = {
+  pending: 'pending',
+  completed: 'completed',
+  rejected: 'rejected',
+  withdrawn: 'withdrawn',
+} as const;
+
+export interface DeletionRequest {
+  id: string;
+  status: DeletionRequestStatus;
+  /** @nullable */
+  userNote: string | null;
+  /** @nullable */
+  ownerNote: string | null;
+  requestedAt: string;
+  /** @nullable */
+  handledAt: string | null;
+}
+
+export interface DeletionRequestEnvelope {
+  request: DeletionRequest | null;
+}
+
+export interface CreateDeletionRequestInput {
+  /** @maxLength 500 */
+  note?: string;
+}
+
+export interface DeletionBlockers {
+  isOwnerAccount: boolean;
+  openBookings: number;
+  moneyHeld: number;
+  moneyOwed: number;
+  openComplaints: number;
+}
+
+export type OwnerDeletionRequestStatus = typeof OwnerDeletionRequestStatus[keyof typeof OwnerDeletionRequestStatus];
+
+
+export const OwnerDeletionRequestStatus = {
+  pending: 'pending',
+  completed: 'completed',
+  rejected: 'rejected',
+  withdrawn: 'withdrawn',
+} as const;
+
+export interface OwnerDeletionRequest {
+  id: string;
+  status: OwnerDeletionRequestStatus;
+  /** @nullable */
+  userNote: string | null;
+  /** @nullable */
+  ownerNote: string | null;
+  requestedAt: string;
+  /** @nullable */
+  handledAt: string | null;
+  userId: string;
+  role: string;
+  name: string;
+  email: string;
+  blockers: DeletionBlockers | null;
+}
+
+export interface RejectDeletionInput {
+  /** @maxLength 500 */
+  note: string;
+}
+
+export interface ApproveDeletionResult {
+  ok: boolean;
+  /** False if the stored identity document file could not be deleted and needs removing by hand. */
+  idDocumentDeleted: boolean;
+}
+
 export type AftercareBlockType = typeof AftercareBlockType[keyof typeof AftercareBlockType];
 
 

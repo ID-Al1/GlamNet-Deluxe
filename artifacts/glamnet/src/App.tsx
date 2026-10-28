@@ -31,6 +31,7 @@ const Payouts = lazy(() => import("@/pages/payouts/index"));
 const AftercareManager = lazy(() => import("@/pages/aftercare/index"));
 const AftercareEditor = lazy(() => import("@/pages/aftercare/editor"));
 const PublicAftercare = lazy(() => import("@/pages/aftercare/public"));
+const OwnerDeletions = lazy(() => import("@/pages/owner/deletions"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const ComplaintsList = lazy(() => import("@/pages/complaints/index"));
 const NewComplaint = lazy(() => import("@/pages/complaints/new"));
@@ -127,6 +128,15 @@ function Router() {
                     <OwnerLayout>
                       <Suspense fallback={<PageLoader />}>
                         <OwnerPortal />
+                      </Suspense>
+                    </OwnerLayout>
+                  </RequireOwner>
+                </Route>
+                <Route path="/owner/deletions">
+                  <RequireOwner>
+                    <OwnerLayout>
+                      <Suspense fallback={<PageLoader />}>
+                        <OwnerDeletions />
                       </Suspense>
                     </OwnerLayout>
                   </RequireOwner>

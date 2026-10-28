@@ -663,6 +663,126 @@ export const VerifyCompletionCodeResponse = zod.object({
 
 
 /**
+ * @summary My latest account deletion request, if any
+ */
+export const GetMyDeletionRequestResponse = zod.object({
+  "request": zod.union([zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'rejected', 'withdrawn']),
+  "userNote": zod.string().nullable(),
+  "ownerNote": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "handledAt": zod.coerce.date().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * The owner reviews every request. Nothing is deleted until it is approved.
+ * @summary Ask Bonisa to delete my account and personal information
+ */
+export const requestAccountDeletionBodyNoteMax = 500;
+
+
+
+export const RequestAccountDeletionBody = zod.object({
+  "note": zod.string().max(requestAccountDeletionBodyNoteMax).optional()
+})
+
+export const RequestAccountDeletionResponse = zod.object({
+  "request": zod.union([zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'rejected', 'withdrawn']),
+  "userNote": zod.string().nullable(),
+  "ownerNote": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "handledAt": zod.coerce.date().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Withdraw my waiting request
+ */
+export const WithdrawDeletionRequestResponse = zod.object({
+  "request": zod.union([zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'rejected', 'withdrawn']),
+  "userNote": zod.string().nullable(),
+  "ownerNote": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "handledAt": zod.coerce.date().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary All account deletion requests, newest first
+ */
+export const ListOwnerDeletionRequestsResponseItem = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'rejected', 'withdrawn']),
+  "userNote": zod.string().nullable(),
+  "ownerNote": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "handledAt": zod.coerce.date().nullable(),
+  "userId": zod.string(),
+  "role": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "blockers": zod.union([zod.object({
+  "isOwnerAccount": zod.boolean(),
+  "openBookings": zod.number(),
+  "moneyHeld": zod.number(),
+  "moneyOwed": zod.number(),
+  "openComplaints": zod.number()
+}),zod.null()])
+})
+export const ListOwnerDeletionRequestsResponse = zod.array(ListOwnerDeletionRequestsResponseItem)
+
+
+/**
+ * Refused with the reasons if the person has live bookings, money in flight, money owed or an open complaint.
+ * @summary Delete the account's personal information
+ */
+export const ApproveDeletionRequestParams = zod.object({
+  "requestId": zod.coerce.string()
+})
+
+export const ApproveDeletionRequestResponse = zod.object({
+  "ok": zod.boolean(),
+  "idDocumentDeleted": zod.boolean().describe('False if the stored identity document file could not be deleted and needs removing by hand.')
+})
+
+
+/**
+ * @summary Decline the request with a reason the person will read
+ */
+export const RejectDeletionRequestParams = zod.object({
+  "requestId": zod.coerce.string()
+})
+
+export const rejectDeletionRequestBodyNoteMax = 500;
+
+
+
+export const RejectDeletionRequestBody = zod.object({
+  "note": zod.string().max(rejectDeletionRequestBodyNoteMax)
+})
+
+export const RejectDeletionRequestResponse = zod.object({
+  "request": zod.union([zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'rejected', 'withdrawn']),
+  "userNote": zod.string().nullable(),
+  "ownerNote": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "handledAt": zod.coerce.date().nullable()
+}),zod.null()])
+})
+
+
+/**
  * @summary Starting points an artist can edit
  */
 export const ListAftercareTemplatesResponseItem = zod.object({

@@ -106,6 +106,17 @@ export class ObjectStorageService {
     return new Response(webStream, { headers });
   }
 
+  /** Deletes a stored file. A file that is already gone is not an error. */
+  async deleteObjectEntity(objectPath: string): Promise<void> {
+    try {
+      const file = await this.getObjectEntityFile(objectPath);
+      await file.delete({ ignoreNotFound: true });
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) return;
+      throw error;
+    }
+  }
+
   async getObjectEntityUploadURL(): Promise<string> {
     const privateObjectDir = this.getPrivateObjectDir();
     if (!privateObjectDir) {

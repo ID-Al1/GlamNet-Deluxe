@@ -21,6 +21,8 @@ export const usersTable = pgTable("users", {
   // Null for accounts created before consent capture existed.
   privacyConsentAt: timestamp("privacy_consent_at"),
   privacyPolicyVersion: text("privacy_policy_version"),
+  // Set when the account was anonymised after an approved deletion request.
+  anonymisedAt: timestamp("anonymised_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({ accountStatusCheck: check("users_account_status_check", sql`${t.accountStatus} in ('active', 'suspended')`) }));
 

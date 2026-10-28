@@ -47,6 +47,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Your rights",
     body: [
       "You can ask to see the personal information we hold about you, ask us to correct it, ask us to delete it, or object to how we use it.",
+      "To ask us to delete your account and personal information, use Request deletion at the bottom of your Profile page. We review every request and reply within 30 days. We cannot delete an account while there is a booking coming up, a payment being settled or a complaint open. We keep booking and payment records we are required to keep, without your name on them.",
       "If you are unhappy with how we handle your information, you can complain to the Information Regulator of South Africa at inforegulator.org.za.",
     ],
   },
