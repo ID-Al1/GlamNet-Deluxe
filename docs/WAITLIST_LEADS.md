@@ -39,3 +39,20 @@ she can go straight into Artist Contacts).
 
 ## To follow up
 - One makeup artist Alwande contacted a while ago and never followed up with. Name still to add.
+
+
+---
+## Update, 28 October 2026 (Alwande's decisions)
+
+| Person | Status now |
+|---|---|
+| Anna (nails) | Email in hand. Next: send the Get Ready checklist. |
+| Merveille (bridal and events makeup) | Spoken to by phone. Ready for the checklist. **ID exception agreed:** her ID is still being sorted, so she is verified without it for now. Closer to launch she will be asked to add it. Alwande has spoken to her and she is a real person. |
+| Lesedi (makeup) | Email in hand. Next: send the Get Ready checklist. |
+| Lebogang M (makeup) | Spoken to. Call back at 2 pm to finish adding her services to her profile. |
+| Kylie (hair) | Not interested. No replies to any message. Closed. |
+| Hope (hair) | Still a warm contact. |
+| Hope's 5 TikTok referrals | Dropped. Not pursuing. |
+| 13 old GlamNet waitlist emails | Left out. Some are already on the platform, most do not say what they do, and some do not answer emails. |
+
+The live app is being built by Hayden from the specs, so this repository is the reference and the specs, not what goes live.

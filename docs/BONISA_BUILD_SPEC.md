@@ -109,6 +109,12 @@ Rejection requires a written reason, which she receives word for word.
 
 ---
 
+### Owner ID exception (for Hayden's build)
+
+An artist cannot normally be verified until her ID number and ID photo are on file. The owner can make a one-off exception for someone he has spoken to himself: verification goes through with a written reason and a date the ID is due, both kept in the audit log. The profile shows "ID pending" to the owner only, never to the public or clients. A reminder goes out near the due date. Without this, one missing document blocks a real artist who has already been vetted in person.
+
+---
+
 ### Keep warm and the Founding Artist badge
 
 **Why:** while the live payment side is finished, the first artists must not drift away. Artists leave a long wait when nothing happens and nobody says when.
