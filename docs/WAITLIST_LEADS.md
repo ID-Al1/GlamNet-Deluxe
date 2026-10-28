@@ -56,3 +56,11 @@ she can go straight into Artist Contacts).
 | 13 old GlamNet waitlist emails | Left out. Some are already on the platform, most do not say what they do, and some do not answer emails. |
 
 The live app is being built by Hayden from the specs, so this repository is the reference and the specs, not what goes live.
+
+### Calls and promises on 28 October
+- Lebogang M: call back at 2 pm to finish adding her services to her profile.
+- Anna: call at about 4 pm to finalise her profile (finalise only, not verify).
+- Get Ready PDFs (note plus checklist, one file each) made for Anna, Merveille and Lesedi. Alwande shares them himself. No emails are being sent to them.
+
+### Working rule from Alwande
+Anything he asks for should be made as a Bonisa-styled PDF he can forward, with the message and the content together in one file, not text pasted into chat.
