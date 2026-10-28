@@ -26,3 +26,5 @@ Day 21 opening date; referral rule when revisited; deposit and late-cancellation
 
 ## Instagram
 They have one, parked for now. When ready: ask for the handle and what it should do (spotlights, invites).
+
+- Send pack: docs/Founding_50_Send_Pack/ holds every group PDF in send order (start with 00_START_HERE_Send_Calendar.pdf). Day 14 spotlight card needs an artist yes first. Day 21 PDF has no month; add one once Hayden gives it.
