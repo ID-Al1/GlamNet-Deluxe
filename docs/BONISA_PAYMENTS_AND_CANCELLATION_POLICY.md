@@ -1,65 +1,56 @@
-# Bonisa payments, cancellation and no-show policy (v2)
+# Bonisa payments, cancellation and no-show policy (v3)
 
-Decided and confirmed by Alwande on 2026-10-26, including the assumptions marked below and the recommendations (R2,000 Monday line, weekday payout days, balance paid through Bonisa). The numbers live in one file,
-`artifacts/api-server/src/lib/bookingPolicy.ts`, and are tested. Not legal advice:
-have it read before it is shown to customers.
+v3 written 2026-10-28 after Alwande asked for a simple rule and delegated the details.
+The numbers live in `artifacts/api-server/src/lib/bookingPolicy.ts` and are tested.
+Not legal advice: have it read before it is shown to customers.
 
-Items marked **ASSUMPTION** were not stated and need a yes or a change.
+## The promise
+An artist is never at risk of not being paid. A client never loses money for no reason.
 
-## Timeline for an artist
+Three rules make that true:
+1. **Only Peach says whether money arrived.** No screenshots, no "proof of payment", no manual marking as paid. Both sides see the same status.
+2. **An artist never works on money that is not secured.** A booking only shows "Deposit secured" after Peach confirms it.
+3. **Money moves only by the rules.** Completion code, then a 24 hour complaint window, then payout. Every rand shows its stage and a pay-by date.
 
-1. Client books and pays a **50% deposit** into escrow.
-2. After the service, the artist taps "Request code". The client gives her the code. She types it in. The service is complete. (Not built yet.)
-3. The **24 hour complaint window** opens. Money stays held.
-4. No complaint: the money is **ready**.
-5. Ready money is paid within **24 hours** after that (existing rule: `PAYOUT_WINDOW_HOURS`).
+## Timeline
+| When | What happens |
+|---|---|
+| Booking | Client pays the 50% deposit through Peach (card or instant EFT). The slot is held 15 minutes while it confirms. The artist is told about the booking only after it is secured. |
+| 48 hours before | Last moment to cancel for a full refund. |
+| 24 hours before | The balance (other 50%) must be paid through Bonisa. Reminders go out before this. Not paid: the booking cancels and the artist keeps the deposit. |
+| Appointment | Artist asks for the completion code. Client gives it. |
+| +24 hours | Complaint window closes. No open complaint: the money is ready. |
+| +48 hours | Artist is paid. The pay-by date is shown on her tracker. |
 
-So an artist is normally paid **within about 48 hours** of the service, on business days.
-
-## Cancellation, lateness and no-shows
-Example: a R1,000 service. Deposit is R500.
-
+## Cancellation, lateness, no-shows (R1,000 service, R500 deposit)
 | What happens | Client gets back | Artist keeps (before Bonisa's 18%) |
 |---|---|---|
 | Client cancels **48 hours or more** before | R500 (all of it) | R0 |
-| Client cancels **24 to 48 hours** before (**ASSUMPTION**) | R250 | R250 |
-| Client cancels **less than 24 hours** before | R0 | R500 (the deposit) |
-| Client is up to **15 minutes late** | Nothing returned | Booking goes ahead, no fee |
-| Client is **16 to 30 minutes late** | Nothing returned | Booking goes ahead. **Late fee of 20% of the deposit** (R100, **ASSUMPTION** that it is 20% of the deposit) |
-| Client is **more than 30 minutes late** | R0 | R500, counts as a no-show |
-| Client does **not show up** | R0 | R500 |
-| **Artist** does not show up | **Full refund** | R0, no pay |
-| **Artist** cancels | **Full refund** | R0 |
+| Client cancels **less than 48 hours** before | R0 | R500 (the deposit) |
+| Client is up to **30 minutes late** | Nothing | Booking goes ahead. After 15 minutes of grace, the artist may shorten the service by the time lost. No late fee. |
+| Client is **more than 30 minutes late**, or does not show | R0 | R500 |
+| **Artist** cancels or does not show | **Full refund** | R0, and Bonisa is told |
 
-If the client has also paid the other half through Bonisa, the artist keeps only the deposit
-in the "late more than 30 minutes", "no-show" and "under 24 hours" rows, and the rest goes back to the client.
+If the balance is also paid, the artist keeps only the deposit in the "less than 48 hours", "more than 30 minutes late" and "no-show" rows. The balance goes back to the client.
 
-Real emergencies: the owner can still refund through the complaints centre.
+### Two changes from v2 (decided by Claude on Alwande's instruction, 2026-10-28)
+1. **Two cancellation tiers, not three.** The 24 to 48 hour middle tier is gone. Simpler to explain.
+2. **No late fee.** Bonisa cannot reliably collect extra money after a service, and an EFT payment cannot be charged again. Lateness is handled by shortening the service, and more than 30 minutes late counts as a no-show.
+To bring the fee back, say so. It would only work for clients who pay by card with a saved card.
 
-## Payouts
-- Everything ready is paid in **one payout per artist**, not one transfer per booking.
-- **Normal bookings:** paid on the next payout day after the 24 hour window closes.
-- **Large bookings:** a single booking where the artist's share is **R2,000 or more** is paid on **Monday**, in one batch. (Recommended by me. It is one setting, easy to change.)
-- **DECIDE:** payout days for normal bookings. I recommend every weekday.
+## The balance (other 50%)
+Paid through Bonisa, not to the artist. Bonisa earns its 18% on the full price, the artist is protected, and there is no reason to move off the app. The client can also pay everything at booking. The "pay at appointment" option should be removed.
 
-## The other 50% (the balance): please decide
-The deposit is paid at booking. There are two ways to collect the other half:
-
-| | A. Through Bonisa (recommended) | B. Directly to the artist at the appointment |
-|---|---|---|
-| Bonisa earns on a R1,000 booking | R180 | R90 (18% of the R500 deposit only) |
-| Artist is protected if the client does not pay | Yes | No |
-| Risk of clients and artists moving off Bonisa | Lower | Higher |
-
-Recommended: **A.** The client pays the balance through Bonisa before the appointment, for example
-by 24 hours before. Your current booking screen already has a "pay at appointment" option, which is
-the B way. That option would need to change or be limited.
+## When a payment looks late or missing
+| Someone says | What happens |
+|---|---|
+| Client: "I paid but it still says pending" | Status comes only from Peach. Instant EFT confirms in seconds. If Peach confirms later and the slot is gone, the client is refunded in full automatically. Nobody marks it paid by hand. |
+| Artist: "The client's payment is not showing" | Her screen shows the same Peach status. She does not start the service until it says "Deposit secured". A "Payment not showing?" button opens a case and the owner checks the Peach reference the same business day. |
+| Artist: "My payout has not arrived" | Her tracker shows the pay-by date and, once paid, the payout reference. Past the pay-by date it says so, opens a case, and the owner sees it on an Overdue payouts list. Bank EFTs can take one business day to show. |
+| Client: "The artist did not show" | Full refund by the rules above. Bonisa records it against the artist. |
+Bonisa does not promise money penalties for a late payout yet. That decision waits until payouts are automatic.
 
 ## What is built and what is not
-- Built: the rules in `bookingPolicy.ts` with tests, the payout tracker for artists, escrow, the 82/18 split, owner payout batches, **the completion code and the 24 hour complaint window** (money is released automatically when the window closes with no open complaint).
-- Completion code details: 6 digits, valid 24 hours (confirmed by Alwande), 4 wrong tries per code (confirmed). An artist can ask for up to 3 codes for the same booking, so she can get a fresh one if a code expires or locks.
-- If the client never gives the code: 30 minutes after asking, the artist taps "did not give me the code". That opens a case for the owner (category "no_completion_code"), and the client is told in chat. The owner can then **complete the booking for the artist** (the client still gets the 24 hour complaint window) or refund the client. The 30 minute wait is my assumption, confirm.
-- A complaint on a booking keeps the money held until the owner closes the case.
-- Not built: applying these rules when a client cancels, late fees, the Monday rule in payouts, collecting the balance.
-- Today when a client cancels, the status changes and nothing else happens: no refund, no fee. The client's money stays held. This is wired up after Peach is set up, because refunds are done through the payment provider.
-- Payments are moving to Peach Payments. These rules do not depend on how Peach works.
+- Built: the rules above as tested code, the payout tracker with pay-by dates, escrow, the 82/18 split, the completion code, the complaint window, the missing-code report, safety tools.
+- Not built, and needs Peach: taking payments and webhooks, refunds by these rules, the balance payment with auto-cancel, automatic payouts, overdue payout alerts, the "payment not showing" buttons. These are written in build order in the plan page.
+- Not built, does not need Peach: removing "pay at appointment".

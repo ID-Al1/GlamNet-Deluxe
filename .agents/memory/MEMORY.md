@@ -21,3 +21,4 @@
 - [Who decides](bonisa-who-decides.md) — Alwande has the final call on money and rules; he confirmed the Peach switch, subscription hold and payments policy on 2026-10-26.
 - [Completion code and release](bonisa-completion-code.md) — code from client to artist starts a 24 hour complaint window, then a job releases money; confirm-work cannot release; open complaints block release.
 - [Artist safety tools](bonisa-safety.md) — trusted contact plus WhatsApp and call buttons; client details only for paid bookings near the appointment; no tracking, no ID check, no auto alerts yet.
+- [Payment guarantee rules](bonisa-payment-guarantee.md) — three rules, two cancellation tiers, no late fee, balance through Bonisa by 24h before; v3 2026-10-28.

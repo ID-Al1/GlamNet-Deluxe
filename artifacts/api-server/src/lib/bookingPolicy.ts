@@ -15,29 +15,30 @@ export const DEPOSIT_PERCENT = 50;
 /** Hours after the service within which a client can raise a complaint. */
 export const COMPLAINT_WINDOW_HOURS = 24;
 
-/** Cancelling at least this many hours before: full refund. */
+/**
+ * Cancelling at least this many hours before: full refund. Cancelling later than
+ * this: the artist keeps the deposit. Two tiers on purpose, so it is easy to
+ * explain. (Alwande asked for a simple rule on 2026-10-28.)
+ */
 export const FULL_REFUND_NOTICE_HOURS = 48;
 
-/** Cancelling less than this many hours before: the deposit is kept. */
-export const NO_REFUND_NOTICE_HOURS = 24;
-
 /**
- * Between the two notice limits the client gets part of the deposit back.
- * ASSUMPTION: Alwande did not state this tier. Confirm or change.
+ * The balance (the other half of the price) is paid through Bonisa by this many
+ * hours before the appointment. If it is not paid by then the booking cancels and
+ * the artist keeps the deposit.
  */
-export const MIDDLE_TIER_DEPOSIT_KEPT_PERCENT = 50;
+export const BALANCE_DUE_HOURS_BEFORE = 24;
 
 /** Minutes late that are free of charge. */
 export const LATE_GRACE_MINUTES = 15;
 
-/** More minutes late than this counts as a no-show. */
-export const LATE_NO_SHOW_MINUTES = 30;
-
 /**
- * Late fee, as a percentage of the deposit.
- * ASSUMPTION: Alwande said "20%"; I read it as 20% of the deposit. Confirm.
+ * More minutes late than this counts as a no-show. Between the grace period and
+ * this, the booking goes ahead and the artist may shorten the service by the time
+ * lost. There is no late fee: Bonisa cannot reliably collect money after the
+ * service, and EFT payments cannot be charged again.
  */
-export const LATE_FEE_PERCENT_OF_DEPOSIT = 20;
+export const LATE_NO_SHOW_MINUTES = 30;
 
 /**
  * A single booking whose artist share is at or above this (in Rand) is paid out
@@ -96,8 +97,6 @@ export interface PolicyOutcome {
   clientRefund: number;
   /** Money from what was already paid that the artist keeps, in Rand. */
   artistKeeps: number;
-  /** Extra the client owes for being late, in Rand. Not part of money already paid. */
-  lateFee: number;
   /** A sentence both sides can read. */
   reason: string;
 }
@@ -120,7 +119,7 @@ export function applyBookingPolicy(input: { price: number; amountPaid?: number; 
   if (paidC < depositC) throw new RangeError("amountPaid cannot be less than the deposit");
 
   const keep = (keptC: number, reason: string): PolicyOutcome => ({
-    proceeds: false, clientRefund: rand(paidC - keptC), artistKeeps: rand(keptC), lateFee: 0, reason,
+    proceeds: false, clientRefund: rand(paidC - keptC), artistKeeps: rand(keptC), reason,
   });
 
   switch (event.type) {
@@ -135,20 +134,15 @@ export function applyBookingPolicy(input: { price: number; amountPaid?: number; 
         return keep(depositC, `The client was more than ${LATE_NO_SHOW_MINUTES} minutes late, which counts as a no-show. The artist keeps the deposit.`);
       }
       if (event.minutesLate > LATE_GRACE_MINUTES) {
-        const feeC = Math.round(depositC * LATE_FEE_PERCENT_OF_DEPOSIT / 100);
-        return { proceeds: true, clientRefund: 0, artistKeeps: 0, lateFee: rand(feeC), reason: `The client was more than ${LATE_GRACE_MINUTES} minutes late, so a late fee applies.` };
+        return { proceeds: true, clientRefund: 0, artistKeeps: 0, reason: `The client was more than ${LATE_GRACE_MINUTES} minutes late. The booking goes ahead and the artist may shorten the service by the time lost.` };
       }
-      return { proceeds: true, clientRefund: 0, artistKeeps: 0, lateFee: 0, reason: "Within the grace period, so no fee applies." };
+      return { proceeds: true, clientRefund: 0, artistKeeps: 0, reason: "Within the grace period, so nothing changes." };
     }
     case "client_cancel": {
       if (event.hoursBefore >= FULL_REFUND_NOTICE_HOURS) {
         return keep(0, `Cancelled ${FULL_REFUND_NOTICE_HOURS} hours or more before, so the client is refunded in full.`);
       }
-      if (event.hoursBefore >= NO_REFUND_NOTICE_HOURS) {
-        const keptC = Math.round(depositC * MIDDLE_TIER_DEPOSIT_KEPT_PERCENT / 100);
-        return keep(keptC, `Cancelled less than ${FULL_REFUND_NOTICE_HOURS} hours before, so the artist keeps part of the deposit.`);
-      }
-      return keep(depositC, `Cancelled less than ${NO_REFUND_NOTICE_HOURS} hours before, so the deposit is not refunded.`);
+      return keep(depositC, `Cancelled less than ${FULL_REFUND_NOTICE_HOURS} hours before, so the artist keeps the deposit.`);
     }
   }
 }
