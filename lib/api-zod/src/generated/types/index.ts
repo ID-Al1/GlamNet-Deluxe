@@ -7,6 +7,16 @@
  */
 
 export * from './activityItem';
+export * from './aftercareBlock';
+export * from './aftercareBlockType';
+export * from './aftercareList';
+export * from './aftercareOk';
+export * from './aftercarePage';
+export * from './aftercarePageCategory';
+export * from './aftercarePageInput';
+export * from './aftercarePageInputCategory';
+export * from './aftercareTemplate';
+export * from './aftercareTemplateCategory';
 export * from './apiError';
 export * from './appointment';
 export * from './appointmentInput';
@@ -123,6 +133,9 @@ export * from './portfolioItem';
 export * from './portfolioItemInput';
 export * from './profileReadiness';
 export * from './profileReadinessCriterion';
+export * from './publicAftercare';
+export * from './publicAftercareArtist';
+export * from './publishAftercareInput';
 export * from './revealArtistBankAccount200';
 export * from './safetyContact';
 export * from './safetyContactInput';

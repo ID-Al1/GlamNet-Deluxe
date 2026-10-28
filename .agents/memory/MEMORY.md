@@ -22,3 +22,4 @@
 - [Completion code and release](bonisa-completion-code.md) — code from client to artist starts a 24 hour complaint window, then a job releases money; confirm-work cannot release; open complaints block release.
 - [Artist safety tools](bonisa-safety.md) — trusted contact plus WhatsApp and call buttons; client details only for paid bookings near the appointment; no tracking, no ID check, no auto alerts yet.
 - [Payment guarantee rules](bonisa-payment-guarantee.md) — three rules, two cancellation tiers, no late fee, balance through Bonisa by 24h before; v3 2026-10-28.
+- [Bonisa Aftercare](bonisa-aftercare.md) — verified artists share plain-text aftercare pages by link; unguessable token, ownership and verified checks on the server, no images yet.

@@ -663,6 +663,278 @@ export const VerifyCompletionCodeResponse = zod.object({
 
 
 /**
+ * @summary Starting points an artist can edit
+ */
+export const ListAftercareTemplatesResponseItem = zod.object({
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "title": zod.string(),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+}))
+})
+export const ListAftercareTemplatesResponse = zod.array(ListAftercareTemplatesResponseItem)
+
+
+/**
+ * @summary List my aftercare pages
+ */
+export const ListMyAftercareResponse = zod.object({
+  "verified": zod.boolean(),
+  "pages": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create an aftercare page as a draft
+ */
+export const CreateAftercarePageBody = zod.object({
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullish().describe('Optional https link for booking again. Empty means the artist\'s Bonisa profile.'),
+  "reviewed": zod.boolean().optional().describe('Required when saving a page that is live.')
+})
+
+export const CreateAftercarePageResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get one of my aftercare pages
+ */
+export const GetAftercarePageParams = zod.object({
+  "pageId": zod.coerce.string()
+})
+
+export const GetAftercarePageResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * A page that is live needs reviewed set to true to confirm the artist has read her changes.
+ * @summary Save changes to one of my pages
+ */
+export const UpdateAftercarePageParams = zod.object({
+  "pageId": zod.coerce.string()
+})
+
+export const UpdateAftercarePageBody = zod.object({
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullish().describe('Optional https link for booking again. Empty means the artist\'s Bonisa profile.'),
+  "reviewed": zod.boolean().optional().describe('Required when saving a page that is live.')
+})
+
+export const UpdateAftercarePageResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete one of my pages
+ */
+export const DeleteAftercarePageParams = zod.object({
+  "pageId": zod.coerce.string()
+})
+
+export const DeleteAftercarePageResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Publish a page so its link opens for anyone
+ */
+export const PublishAftercarePageParams = zod.object({
+  "pageId": zod.coerce.string()
+})
+
+export const PublishAftercarePageBody = zod.object({
+  "reviewed": zod.boolean()
+})
+
+export const PublishAftercarePageResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Take a page down. The link stops opening at once.
+ */
+export const UnpublishAftercarePageParams = zod.object({
+  "pageId": zod.coerce.string()
+})
+
+export const UnpublishAftercarePageResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Copy a page into a new draft with its own link
+ */
+export const DuplicateAftercarePageParams = zod.object({
+  "pageId": zod.coerce.string()
+})
+
+export const DuplicateAftercarePageResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['hair', 'braids', 'nails', 'lashes', 'makeup', 'other']),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "publicToken": zod.string(),
+  "published": zod.boolean(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Returns only what the artist wrote and her public name. Unpublished, unverified and suspended artists all return 404.
+ * @summary The open page a client sees. No login.
+ */
+export const GetPublicAftercareParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetPublicAftercareResponse = zod.object({
+  "title": zod.string(),
+  "category": zod.string(),
+  "blocks": zod.array(zod.object({
+  "type": zod.enum(['heading', 'paragraph', 'list']),
+  "text": zod.string().optional().describe('For a heading or a paragraph. Plain text only.'),
+  "items": zod.array(zod.string()).optional().describe('For a list.')
+})),
+  "rebookingUrl": zod.string().nullable(),
+  "artist": zod.object({
+  "name": zod.string(),
+  "profileId": zod.string()
+}),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
  * Shows the artist where her money is for every booking: held in escrow, in review, ready to be paid by Bonisa, paid, or refunded. Amounts are always the artist's share, never the booking total.
  * @summary Get my payout tracker
  */

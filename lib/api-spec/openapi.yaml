@@ -635,6 +635,225 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /aftercare/templates:
+    get:
+      operationId: listAftercareTemplates
+      tags: [aftercare]
+      summary: Starting points an artist can edit
+      responses:
+        "200":
+          description: One template per service category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AftercareTemplate"
+
+  /aftercare:
+    get:
+      operationId: listMyAftercare
+      tags: [aftercare]
+      summary: List my aftercare pages
+      responses:
+        "200":
+          description: My pages, and whether I may create them (verified artists only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercareList"
+    post:
+      operationId: createAftercarePage
+      tags: [aftercare]
+      summary: Create an aftercare page as a draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AftercarePageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercarePage"
+        "400":
+          description: Invalid content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Not a verified artist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /aftercare/{pageId}:
+    parameters:
+      - name: pageId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getAftercarePage
+      tags: [aftercare]
+      summary: Get one of my aftercare pages
+      responses:
+        "200":
+          description: The page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercarePage"
+        "404":
+          description: Not found, or not mine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    put:
+      operationId: updateAftercarePage
+      tags: [aftercare]
+      summary: Save changes to one of my pages
+      description: A page that is live needs reviewed set to true to confirm the artist has read her changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AftercarePageInput"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercarePage"
+        "400":
+          description: Invalid content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteAftercarePage
+      tags: [aftercare]
+      summary: Delete one of my pages
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercareOk"
+
+  /aftercare/{pageId}/publish:
+    post:
+      operationId: publishAftercarePage
+      tags: [aftercare]
+      summary: Publish a page so its link opens for anyone
+      parameters:
+        - name: pageId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishAftercareInput"
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercarePage"
+        "400":
+          description: Not reviewed, or nothing to publish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /aftercare/{pageId}/unpublish:
+    post:
+      operationId: unpublishAftercarePage
+      tags: [aftercare]
+      summary: Take a page down. The link stops opening at once.
+      parameters:
+        - name: pageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unpublished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercarePage"
+
+  /aftercare/{pageId}/duplicate:
+    post:
+      operationId: duplicateAftercarePage
+      tags: [aftercare]
+      summary: Copy a page into a new draft with its own link
+      parameters:
+        - name: pageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: The copy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AftercarePage"
+
+  /public/aftercare/{token}:
+    get:
+      operationId: getPublicAftercare
+      tags: [aftercare]
+      summary: The open page a client sees. No login.
+      description: Returns only what the artist wrote and her public name. Unpublished, unverified and suspended artists all return 404.
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicAftercare"
+        "404":
+          description: Not available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /stylists/me/payouts:
     get:
       operationId: getMyPayouts
@@ -2254,6 +2473,146 @@ components:
               type: string
             phone:
               type: string
+
+    AftercareBlock:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [heading, paragraph, list]
+        text:
+          type: string
+          description: For a heading or a paragraph. Plain text only.
+        items:
+          type: array
+          description: For a list.
+          items:
+            type: string
+
+    AftercarePageInput:
+      type: object
+      required: [title, category, blocks]
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+          enum: [hair, braids, nails, lashes, makeup, other]
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AftercareBlock"
+        rebookingUrl:
+          type: ["string", "null"]
+          description: Optional https link for booking again. Empty means the artist's Bonisa profile.
+        reviewed:
+          type: boolean
+          description: Required when saving a page that is live.
+
+    AftercarePage:
+      type: object
+      required: [id, title, category, blocks, rebookingUrl, publicToken, published, reviewedAt, publishedAt, viewCount, lastViewedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+          enum: [hair, braids, nails, lashes, makeup, other]
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AftercareBlock"
+        rebookingUrl:
+          type: ["string", "null"]
+        publicToken:
+          type: string
+        published:
+          type: boolean
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        viewCount:
+          type: integer
+        lastViewedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AftercareList:
+      type: object
+      required: [verified, pages]
+      properties:
+        verified:
+          type: boolean
+        pages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AftercarePage"
+
+    AftercareTemplate:
+      type: object
+      required: [category, title, blocks]
+      properties:
+        category:
+          type: string
+          enum: [hair, braids, nails, lashes, makeup, other]
+        title:
+          type: string
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AftercareBlock"
+
+    PublishAftercareInput:
+      type: object
+      required: [reviewed]
+      properties:
+        reviewed:
+          type: boolean
+
+    AftercareOk:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+
+    PublicAftercare:
+      type: object
+      required: [title, category, blocks, rebookingUrl, artist, updatedAt]
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AftercareBlock"
+        rebookingUrl:
+          type: ["string", "null"]
+        artist:
+          type: object
+          required: [name, profileId]
+          properties:
+            name:
+              type: string
+            profileId:
+              type: string
+        updatedAt:
+          type: string
+          format: date-time
 
     MissingCodeReportResult:
       type: object

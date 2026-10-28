@@ -13,7 +13,7 @@ import { CompletionCodeEntry } from "@/components/completion-code-entry";
 import { SafetyDialog } from "@/components/safety-dialog";
 import { toast } from "sonner";
 import {
-  DollarSign, Calendar as CalendarIcon, Activity, Star,
+  ClipboardList, DollarSign, Calendar as CalendarIcon, Activity, Star,
   Home as HomeIcon, Gift, Copy, CheckCheck, Briefcase, Zap, Users, Check, X, MessageCircle, Bell,
   Scissors, Plus, Pencil, Trash2, Clock, ListChecks, CheckCircle2, CircleDashed,
   ShieldAlert, Banknote, Receipt, RefreshCw, Loader2, AlertCircle, RotateCcw, TrendingUp,
@@ -485,6 +485,11 @@ export default function StylistDashboard() {
           <Link href="/complaints">
             <Button variant="outline" className="gap-2 shrink-0 rounded-full px-5">
               <ShieldAlert className="h-4 w-4" strokeWidth={1.9} />Cases
+            </Button>
+          </Link>
+          <Link href="/aftercare">
+            <Button variant="outline" className="gap-2 shrink-0 rounded-full px-5" data-testid="link-aftercare">
+              <ClipboardList className="h-4 w-4" strokeWidth={1.9} />Aftercare
             </Button>
           </Link>
           <Link href="/casting">

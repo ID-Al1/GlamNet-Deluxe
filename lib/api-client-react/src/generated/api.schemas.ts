@@ -903,6 +903,126 @@ export interface BookingSafetyInfo {
   trustedContact: BookingSafetyInfoTrustedContact;
 }
 
+export type AftercareBlockType = typeof AftercareBlockType[keyof typeof AftercareBlockType];
+
+
+export const AftercareBlockType = {
+  heading: 'heading',
+  paragraph: 'paragraph',
+  list: 'list',
+} as const;
+
+export interface AftercareBlock {
+  type: AftercareBlockType;
+  /** For a heading or a paragraph. Plain text only. */
+  text?: string;
+  /** For a list. */
+  items?: string[];
+}
+
+export type AftercarePageInputCategory = typeof AftercarePageInputCategory[keyof typeof AftercarePageInputCategory];
+
+
+export const AftercarePageInputCategory = {
+  hair: 'hair',
+  braids: 'braids',
+  nails: 'nails',
+  lashes: 'lashes',
+  makeup: 'makeup',
+  other: 'other',
+} as const;
+
+export interface AftercarePageInput {
+  title: string;
+  category: AftercarePageInputCategory;
+  blocks: AftercareBlock[];
+  /**
+     * Optional https link for booking again. Empty means the artist's Bonisa profile.
+     * @nullable
+     */
+  rebookingUrl?: string | null;
+  /** Required when saving a page that is live. */
+  reviewed?: boolean;
+}
+
+export type AftercarePageCategory = typeof AftercarePageCategory[keyof typeof AftercarePageCategory];
+
+
+export const AftercarePageCategory = {
+  hair: 'hair',
+  braids: 'braids',
+  nails: 'nails',
+  lashes: 'lashes',
+  makeup: 'makeup',
+  other: 'other',
+} as const;
+
+export interface AftercarePage {
+  id: string;
+  title: string;
+  category: AftercarePageCategory;
+  blocks: AftercareBlock[];
+  /** @nullable */
+  rebookingUrl: string | null;
+  publicToken: string;
+  published: boolean;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  publishedAt: string | null;
+  viewCount: number;
+  /** @nullable */
+  lastViewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AftercareList {
+  verified: boolean;
+  pages: AftercarePage[];
+}
+
+export type AftercareTemplateCategory = typeof AftercareTemplateCategory[keyof typeof AftercareTemplateCategory];
+
+
+export const AftercareTemplateCategory = {
+  hair: 'hair',
+  braids: 'braids',
+  nails: 'nails',
+  lashes: 'lashes',
+  makeup: 'makeup',
+  other: 'other',
+} as const;
+
+export interface AftercareTemplate {
+  category: AftercareTemplateCategory;
+  title: string;
+  blocks: AftercareBlock[];
+}
+
+export interface PublishAftercareInput {
+  reviewed: boolean;
+}
+
+export interface AftercareOk {
+  ok: boolean;
+}
+
+export type PublicAftercareArtist = {
+  name: string;
+  profileId: string;
+};
+
+export interface PublicAftercare {
+  title: string;
+  category: string;
+  blocks: AftercareBlock[];
+  /** @nullable */
+  rebookingUrl: string | null;
+  artist: PublicAftercareArtist;
+  updatedAt: string;
+}
+
 export interface MissingCodeReportResult {
   caseNumber: string;
 }

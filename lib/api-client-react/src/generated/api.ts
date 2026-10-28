@@ -20,6 +20,11 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AftercareList,
+  AftercareOk,
+  AftercarePage,
+  AftercarePageInput,
+  AftercareTemplate,
   ApiError,
   Appointment,
   AppointmentInput,
@@ -84,6 +89,8 @@ import type {
   PayoutTracker,
   PortfolioItem,
   PortfolioItemInput,
+  PublicAftercare,
+  PublishAftercareInput,
   RevealArtistBankAccount200,
   SafetyContact,
   SafetyContactInput,
@@ -2167,6 +2174,738 @@ export const useVerifyCompletionCode = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getVerifyCompletionCodeMutationOptions(options));
     }
+
+export const getListAftercareTemplatesUrl = () => {
+
+
+
+
+  return `/api/aftercare/templates`
+}
+
+/**
+ * @summary Starting points an artist can edit
+ */
+export const listAftercareTemplates = async ( options?: RequestInit): Promise<AftercareTemplate[]> => {
+
+  return customFetch<AftercareTemplate[]>(getListAftercareTemplatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAftercareTemplatesQueryKey = () => {
+    return [
+    `/api/aftercare/templates`
+    ] as const;
+    }
+
+
+export const getListAftercareTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof listAftercareTemplates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAftercareTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAftercareTemplatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAftercareTemplates>>> = ({ signal }) => listAftercareTemplates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAftercareTemplates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAftercareTemplatesQueryResult = NonNullable<Awaited<ReturnType<typeof listAftercareTemplates>>>
+export type ListAftercareTemplatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Starting points an artist can edit
+ */
+
+export function useListAftercareTemplates<TData = Awaited<ReturnType<typeof listAftercareTemplates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAftercareTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAftercareTemplatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMyAftercareUrl = () => {
+
+
+
+
+  return `/api/aftercare`
+}
+
+/**
+ * @summary List my aftercare pages
+ */
+export const listMyAftercare = async ( options?: RequestInit): Promise<AftercareList> => {
+
+  return customFetch<AftercareList>(getListMyAftercareUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyAftercareQueryKey = () => {
+    return [
+    `/api/aftercare`
+    ] as const;
+    }
+
+
+export const getListMyAftercareQueryOptions = <TData = Awaited<ReturnType<typeof listMyAftercare>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyAftercare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyAftercareQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyAftercare>>> = ({ signal }) => listMyAftercare({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyAftercare>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyAftercareQueryResult = NonNullable<Awaited<ReturnType<typeof listMyAftercare>>>
+export type ListMyAftercareQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List my aftercare pages
+ */
+
+export function useListMyAftercare<TData = Awaited<ReturnType<typeof listMyAftercare>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyAftercare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyAftercareQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAftercarePageUrl = () => {
+
+
+
+
+  return `/api/aftercare`
+}
+
+/**
+ * @summary Create an aftercare page as a draft
+ */
+export const createAftercarePage = async (aftercarePageInput: AftercarePageInput, options?: RequestInit): Promise<AftercarePage> => {
+
+  return customFetch<AftercarePage>(getCreateAftercarePageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(aftercarePageInput)
+  }
+);}
+
+
+
+
+export const getCreateAftercarePageMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAftercarePage>>, TError,{data: BodyType<AftercarePageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAftercarePage>>, TError,{data: BodyType<AftercarePageInput>}, TContext> => {
+
+const mutationKey = ['createAftercarePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAftercarePage>>, {data: BodyType<AftercarePageInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAftercarePage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAftercarePageMutationResult = NonNullable<Awaited<ReturnType<typeof createAftercarePage>>>
+    export type CreateAftercarePageMutationBody = BodyType<AftercarePageInput>
+    export type CreateAftercarePageMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Create an aftercare page as a draft
+ */
+export const useCreateAftercarePage = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAftercarePage>>, TError,{data: BodyType<AftercarePageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAftercarePage>>,
+        TError,
+        {data: BodyType<AftercarePageInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAftercarePageMutationOptions(options));
+    }
+
+export const getGetAftercarePageUrl = (pageId: string,) => {
+
+
+
+
+  return `/api/aftercare/${pageId}`
+}
+
+/**
+ * @summary Get one of my aftercare pages
+ */
+export const getAftercarePage = async (pageId: string, options?: RequestInit): Promise<AftercarePage> => {
+
+  return customFetch<AftercarePage>(getGetAftercarePageUrl(pageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAftercarePageQueryKey = (pageId: string,) => {
+    return [
+    `/api/aftercare/${pageId}`
+    ] as const;
+    }
+
+
+export const getGetAftercarePageQueryOptions = <TData = Awaited<ReturnType<typeof getAftercarePage>>, TError = ErrorType<ApiError>>(pageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAftercarePage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAftercarePageQueryKey(pageId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAftercarePage>>> = ({ signal }) => getAftercarePage(pageId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: pageId !== null && pageId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAftercarePage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAftercarePageQueryResult = NonNullable<Awaited<ReturnType<typeof getAftercarePage>>>
+export type GetAftercarePageQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get one of my aftercare pages
+ */
+
+export function useGetAftercarePage<TData = Awaited<ReturnType<typeof getAftercarePage>>, TError = ErrorType<ApiError>>(
+ pageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAftercarePage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAftercarePageQueryOptions(pageId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAftercarePageUrl = (pageId: string,) => {
+
+
+
+
+  return `/api/aftercare/${pageId}`
+}
+
+/**
+ * A page that is live needs reviewed set to true to confirm the artist has read her changes.
+ * @summary Save changes to one of my pages
+ */
+export const updateAftercarePage = async (pageId: string,
+    aftercarePageInput: AftercarePageInput, options?: RequestInit): Promise<AftercarePage> => {
+
+  return customFetch<AftercarePage>(getUpdateAftercarePageUrl(pageId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(aftercarePageInput)
+  }
+);}
+
+
+
+
+export const getUpdateAftercarePageMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAftercarePage>>, TError,{pageId: string;data: BodyType<AftercarePageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAftercarePage>>, TError,{pageId: string;data: BodyType<AftercarePageInput>}, TContext> => {
+
+const mutationKey = ['updateAftercarePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAftercarePage>>, {pageId: string;data: BodyType<AftercarePageInput>}> = (props) => {
+          const {pageId,data} = props ?? {};
+
+          return  updateAftercarePage(pageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAftercarePageMutationResult = NonNullable<Awaited<ReturnType<typeof updateAftercarePage>>>
+    export type UpdateAftercarePageMutationBody = BodyType<AftercarePageInput>
+    export type UpdateAftercarePageMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Save changes to one of my pages
+ */
+export const useUpdateAftercarePage = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAftercarePage>>, TError,{pageId: string;data: BodyType<AftercarePageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAftercarePage>>,
+        TError,
+        {pageId: string;data: BodyType<AftercarePageInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAftercarePageMutationOptions(options));
+    }
+
+export const getDeleteAftercarePageUrl = (pageId: string,) => {
+
+
+
+
+  return `/api/aftercare/${pageId}`
+}
+
+/**
+ * @summary Delete one of my pages
+ */
+export const deleteAftercarePage = async (pageId: string, options?: RequestInit): Promise<AftercareOk> => {
+
+  return customFetch<AftercareOk>(getDeleteAftercarePageUrl(pageId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAftercarePageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAftercarePage>>, TError,{pageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAftercarePage>>, TError,{pageId: string}, TContext> => {
+
+const mutationKey = ['deleteAftercarePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAftercarePage>>, {pageId: string}> = (props) => {
+          const {pageId} = props ?? {};
+
+          return  deleteAftercarePage(pageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAftercarePageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAftercarePage>>>
+
+    export type DeleteAftercarePageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete one of my pages
+ */
+export const useDeleteAftercarePage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAftercarePage>>, TError,{pageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAftercarePage>>,
+        TError,
+        {pageId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAftercarePageMutationOptions(options));
+    }
+
+export const getPublishAftercarePageUrl = (pageId: string,) => {
+
+
+
+
+  return `/api/aftercare/${pageId}/publish`
+}
+
+/**
+ * @summary Publish a page so its link opens for anyone
+ */
+export const publishAftercarePage = async (pageId: string,
+    publishAftercareInput: PublishAftercareInput, options?: RequestInit): Promise<AftercarePage> => {
+
+  return customFetch<AftercarePage>(getPublishAftercarePageUrl(pageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publishAftercareInput)
+  }
+);}
+
+
+
+
+export const getPublishAftercarePageMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishAftercarePage>>, TError,{pageId: string;data: BodyType<PublishAftercareInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishAftercarePage>>, TError,{pageId: string;data: BodyType<PublishAftercareInput>}, TContext> => {
+
+const mutationKey = ['publishAftercarePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishAftercarePage>>, {pageId: string;data: BodyType<PublishAftercareInput>}> = (props) => {
+          const {pageId,data} = props ?? {};
+
+          return  publishAftercarePage(pageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishAftercarePageMutationResult = NonNullable<Awaited<ReturnType<typeof publishAftercarePage>>>
+    export type PublishAftercarePageMutationBody = BodyType<PublishAftercareInput>
+    export type PublishAftercarePageMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Publish a page so its link opens for anyone
+ */
+export const usePublishAftercarePage = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishAftercarePage>>, TError,{pageId: string;data: BodyType<PublishAftercareInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof publishAftercarePage>>,
+        TError,
+        {pageId: string;data: BodyType<PublishAftercareInput>},
+        TContext
+      > => {
+      return useMutation(getPublishAftercarePageMutationOptions(options));
+    }
+
+export const getUnpublishAftercarePageUrl = (pageId: string,) => {
+
+
+
+
+  return `/api/aftercare/${pageId}/unpublish`
+}
+
+/**
+ * @summary Take a page down. The link stops opening at once.
+ */
+export const unpublishAftercarePage = async (pageId: string, options?: RequestInit): Promise<AftercarePage> => {
+
+  return customFetch<AftercarePage>(getUnpublishAftercarePageUrl(pageId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getUnpublishAftercarePageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unpublishAftercarePage>>, TError,{pageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unpublishAftercarePage>>, TError,{pageId: string}, TContext> => {
+
+const mutationKey = ['unpublishAftercarePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unpublishAftercarePage>>, {pageId: string}> = (props) => {
+          const {pageId} = props ?? {};
+
+          return  unpublishAftercarePage(pageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnpublishAftercarePageMutationResult = NonNullable<Awaited<ReturnType<typeof unpublishAftercarePage>>>
+
+    export type UnpublishAftercarePageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Take a page down. The link stops opening at once.
+ */
+export const useUnpublishAftercarePage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unpublishAftercarePage>>, TError,{pageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unpublishAftercarePage>>,
+        TError,
+        {pageId: string},
+        TContext
+      > => {
+      return useMutation(getUnpublishAftercarePageMutationOptions(options));
+    }
+
+export const getDuplicateAftercarePageUrl = (pageId: string,) => {
+
+
+
+
+  return `/api/aftercare/${pageId}/duplicate`
+}
+
+/**
+ * @summary Copy a page into a new draft with its own link
+ */
+export const duplicateAftercarePage = async (pageId: string, options?: RequestInit): Promise<AftercarePage> => {
+
+  return customFetch<AftercarePage>(getDuplicateAftercarePageUrl(pageId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getDuplicateAftercarePageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateAftercarePage>>, TError,{pageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof duplicateAftercarePage>>, TError,{pageId: string}, TContext> => {
+
+const mutationKey = ['duplicateAftercarePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof duplicateAftercarePage>>, {pageId: string}> = (props) => {
+          const {pageId} = props ?? {};
+
+          return  duplicateAftercarePage(pageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DuplicateAftercarePageMutationResult = NonNullable<Awaited<ReturnType<typeof duplicateAftercarePage>>>
+
+    export type DuplicateAftercarePageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Copy a page into a new draft with its own link
+ */
+export const useDuplicateAftercarePage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateAftercarePage>>, TError,{pageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof duplicateAftercarePage>>,
+        TError,
+        {pageId: string},
+        TContext
+      > => {
+      return useMutation(getDuplicateAftercarePageMutationOptions(options));
+    }
+
+export const getGetPublicAftercareUrl = (token: string,) => {
+
+
+
+
+  return `/api/public/aftercare/${token}`
+}
+
+/**
+ * Returns only what the artist wrote and her public name. Unpublished, unverified and suspended artists all return 404.
+ * @summary The open page a client sees. No login.
+ */
+export const getPublicAftercare = async (token: string, options?: RequestInit): Promise<PublicAftercare> => {
+
+  return customFetch<PublicAftercare>(getGetPublicAftercareUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicAftercareQueryKey = (token: string,) => {
+    return [
+    `/api/public/aftercare/${token}`
+    ] as const;
+    }
+
+
+export const getGetPublicAftercareQueryOptions = <TData = Awaited<ReturnType<typeof getPublicAftercare>>, TError = ErrorType<ApiError>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicAftercare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicAftercareQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicAftercare>>> = ({ signal }) => getPublicAftercare(token, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicAftercare>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicAftercareQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicAftercare>>>
+export type GetPublicAftercareQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary The open page a client sees. No login.
+ */
+
+export function useGetPublicAftercare<TData = Awaited<ReturnType<typeof getPublicAftercare>>, TError = ErrorType<ApiError>>(
+ token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicAftercare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicAftercareQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetMyPayoutsUrl = () => {
 

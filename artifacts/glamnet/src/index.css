@@ -114,6 +114,7 @@
   --baby-blue: 38 24% 76%;
   --plum: 348 55% 27%;
   --orange: 348 55% 27%;
+  --sage: 92 11% 49%; /* Bonisa sage #7C8B6F */
   --cream: 40 33% 93%;
 
   --button-outline: rgba(0,0,0,.08);
@@ -171,6 +172,7 @@
   --baby-blue: 38 20% 55%;
   --plum: 349 42% 62%;
   --orange: 349 42% 62%;
+  --sage: 92 14% 62%;
   --cream: 350 18% 15%;
 
   --button-outline: rgba(255,255,255,.10);

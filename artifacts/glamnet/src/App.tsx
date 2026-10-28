@@ -28,6 +28,9 @@ const Profile = lazy(() => import("@/pages/profile/index"));
 const ProfileSetup = lazy(() => import("@/pages/profile/setup"));
 const LeaveReview = lazy(() => import("@/pages/reviews/[appointmentId]"));
 const Payouts = lazy(() => import("@/pages/payouts/index"));
+const AftercareManager = lazy(() => import("@/pages/aftercare/index"));
+const AftercareEditor = lazy(() => import("@/pages/aftercare/editor"));
+const PublicAftercare = lazy(() => import("@/pages/aftercare/public"));
 const PaymentHistory = lazy(() => import("@/pages/payments/index"));
 const ComplaintsList = lazy(() => import("@/pages/complaints/index"));
 const NewComplaint = lazy(() => import("@/pages/complaints/new"));
@@ -80,6 +83,9 @@ function Router() {
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Switch>
+          <Route path="/a/:token">
+            <PublicAftercare />
+          </Route>
           <Route path="/profile/setup">
             <AppLayout>
               <ProfileSetup />
@@ -111,6 +117,8 @@ function Router() {
                 <Route path="/reviews/:appointmentId" component={LeaveReview} />
                 <Route path="/payments" component={PaymentHistory} />
                 <Route path="/payouts" component={Payouts} />
+                <Route path="/aftercare" component={AftercareManager} />
+                <Route path="/aftercare/:id" component={AftercareEditor} />
                 <Route path="/complaints" component={ComplaintsList} />
                 <Route path="/complaints/new" component={NewComplaint} />
                 <Route path="/complaints/:id" component={ComplaintDetail} />
